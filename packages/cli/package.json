@@ -1,0 +1,10 @@
+{
+  "name": "create-stateforge-app",
+  "version": "0.1.0",
+  "bin": {
+    "create-stateforge-app": "./bin/index.js"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2"
+  }
+}

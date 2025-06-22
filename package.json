@@ -1,0 +1,14 @@
+{
+  "name": "stateforge",
+  "private": true,
+  "workspaces": [
+    "packages/core",
+    "packages/starter",
+    "packages/cli"
+  ],
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm --filter @stateforge/starter dev",
+    "lint": "pnpm -r run lint"
+  }
+}
