@@ -1,14 +1,25 @@
 {
   "name": "stateforge",
   "private": true,
+  "packageManager": "pnpm@9.0.0",
   "workspaces": [
     "packages/core",
     "packages/starter",
     "packages/cli"
   ],
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter @stateforge/core build && pnpm --filter @stateforge/starter build && pnpm --filter create-stateforge-app build",
     "dev": "pnpm --filter @stateforge/starter dev",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm --filter @stateforge/core lint && pnpm --filter @stateforge/starter lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
   }
 }
