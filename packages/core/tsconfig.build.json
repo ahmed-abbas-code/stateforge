@@ -1,30 +1,20 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": false,
+    "noEmit": false,
     "outDir": "dist",
     "rootDir": "src",
-    "module": "ESNext",
-    "target": "ES2019",
-    "moduleResolution": "Node",
-    "jsx": "react-jsx",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true,
-
-    // ✅ Required to support @/lib/* alias
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "composite": true,
+    "sourceMap": true,
+    "declarationMap": true
   },
   "include": ["src"],
   "exclude": [
     "**/__tests__/**",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
+    "**/*.test.*",
+    "**/*.spec.*",
     "node_modules",
     "dist"
   ]

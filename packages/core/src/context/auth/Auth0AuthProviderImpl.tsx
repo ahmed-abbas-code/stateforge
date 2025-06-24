@@ -1,3 +1,4 @@
+import React from 'react';
 import { AuthContext } from './AuthContext';
 import { useUser } from '@auth0/nextjs-auth0/client';
 
@@ -13,7 +14,15 @@ export const Auth0AuthProviderImpl = ({ children }: { children: React.ReactNode 
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading: isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading: isLoading,
+        isAuthenticated: !!user, // ✅ Added here
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getPersistenceStrategy } from '../strategies/factory/createPersistenceStrategy';
-import { PersistenceStrategy } from '../types/persistence';
+import { useState, useEffect, useRef } from 'react';
+import { PersistenceStrategy } from '@/types/PersistenceOptions';
 
 export interface PersistOptions<T> {
   key: string;
@@ -14,12 +13,12 @@ export function usePersistedFramework<T>({
   strategy,
 }: PersistOptions<T>): readonly [T, (val: T) => void] {
   const [value, setValue] = useState<T>(defaultValue);
+  const strategyRef = useRef(getPersistenceStrategy<T>(strategy));
 
   useEffect(() => {
     const load = async () => {
       try {
-        const persistence = getPersistenceStrategy<T>(strategy);
-        const stored = await persistence.get(key);
+        const stored = await strategyRef.current.get(key);
         if (stored !== undefined && stored !== null) {
           setValue(stored);
         }
@@ -28,13 +27,12 @@ export function usePersistedFramework<T>({
       }
     };
     load();
-  }, [key, strategy]);
+  }, [key]);
 
   const update = (newValue: T) => {
     setValue(newValue);
     try {
-      const persistence = getPersistenceStrategy<T>(strategy);
-      persistence.set(key, newValue);
+      strategyRef.current.set(key, newValue);
     } catch (error) {
       console.error(`[StateForge] Failed to persist key "${key}":`, error);
     }
@@ -42,3 +40,7 @@ export function usePersistedFramework<T>({
 
   return [value, update] as const;
 }
+function getPersistenceStrategy<T>(strategy: string): any {
+  throw new Error('Function not implemented.');
+}
+

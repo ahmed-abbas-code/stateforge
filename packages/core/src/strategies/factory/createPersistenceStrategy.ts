@@ -1,28 +1,31 @@
-import { PersistenceStrategy } from '../../types/persistence';
-import { LocalStorageStrategy } from '../implementations/LocalStorageStrategy';
-import { RestApiStrategy } from '../implementations/RestApiStrategy';
-// import { FirestoreStrategy } from '../implementations/FirestoreStrategy';
-// import { RedisStrategy } from '../implementations/RedisStrategy';
-// import { EncryptedStorageStrategy } from '../implementations/EncryptedStorageStrategy';
+import { PersistenceStrategy, PersistenceStrategyBase } from '@/types/PersistenceOptions';
 
-interface PersistenceHandler<T> {
-  get(key: string): Promise<T | undefined>;
-  set(key: string, value: T): Promise<void>;
-}
+import { LocalStorageStrategyImpl } from '@/strategies/implementations/LocalStorageStrategyImpl';
+import { RestApiStrategyImpl } from '@/strategies/implementations/RestApiStrategyImpl';
+import { FirestoreStrategyImpl } from '@/strategies/implementations/FirestoreStrategyImpl';
+import { RedisServerStrategyImpl } from '@/strategies/implementations/RedisServerStrategyImpl';
+import { EncryptedStorageStrategyImpl } from '@/strategies/implementations/EncryptedStorageStrategyImpl';
 
-export function getPersistenceStrategy<T>(strategy: PersistenceStrategy): PersistenceHandler<T> {
-  switch (strategy) {
+type StrategyConfig = {
+  type: PersistenceStrategy;
+  namespace?: string;
+};
+
+export function createPersistenceStrategy<T>(config: StrategyConfig): PersistenceStrategyBase<T> {
+  const { type, namespace } = config;
+
+  switch (type) {
     case 'localStorage':
-      return new LocalStorageStrategy<T>();
+      return new LocalStorageStrategyImpl<T>(namespace);
     case 'restApi':
-      return new RestApiStrategy<T>();
-    // case 'firestore':
-    //   return new FirestoreStrategy<T>();
-    // case 'redis':
-    //   return new RedisStrategy<T>();
-    // case 'encryptedStorage':
-    //   return new EncryptedStorageStrategy<T>();
+      return new RestApiStrategyImpl<T>(namespace);
+    case 'firestore':
+      return new FirestoreStrategyImpl<T>(namespace);
+    case 'redis':
+      return new RedisServerStrategyImpl<T>(namespace);
+    case 'encryptedStorage':
+      return new EncryptedStorageStrategyImpl<T>(namespace);
     default:
-      throw new Error(`[StateForge] Unsupported strategy "${strategy}"`);
+      throw new Error(`[StateForge] Unsupported strategy "${type}"`);
   }
 }

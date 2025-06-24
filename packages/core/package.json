@@ -11,22 +11,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./context/state/AppStateContext": {
-      "import": "./dist/context/state/AppStateContext.js",
-      "types": "./dist/context/state/AppStateContext.d.ts"
-    },
-    "./hooks/usePersistedFramework": {
-      "import": "./dist/hooks/usePersistedFramework.js",
-      "types": "./dist/hooks/usePersistedFramework.d.ts"
-    },
-    "./strategies/factory/createPersistenceStrategy": {
-      "import": "./dist/strategies/factory/createPersistenceStrategy.js",
-      "types": "./dist/strategies/factory/createPersistenceStrategy.d.ts"
-    },
-    "./strategies/implementations/LocalStorageStrategyImpl": {
-      "import": "./dist/strategies/implementations/LocalStorageStrategyImpl.js",
-      "types": "./dist/strategies/implementations/LocalStorageStrategyImpl.d.ts"
     }
   },
   "files": [
@@ -39,7 +23,9 @@
   },
   "dependencies": {
     "axios": "^1.6.8",
+    "crypto-js": "^4.2.0",
     "firebase": "^10.12.0",
+    "firebase-admin": "^13.4.0",
     "uuid": "^9.0.1",
     "zod": "^3.22.4"
   },
@@ -49,7 +35,7 @@
     "react": "^18.0.0"
   },
   "devDependencies": {
-    "@auth0/nextjs-auth0": "^2.7.0",
+    "@auth0/nextjs-auth0": "^2.7.0", 
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
   }

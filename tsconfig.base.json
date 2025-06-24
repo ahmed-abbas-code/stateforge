@@ -3,28 +3,29 @@
     "target": "ES2021",
     "module": "ESNext",
     "lib": ["DOM", "ESNext"],
-    "moduleResolution": "Node",
+    "moduleResolution": "Node16",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "types": ["node"],
 
-    // ✅ Path aliases for cross-package access
+    // ✅ Monorepo-aware path aliases (used by all packages)
     "baseUrl": ".",
     "paths": {
-      "@core/*": ["packages/core/src/*"],
-      "@starter/*": ["packages/starter/src/*"],
-      "@cli/*": ["packages/cli/src/*"],
+      "@stateforge/core/*": ["packages/core/src/*"],
+      "@stateforge/starter/*": ["packages/starter/src/*"],
+      "@stateforge/cli/*": ["packages/cli/src/*"],
 
-      // ✅ For local imports inside packages/core (e.g., @/lib/firebase)
+      // Optional convenience alias (used only inside /core if desired)
       "@/*": ["packages/core/src/*"]
     }
   },
+
   "include": ["packages/**/*"],
   "exclude": ["node_modules", "dist"]
 }

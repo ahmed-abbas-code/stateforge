@@ -1,17 +1,9 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-
-export interface AppSharedState {
-  hydrated: boolean;
-  [key: string]: any;
-}
-
-interface AppStateContextType {
-  appSharedState: AppSharedState;
-  setAppSharedState: React.Dispatch<React.SetStateAction<AppSharedState>>;
-}
+import { AppSharedState, AppStateContextType } from '@/types/AppState';
 
 const defaultState: AppSharedState = {
   hydrated: false,
+  lastUpdated: '',
 };
 
 export const AppStateContext = createContext<AppStateContextType | undefined>(undefined);

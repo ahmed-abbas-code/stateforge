@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  GoogleAuthProvider,
+} from 'firebase/auth';
 
 export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +35,16 @@ export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNo
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, getToken }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        getToken, // optional, used for internal calls
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -10,16 +10,23 @@
   "scripts": {
     "build": "pnpm --filter @stateforge/core build && pnpm --filter @stateforge/starter build && pnpm --filter create-stateforge-app build",
     "dev": "pnpm --filter @stateforge/starter dev",
-    "lint": "pnpm --filter @stateforge/core lint && pnpm --filter @stateforge/starter lint"
+    "lint": "pnpm --filter @stateforge/core lint && pnpm --filter @stateforge/starter lint",
+    "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
+    "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
+    "show:cli": "find packages/cli -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py"
   },
   "devDependencies": {
-    "@types/node": "^20.11.19",
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.19.1",
     "@types/react": "19.1.8",
     "@types/react-dom": "^19.1.6",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "next-rate-limit": "^0.0.3",
+    "redis": "^5.5.6",
+    "zod": "^3.22.4"
   }
 }

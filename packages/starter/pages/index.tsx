@@ -1,35 +1,27 @@
-import { useContext, useEffect, useState } from 'react';
-import { AppStateContext } from '@stateforge/core/context/state/AppStateContext';
-import { usePersistedFramework } from '@stateforge/core/hooks/usePersistedFramework';
+import { useAppState, usePersistedFramework } from '@stateforge/core';
+import type { AppSharedState } from '@stateforge/core';
+
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
-  // Safe access to context
-  const context = useContext(AppStateContext);
+  const { appSharedState, setAppSharedState } = useAppState();
 
-  if (!context) {
-    throw new Error('AppStateContext must be used within AppStateProvider');
-  }
-
-  const { appSharedState, setAppSharedState } = context;
-
-  // Client-side persisted state
   const [clientValue, setClientValue] = usePersistedFramework<string>({
     key: 'client_input',
-    strategy: 'localStorage', // or 'encryptedStorage'
+    strategy: 'localStorage',
     defaultValue: '',
   });
 
-  // Server-side persisted state
   const [serverValue, setServerValue] = usePersistedFramework<string>({
     key: 'server_input',
-    strategy: 'restApi', // or 'firestore', 'redis'
+    strategy: 'restApi',
     defaultValue: '',
   });
 
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setAppSharedState(prev => ({
+    setAppSharedState((prev: AppSharedState) => ({
       ...prev,
       hydrated: true,
       lastUpdated: new Date().toISOString(),

@@ -1,10 +1,20 @@
 import type { AppProps } from 'next/app';
-import { AppStateProvider } from '@stateforge/core/context/state/AppStateContext';
+import '@/styles/globals.css';
 
-export default function MyApp({ Component, pageProps }: AppProps) {
+import {
+  AppStateProvider,
+  NavigationStateProvider,
+  AuthProvider,
+} from '@stateforge/core';
+
+export default function App({ Component, pageProps }: AppProps) {
   return (
-    <AppStateProvider>
-      <Component {...pageProps} />
-    </AppStateProvider>
+    <AuthProvider>
+      <AppStateProvider>
+        <NavigationStateProvider>
+          <Component {...pageProps} />
+        </NavigationStateProvider>
+      </AppStateProvider>
+    </AuthProvider>
   );
 }
