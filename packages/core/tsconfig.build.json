@@ -11,7 +11,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
-    "baseUrl": "."
+
+    // ✅ Required to support @/lib/* alias
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": ["src"],
   "exclude": [
@@ -19,6 +24,8 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "**/*.spec.tsx",
+    "node_modules",
+    "dist"
   ]
 }

@@ -2,6 +2,8 @@
   "name": "@stateforge/core",
   "version": "0.1.0",
   "description": "Secure, pluggable framework for state, auth, and persistence across client/server.",
+  "author": "Your Name or Org",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -22,19 +24,19 @@
       "import": "./dist/strategies/factory/createPersistenceStrategy.js",
       "types": "./dist/strategies/factory/createPersistenceStrategy.d.ts"
     },
-    "./strategies/implementations/LocalStorageStrategy": {
-      "import": "./dist/strategies/implementations/LocalStorageStrategy.js",
-      "types": "./dist/strategies/implementations/LocalStorageStrategy.d.ts"
+    "./strategies/implementations/LocalStorageStrategyImpl": {
+      "import": "./dist/strategies/implementations/LocalStorageStrategyImpl.js",
+      "types": "./dist/strategies/implementations/LocalStorageStrategyImpl.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.build.json",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix"
   },
-  "files": [
-    "dist"
-  ],
   "dependencies": {
     "axios": "^1.6.8",
     "firebase": "^10.12.0",
@@ -42,12 +44,13 @@
     "zod": "^3.22.4"
   },
   "peerDependencies": {
+    "@auth0/nextjs-auth0": "^2.0.0",
     "next": "^13.0.0 || ^14.0.0",
     "react": "^18.0.0"
   },
   "devDependencies": {
+    "@auth0/nextjs-auth0": "^2.7.0",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
-  },
-  "license": "MIT"
+  }
 }
