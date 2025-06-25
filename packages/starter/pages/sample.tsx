@@ -19,7 +19,11 @@ const defaultState: SampleState = {
 };
 
 export default function SampleWizardPage({ initialState }: { initialState: SampleState }) {
-  const [state, setState] = useNavigationPersistedState<SampleState>('sample-wizard', initialState);
+  const [state, setState] = useNavigationPersistedState<SampleState>({
+    key: 'sample-wizard',
+    defaultValue: defaultState,
+    initialState,
+  });
 
   const nextStep = () => setState({ ...state, step: state.step + 1 });
   const prevStep = () => setState({ ...state, step: state.step - 1 });

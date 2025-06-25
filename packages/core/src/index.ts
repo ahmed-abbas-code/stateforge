@@ -54,9 +54,8 @@ export type {
   PersistenceStrategyBase as PersistenceStrategy,
 } from '@/strategies/PersistenceStrategyBase';
 
-export { createPersistenceStrategy } from '@/lib/createPersistenceStrategy';
+export { createPersistenceStrategy } from '@/strategies/factory/createPersistenceStrategy';
 export { NavigationStateStrategyImpl } from '@/strategies/implementations/NavigationStateStrategyImpl';
-
 
 // ─── Axios HTTP Layer ──────────────────────────────────────────
 export { axiosApp, axiosAuth } from '@/lib/axiosClient';
@@ -71,3 +70,8 @@ export { auth } from '@/lib/firebase';
 export { firebaseAdmin } from '@/lib/firebase-admin';
 export { firestore } from '@/lib/firestore';
 export { redis } from '@/lib/redis';
+
+// ─── Schema Validation ─────────────────────────────────────────
+export { validateSchema } from '@/lib/validateSchema';
+
+export { mapAuth0ToAuthUser } from './context/auth/mappers/mapAuth0ToAuthUser';

@@ -1,7 +1,6 @@
 import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
 
 type MemoryStore = Record<string, string>;
-
 const memoryStore: MemoryStore = {};
 
 export class NavigationStateStrategyImpl<T> implements PersistenceStrategyBase<T> {
@@ -26,9 +25,11 @@ export class NavigationStateStrategyImpl<T> implements PersistenceStrategyBase<T
         : memoryStore[fullKey];
 
       if (!raw) return undefined;
-      return JSON.parse(raw) as T;
+
+      const parsed = JSON.parse(raw);
+      return parsed as T;
     } catch (err) {
-      console.error(`[NavState] Failed to read key "${key}":`, err);
+      console.error(`[NavigationStateStrategy] Failed to read key "${key}" (fullKey="${fullKey}")`, err);
       return undefined;
     }
   }
@@ -38,13 +39,14 @@ export class NavigationStateStrategyImpl<T> implements PersistenceStrategyBase<T
 
     try {
       const raw = JSON.stringify(value);
+
       if (this.isBrowser) {
         sessionStorage.setItem(fullKey, raw);
       } else {
         memoryStore[fullKey] = raw;
       }
     } catch (err) {
-      console.error(`[NavState] Failed to write key "${key}":`, err);
+      console.error(`[NavigationStateStrategy] Failed to write key "${key}" (fullKey="${fullKey}")`, err);
     }
   }
 }

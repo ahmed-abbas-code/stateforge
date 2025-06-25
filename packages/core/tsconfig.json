@@ -5,16 +5,17 @@
     // === Path Aliases ===
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@stateforge/core/*": ["./*"]
     },
 
     // === Output Behavior ===
     "declaration": true,
-    "emitDeclarationOnly": false,        // ✅ Ensures JS + .d.ts files are emitted
+    "emitDeclarationOnly": false,
     "noEmit": false,
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src",                    // ✅ Ensures proper structure in dist/
+    "rootDir": ".",
 
     // === Module & Language Support ===
     "jsx": "react-jsx",
@@ -30,14 +31,19 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+
+    // === Test Environment Support ===
+    "types": ["vitest"]
   },
 
-  "include": ["src/**/*"],                // ✅ Ensures all .ts/.tsx in src/ are picked up
+  "include": [
+    "src/**/*",
+    "tests/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.*",
     "**/*.spec.*",
     "**/__tests__/**"
   ]

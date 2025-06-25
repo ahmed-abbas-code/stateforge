@@ -1,4 +1,8 @@
-import { PersistenceStrategy, PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import {
+  STRATEGY_TYPES,
+  PersistenceStrategy,
+  PersistenceStrategyBase,
+} from '@/types/PersistenceOptions';
 
 import { LocalStorageStrategyImpl } from '@/strategies/implementations/LocalStorageStrategyImpl';
 import { RestApiStrategyImpl } from '@/strategies/implementations/RestApiStrategyImpl';
@@ -11,21 +15,23 @@ type StrategyConfig = {
   namespace?: string;
 };
 
-export function createPersistenceStrategy<T>(config: StrategyConfig): PersistenceStrategyBase<T> {
-  const { type, namespace } = config;
+export function createPersistenceStrategy<T>(
+  config: StrategyConfig
+): PersistenceStrategyBase<T> {
+  const { type, namespace = 'default' } = config;
 
   switch (type) {
-    case 'localStorage':
+    case STRATEGY_TYPES.LOCAL_STORAGE:
       return new LocalStorageStrategyImpl<T>(namespace);
-    case 'restApi':
+    case STRATEGY_TYPES.REST_API:
       return new RestApiStrategyImpl<T>(namespace);
-    case 'firestore':
+    case STRATEGY_TYPES.FIRESTORE:
       return new FirestoreStrategyImpl<T>(namespace);
-    case 'redis':
+    case STRATEGY_TYPES.REDIS:
       return new RedisServerStrategyImpl<T>(namespace);
-    case 'encryptedStorage':
+    case STRATEGY_TYPES.ENCRYPTED_STORAGE:
       return new EncryptedStorageStrategyImpl<T>(namespace);
     default:
-      throw new Error(`[StateForge] Unsupported strategy "${type}"`);
+      throw new Error(`[StateForge] Unsupported strategy type "${type}"`);
   }
 }

@@ -14,15 +14,12 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
 
-    // ✅ Monorepo-aware path aliases (used by all packages)
+    // ✅ Monorepo-aware path aliases (no local alias here)
     "baseUrl": ".",
     "paths": {
       "@stateforge/core/*": ["packages/core/src/*"],
       "@stateforge/starter/*": ["packages/starter/src/*"],
-      "@stateforge/cli/*": ["packages/cli/src/*"],
-
-      // Optional convenience alias (used only inside /core if desired)
-      "@/*": ["packages/core/src/*"]
+      "@stateforge/cli/*": ["packages/cli/src/*"]
     }
   },
 

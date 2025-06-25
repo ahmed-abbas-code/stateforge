@@ -6,15 +6,24 @@ import {
   signInWithPopup,
   signOut,
   GoogleAuthProvider,
+  User as FirebaseUser,
 } from 'firebase/auth';
 
+import type { AuthUser } from '@/types/Auth';
+import { mapFirebaseToAuthUser } from './mappers/mapFirebaseToAuthUser';
+
 export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsub = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        const validatedUser = mapFirebaseToAuthUser(firebaseUser);
+        setUser(validatedUser); // only set if valid
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return () => unsub();
@@ -29,7 +38,7 @@ export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNo
     await signOut(auth);
   };
 
-  const getToken = async () => {
+  const getToken = async (): Promise<string | null> => {
     if (!auth.currentUser) return null;
     return await auth.currentUser.getIdToken();
   };
@@ -42,7 +51,7 @@ export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNo
         isAuthenticated: !!user,
         login,
         logout,
-        getToken, // optional, used for internal calls
+        getToken,
       }}
     >
       {children}

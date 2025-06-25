@@ -2,8 +2,8 @@ import { redis } from '@/lib/redis';
 import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
 
 export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
-  private readonly ttlSeconds?: number;
   private readonly namespace: string;
+  private readonly ttlSeconds?: number;
 
   constructor(namespace: string = 'default', ttlSeconds?: number) {
     this.namespace = namespace;
@@ -19,10 +19,12 @@ export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
 
     try {
       const raw = await redis.get(namespacedKey);
-      if (raw === null) return undefined;
-      return JSON.parse(raw) as T;
+      if (!raw) return undefined;
+
+      const parsed = JSON.parse(raw);
+      return parsed as T;
     } catch (err) {
-      console.error(`[Redis] Failed to get key "${key}":`, err);
+      console.error(`[RedisServerStrategy] Failed to get key "${key}" (namespaced: "${namespacedKey}")`, err);
       return undefined;
     }
   }
@@ -38,7 +40,7 @@ export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
         await redis.set(namespacedKey, serialized);
       }
     } catch (err) {
-      console.error(`[Redis] Failed to set key "${key}":`, err);
+      console.error(`[RedisServerStrategy] Failed to set key "${key}" (namespaced: "${namespacedKey}")`, err);
     }
   }
 }

@@ -1,19 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { PersistenceStrategy } from '@/types/PersistenceOptions';
+import { createPersistenceStrategy } from '@/strategies/factory/createPersistenceStrategy';
+import type { PersistenceStrategyBase } from '@/types/PersistenceOptions';
 
 export interface PersistOptions<T> {
   key: string;
   defaultValue: T;
   strategy: PersistenceStrategy;
+  namespace?: string;
 }
 
 export function usePersistedFramework<T>({
   key,
   defaultValue,
   strategy,
+  namespace = 'app', // default namespace fallback
 }: PersistOptions<T>): readonly [T, (val: T) => void] {
   const [value, setValue] = useState<T>(defaultValue);
-  const strategyRef = useRef(getPersistenceStrategy<T>(strategy));
+
+  // Use useRef to cache strategy instance
+  const strategyRef = useRef<PersistenceStrategyBase<T>>(
+    createPersistenceStrategy({ type: strategy, namespace })
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -40,7 +48,3 @@ export function usePersistedFramework<T>({
 
   return [value, update] as const;
 }
-function getPersistenceStrategy<T>(strategy: string): any {
-  throw new Error('Function not implemented.');
-}
-
