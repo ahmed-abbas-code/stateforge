@@ -13,7 +13,7 @@ export const STRATEGY_TYPES = {
 
 // ─── Literal Union Type Derived from Enum ─────────────────────────
 
-export type PersistenceStrategy = typeof STRATEGY_TYPES[keyof typeof STRATEGY_TYPES];
+export type StrategyIdentifier = typeof STRATEGY_TYPES[keyof typeof STRATEGY_TYPES];
 
 // ─── Generic Strategy Contract Interface ──────────────────────────
 
@@ -21,3 +21,9 @@ export interface PersistenceStrategyBase<T> {
   get(key: string): Promise<T | undefined>;
   set(key: string, value: T): Promise<void>;
 }
+
+// ─── Final Strategy Type Accepts Either String or Object ──────────
+
+export type PersistenceStrategy<T = any> =
+  | StrategyIdentifier
+  | PersistenceStrategyBase<T>;

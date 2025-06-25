@@ -1,6 +1,5 @@
 /// <reference types="vitest" />
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { EncryptedStorageStrategyImpl } from '@/strategies/implementations/EncryptedStorageStrategyImpl';
 import * as CryptoJS from 'crypto-js';
 
@@ -69,21 +68,21 @@ describe('EncryptedStorageStrategyImpl', () => {
   });
 
   it('decrypts and loads from localStorage', async () => {
-    (localStorage.getItem as vi.Mock).mockReturnValue('mocked-encrypted-value');
+    (localStorage.getItem as Mock).mockReturnValue('mocked-encrypted-value');
     const result = await strategy.get(testKey);
     expect(result).toBe('abc');
   });
 
   it('returns undefined if localStorage returns null', async () => {
-    (localStorage.getItem as vi.Mock).mockReturnValue(null);
+    (localStorage.getItem as Mock).mockReturnValue(null);
     const result = await strategy.get(testKey);
     expect(result).toBeUndefined();
   });
 
   it('returns undefined if decryption fails (empty string)', async () => {
-    const decryptMock = CryptoJS.AES.decrypt as unknown as ReturnType<typeof vi.fn>;
+    const decryptMock = CryptoJS.AES.decrypt as unknown as Mock;
     decryptMock.mockReturnValueOnce({ toString: () => '' }); // simulate failure
-    (localStorage.getItem as vi.Mock).mockReturnValue('mocked-encrypted-value');
+    (localStorage.getItem as Mock).mockReturnValue('mocked-encrypted-value');
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const result = await strategy.get(testKey);
@@ -111,7 +110,7 @@ describe('EncryptedStorageStrategyImpl', () => {
 
   it('logs error if decryption throws during JSON.parse', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    (localStorage.getItem as vi.Mock).mockReturnValue('mocked-encrypted-value');
+    (localStorage.getItem as Mock).mockReturnValue('mocked-encrypted-value');
     vi.spyOn(JSON, 'parse').mockImplementationOnce(() => {
       throw new Error('parse error');
     });

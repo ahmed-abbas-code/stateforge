@@ -34,7 +34,7 @@
     "forceConsistentCasingInFileNames": true,
 
     // === Test Environment Support ===
-    "types": ["vitest"]
+    "types": ["vitest", "node"]
   },
 
   "include": [
@@ -43,8 +43,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.spec.*",
-    "**/__tests__/**"
+    "dist"
   ]
 }

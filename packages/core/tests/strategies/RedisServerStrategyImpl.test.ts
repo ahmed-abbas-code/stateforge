@@ -1,4 +1,6 @@
+/// <reference types="vitest" />
 import { describe, it, beforeEach, expect, vi } from 'vitest';
+import type { Mock } from 'vitest'; 
 import { RedisServerStrategyImpl } from '@/strategies/implementations/RedisServerStrategyImpl';
 import { redis } from '@/lib/redis';
 
@@ -34,19 +36,19 @@ describe('RedisServerStrategyImpl', () => {
   });
 
   it('retrieves and parses stored value', async () => {
-    (redis.get as vi.Mock).mockResolvedValueOnce(JSON.stringify(testValue));
+    (redis.get as Mock).mockResolvedValueOnce(JSON.stringify(testValue)); // ✅ Use Mock
     const result = await strategy.get(testKey);
     expect(result).toEqual(testValue);
   });
 
   it('returns undefined if key is not found', async () => {
-    (redis.get as vi.Mock).mockResolvedValueOnce(null);
+    (redis.get as Mock).mockResolvedValueOnce(null); // ✅ Use Mock
     const result = await strategy.get(testKey);
     expect(result).toBeUndefined();
   });
 
   it('returns undefined on JSON parse error', async () => {
-    (redis.get as vi.Mock).mockResolvedValueOnce('{bad json');
+    (redis.get as Mock).mockResolvedValueOnce('{bad json'); // ✅ Use Mock
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await strategy.get(testKey);

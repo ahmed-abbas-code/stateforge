@@ -1,4 +1,6 @@
+/// <reference types="vitest" />
 import { describe, it, beforeEach, expect, vi } from 'vitest';
+import type { Mock } from 'vitest'; 
 import { NavigationStateStrategyImpl } from '@/strategies/implementations/NavigationStateStrategyImpl';
 
 const testNS = 'testNS';
@@ -40,20 +42,20 @@ describe('NavigationStateStrategyImpl', () => {
 
   it('loads data from sessionStorage', async () => {
     const expectedKey = `__nav_state__:${testNS}:${testKey}`;
-    (sessionStorage.getItem as vi.Mock).mockReturnValueOnce(JSON.stringify(testValue));
+    (sessionStorage.getItem as Mock).mockReturnValueOnce(JSON.stringify(testValue)); // ✅ Fixed
     const result = await strategy.get(testKey);
     expect(result).toEqual(testValue);
   });
 
   it('returns undefined when key does not exist', async () => {
-    (sessionStorage.getItem as vi.Mock).mockReturnValueOnce(null);
+    (sessionStorage.getItem as Mock).mockReturnValueOnce(null); // ✅ Fixed
     const result = await strategy.get(testKey);
     expect(result).toBeUndefined();
   });
 
   it('handles malformed JSON gracefully', async () => {
     const expectedKey = `__nav_state__:${testNS}:${testKey}`;
-    (sessionStorage.getItem as vi.Mock).mockReturnValueOnce('{invalid json');
+    (sessionStorage.getItem as Mock).mockReturnValueOnce('{invalid json'); // ✅ Fixed
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const result = await strategy.get(testKey);

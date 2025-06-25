@@ -1,4 +1,6 @@
+/// <reference types="vitest" />
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import type { Mock } from 'vitest'; 
 import { LocalStorageStrategyImpl } from '@/strategies/implementations/LocalStorageStrategyImpl';
 
 describe('LocalStorageStrategyImpl', () => {
@@ -44,13 +46,13 @@ describe('LocalStorageStrategyImpl', () => {
   });
 
   it('loads data from localStorage', async () => {
-    (localStorage.getItem as vi.Mock).mockReturnValue('"abc"');
+    (localStorage.getItem as Mock).mockReturnValue('"abc"'); // ✅ Fixed
     const result = await strategy.load();
     expect(result).toBe('abc');
   });
 
   it('returns undefined when nothing is stored', async () => {
-    (localStorage.getItem as vi.Mock).mockReturnValue(null);
+    (localStorage.getItem as Mock).mockReturnValue(null); // ✅ Fixed
     const result = await strategy.load();
     expect(result).toBeUndefined();
   });

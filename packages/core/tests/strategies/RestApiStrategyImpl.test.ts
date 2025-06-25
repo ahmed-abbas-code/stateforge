@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, Mock } from 'vitest'; 
 import { RestApiStrategyImpl } from '@/strategies/implementations/RestApiStrategyImpl';
 import { fetchAppApi } from '@/utils/fetchAppApi';
 
@@ -17,8 +17,8 @@ describe('RestApiStrategyImpl', () => {
   const testValue = { id: 'abc123' };
   let strategy: RestApiStrategyImpl<typeof testValue>;
 
-  const getMock = fetchAppApi.get as vi.Mock;
-  const postMock = fetchAppApi.post as vi.Mock;
+  const getMock = fetchAppApi.get as Mock;
+  const postMock = fetchAppApi.post as Mock;
 
   beforeEach(() => {
     vi.restoreAllMocks();

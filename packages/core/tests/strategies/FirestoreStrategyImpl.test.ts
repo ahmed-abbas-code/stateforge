@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Mock } from 'vitest'; 
 import { FirestoreStrategyImpl } from '@/strategies/implementations/FirestoreStrategyImpl';
 import { firestore } from '@/lib/firestore';
 
@@ -29,7 +30,7 @@ describe('FirestoreStrategyImpl', () => {
   const value = 'testValue';
   let strategy: FirestoreStrategyImpl<string>;
 
-  const collectionMock = firestore.collection as unknown as vi.Mock;
+  const collectionMock = firestore.collection as unknown as Mock;
   const docMock = vi.fn();
   const getMock = vi.fn();
   const setMock = vi.fn();
