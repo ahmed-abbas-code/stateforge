@@ -1,4 +1,4 @@
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
 
 type MemoryStore = Record<string, string>;
 const memoryStore: MemoryStore = {};
@@ -48,5 +48,9 @@ export class NavigationStateStrategyImpl<T> implements PersistenceStrategyBase<T
     } catch (err) {
       console.error(`[NavigationStateStrategy] Failed to write key "${key}" (fullKey="${fullKey}")`, err);
     }
+  }
+
+  async load(key: string, _ctx?: unknown): Promise<T | undefined> {
+    return this.get(key);
   }
 }

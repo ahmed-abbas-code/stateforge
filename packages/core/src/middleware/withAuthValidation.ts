@@ -1,5 +1,5 @@
 import type { NextApiHandler } from 'next';
-import { verifyFirebaseToken } from '@/lib/verifyFirebaseToken';
+import { verifyFirebaseToken } from '../lib/verifyFirebaseToken';
 
 export function withAuthValidation(handler: NextApiHandler): NextApiHandler {
   return async (req, res) => {

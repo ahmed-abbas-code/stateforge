@@ -1,5 +1,5 @@
-import { envSchema } from '@/types/validation/envSchema';
-import { config } from '@/lib/config'; // assumes process.env was loaded here
+import { envSchema } from '../types/validation/envSchema';
+import { config } from './config'; 
 
 export function validateEnvSchema(): void {
   const result = envSchema.safeParse(config);

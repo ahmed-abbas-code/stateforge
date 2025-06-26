@@ -1,7 +1,7 @@
 import { User as FirebaseUser } from 'firebase/auth';
-import { authUserSchema } from '@/types/validation/authSchema';
-import type { AuthUser } from '@/types/Auth';
-import { validateSchema } from '@/lib/validateSchema';
+import { authUserSchema } from '../../../types/validation/authSchema';
+import type { AuthUser } from '../../../types/Auth';
+import { validateSchema } from '../../../lib/validateSchema';
 
 export function mapFirebaseToAuthUser(firebaseUser: FirebaseUser): AuthUser | null {
   const raw = {

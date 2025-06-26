@@ -1,6 +1,6 @@
 import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { env } from '@/lib/envConfig';
+import { env } from './envConfig';
 
 const firebaseAdminConfig = {
   credential: cert({

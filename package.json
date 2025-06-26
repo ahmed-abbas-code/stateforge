@@ -8,9 +8,9 @@
     "packages/cli"
   ],
   "scripts": {
-    "build": "pnpm --filter @stateforge/core build && pnpm --filter @stateforge/starter build && pnpm --filter create-stateforge-app build",
+    "build": "pnpm -r run build",
     "dev": "pnpm --filter @stateforge/starter dev",
-    "lint": "pnpm --filter @stateforge/core lint && pnpm --filter @stateforge/starter lint",
+    "lint": "pnpm -r run lint",
     "check:env": "tsx scripts/validate-and-generate-env.ts",
     "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",

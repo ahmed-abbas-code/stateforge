@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { AppSharedState, AppStateContextType } from '@/types/AppState';
+import { AppSharedState, AppStateContextType } from '../../types/AppState';
 
 const defaultState: AppSharedState = {
   hydrated: false,

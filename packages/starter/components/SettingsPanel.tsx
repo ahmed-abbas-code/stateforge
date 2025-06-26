@@ -1,10 +1,13 @@
 import { useAppState } from '@stateforge/core';
 
 export const SettingsPanel = () => {
-  const { state, setState } = useAppState();
+  const { appSharedState, setAppSharedState } = useAppState();
 
   const toggleDarkMode = () => {
-    setState({ ...state, darkMode: !state.darkMode });
+    setAppSharedState({
+      ...appSharedState,
+      darkMode: !appSharedState.darkMode,
+    });
   };
 
   return (
@@ -13,7 +16,7 @@ export const SettingsPanel = () => {
       <label className="flex items-center space-x-2">
         <input
           type="checkbox"
-          checked={state.darkMode}
+          checked={!!appSharedState.darkMode}
           onChange={toggleDarkMode}
         />
         <span>Enable Dark Mode</span>

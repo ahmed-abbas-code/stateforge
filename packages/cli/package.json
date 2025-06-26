@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsup && node ./scripts/inject-shebang.js",  
+    "build": "tsup && node ./scripts/inject-shebang.js",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -21,10 +21,8 @@
   },
   "devDependencies": {
     "@types/prompts": "^2.4.9",
-    "@types/node": "^20.0.0",
-    "fs-extra": "^11.1.1",                    
-    "tsup": "^7.3.0",
-    "tsx": "^4.7.0"
+    "fs-extra": "^11.1.1",
+    "tsup": "^7.3.0"
   },
   "engines": {
     "node": ">=18.0.0"

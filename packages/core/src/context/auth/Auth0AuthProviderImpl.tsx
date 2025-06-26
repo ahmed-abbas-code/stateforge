@@ -2,7 +2,7 @@ import React from 'react';
 import { AuthContext } from './AuthContext';
 import { useUser } from '@auth0/nextjs-auth0/client';
 
-import type { AuthUser } from '@/types/Auth';
+import type { AuthUser } from '../../types/Auth';
 import { mapAuth0ToAuthUser } from './mappers/mapAuth0ToAuthUser';
 
 export const Auth0AuthProviderImpl = ({ children }: { children: React.ReactNode }) => {

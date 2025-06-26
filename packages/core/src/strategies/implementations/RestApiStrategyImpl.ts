@@ -1,5 +1,5 @@
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
-import { fetchAppApi } from '@/utils/fetchAppApi';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
+import { fetchAppApi } from '../../utils/fetchAppApi';
 
 export class RestApiStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;

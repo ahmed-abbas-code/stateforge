@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { PersistenceStrategy } from '@/types/PersistenceOptions';
-import { createPersistenceStrategy } from '@/strategies/factory/createPersistenceStrategy';
-import type { PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import { PersistenceStrategy } from '../types/PersistenceOptions';
+import { createPersistenceStrategy } from '../strategies/factory/createPersistenceStrategy';
+import type { PersistenceStrategyBase } from '../types/PersistenceOptions';
 
 export interface PersistOptions<T> {
   key: string;

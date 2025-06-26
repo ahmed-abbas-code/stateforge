@@ -13,9 +13,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (strategy === 'firebase') {
       const token = req.headers.authorization?.split(' ')[1];
+
+      if (!token) {
+        return res.status(401).json({ error: 'Missing bearer token' });
+      }
+
       const decoded = await verifyFirebaseToken(token);
       userId = decoded?.uid || null;
-    } else if (strategy === 'auth0') {
+    }
+    else if (strategy === 'auth0') {
       const session = await getSession(req, res);
       userId = session?.user?.sub || null;
     }

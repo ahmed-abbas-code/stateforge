@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
-import { auth } from '@/lib/firebase';
+import { auth } from '../../lib/firebase';
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -9,7 +9,7 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 
-import type { AuthUser } from '@/types/Auth';
+import type { AuthUser } from '../../types/Auth';
 import { mapFirebaseToAuthUser } from './mappers/mapFirebaseToAuthUser';
 
 export const FirebaseAuthProviderImpl = ({ children }: { children: React.ReactNode }) => {

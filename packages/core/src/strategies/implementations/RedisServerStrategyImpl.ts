@@ -1,5 +1,5 @@
-import { redis } from '@/lib/redis';
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import { redis } from '../../lib/redis';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
 
 export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;

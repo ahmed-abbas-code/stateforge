@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { FirebaseAuthProviderImpl } from './FirebaseAuthProviderImpl';
 import { Auth0AuthProviderImpl } from './Auth0AuthProviderImpl';
-import { config } from '@/lib/config';
+import { config } from '../../lib/config';
 
 interface UnifiedAuthStrategySelectorProps {
   children: ReactNode;

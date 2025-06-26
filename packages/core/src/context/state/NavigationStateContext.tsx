@@ -6,7 +6,7 @@ import {
   useEffect,
 } from 'react';
 import { useRouter } from 'next/router';
-import { NavigationState, NavigationStateContextType } from '@/types/NavigationState';
+import { NavigationState, NavigationStateContextType } from '../../types/NavigationState';
 
 
 export const NavigationStateContext = createContext<NavigationStateContextType | undefined>(undefined);

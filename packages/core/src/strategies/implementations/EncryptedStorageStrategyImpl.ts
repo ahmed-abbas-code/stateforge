@@ -1,6 +1,6 @@
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
 import CryptoJS from 'crypto-js';
-import { getRequiredEnv } from '@/utils/getRequiredEnv';
+import { getRequiredEnv } from '../../utils/getRequiredEnv';
 
 const SECRET = getRequiredEnv('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
 

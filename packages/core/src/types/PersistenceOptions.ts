@@ -1,5 +1,4 @@
 // ─── Strategy Identifiers (Enum-like) ─────────────────────────────
-
 export const STRATEGY_TYPES = {
   LOCAL_STORAGE: 'localStorage',
   REST_API: 'restApi',
@@ -11,19 +10,22 @@ export const STRATEGY_TYPES = {
   NAVIGATION_STATE: 'navigationState',
 } as const;
 
-// ─── Literal Union Type Derived from Enum ─────────────────────────
-
 export type StrategyIdentifier = typeof STRATEGY_TYPES[keyof typeof STRATEGY_TYPES];
 
 // ─── Generic Strategy Contract Interface ──────────────────────────
-
 export interface PersistenceStrategyBase<T> {
   get(key: string): Promise<T | undefined>;
   set(key: string, value: T): Promise<void>;
 }
 
-// ─── Final Strategy Type Accepts Either String or Object ──────────
-
+// ─── Final Strategy Type: string or object ────────────────────────
 export type PersistenceStrategy<T = any> =
   | StrategyIdentifier
   | PersistenceStrategyBase<T>;
+
+// ─── Runtime Type Guard ───────────────────────────────────────────
+export function isStrategyIdentifier<T>(
+  strategy: PersistenceStrategy<T>
+): strategy is StrategyIdentifier {
+  return typeof strategy === 'string';
+}

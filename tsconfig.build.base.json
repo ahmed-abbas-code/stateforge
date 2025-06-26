@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "target": "ES2019",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "lib": ["DOM", "ESNext"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -14,8 +14,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@stateforge/core": ["packages/core/src/index.ts"],
-      "@stateforge/core/*": ["packages/core/src/*"],
+      "@stateforge/core": ["packages/core/dist/index.js"],
+      "@stateforge/core/*": ["packages/core/dist/*"],
       "@stateforge/starter": ["packages/starter/src/index.ts"],
       "@stateforge/starter/*": ["packages/starter/src/*"],
       "@stateforge/cli": ["packages/cli/src/index.ts"],

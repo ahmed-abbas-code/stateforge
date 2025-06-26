@@ -1,5 +1,5 @@
 import type { UserProfile } from '@auth0/nextjs-auth0/client';
-import type { AuthUser } from '@/types/Auth';
+import type { AuthUser } from '../../../types/Auth';
 
 export function mapAuth0ToAuthUser(user: UserProfile): AuthUser {
   return {

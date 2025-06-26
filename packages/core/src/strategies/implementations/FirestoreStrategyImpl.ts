@@ -1,5 +1,5 @@
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
-import { firestore } from '@/lib/firestore';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
+import { firestore } from '../../lib/firestore';
 
 export class FirestoreStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly collection: string;

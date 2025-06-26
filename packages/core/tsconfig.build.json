@@ -1,16 +1,16 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.build.base.json",
   "compilerOptions": {
-    "declaration": true,
-    "emitDeclarationOnly": false,
-    "noEmit": false,
     "outDir": "dist",
     "rootDir": "src",
-    "composite": true,
-    "sourceMap": true,
+    "jsx": "react-jsx",
+    "noEmit": false,
+    "declaration": true,
     "declarationMap": true
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "exclude": [
     "**/__tests__/**",
     "**/*.test.*",

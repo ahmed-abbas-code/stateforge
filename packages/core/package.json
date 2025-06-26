@@ -4,20 +4,21 @@
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Your Name or Org",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.json",
     "tsc": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
@@ -34,19 +35,7 @@
   },
   "peerDependencies": {
     "@auth0/nextjs-auth0": "^2.0.0",
-    "next": "^13.0.0 || ^14.0.0",
+    "next": "^13.0.0 || ^14.0.0 || ^15.0.0",
     "react": "^18.0.0"
-  },
-  "devDependencies": {
-    "@auth0/nextjs-auth0": "^2.7.0",
-    "@testing-library/react": "^14.0.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.0.0",
-    "@vitest/ui": "^1.5.0",
-    "eslint": "^8.57.0",
-    "jsdom": "^24.0.0",
-    "typescript": "^5.4.5",
-    "vite": "5.2.10",
-    "vitest": "^1.5.0"
   }
 }

@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import { useAuth } from '@/context/auth/AuthContext';
+import { useAuth } from '../context/auth/AuthContext';
 import type { ComponentType, JSX } from 'react';
 
 export function withAuthProtection<P extends JSX.IntrinsicAttributes>(

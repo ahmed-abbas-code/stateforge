@@ -1,4 +1,4 @@
-import { PersistenceStrategyBase } from '@/types/PersistenceOptions';
+import { PersistenceStrategyBase } from '../../types/PersistenceOptions';
 
 export class LocalStorageStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;

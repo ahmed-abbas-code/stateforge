@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 interface NavigationPersistOptions<T> {
   key: string;
   defaultValue: T;
-  initialState?: T;              // ✅ new: SSR-injected state
-  useSessionStorage?: boolean;  // defaults to true
+  initialState?: T;              
+  useSessionStorage?: boolean;  
   clearOnLeave?: boolean;
 }
 
