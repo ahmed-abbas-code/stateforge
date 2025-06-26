@@ -1,4 +1,4 @@
-import { axiosApp } from '@stateforge/core';
+import { axiosApp } from 'packages/core/dist/client-only';
 import { useState, useEffect, useCallback } from 'react';
 
 type UserProfile = {

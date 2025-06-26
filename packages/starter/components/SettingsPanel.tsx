@@ -1,4 +1,4 @@
-import { useAppState } from '@stateforge/core';
+import { useAppState } from 'packages/core/dist/client-only';
 
 export const SettingsPanel = () => {
   const { appSharedState, setAppSharedState } = useAppState();

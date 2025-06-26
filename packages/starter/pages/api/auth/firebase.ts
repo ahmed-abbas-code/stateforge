@@ -1,7 +1,7 @@
 // packages/starter/pages/api/auth/firebase.ts
 
+import { verifyFirebaseToken } from '@stateforge/core/server-only';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { verifyFirebaseToken } from '@stateforge/core';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

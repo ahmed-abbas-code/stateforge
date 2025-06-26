@@ -6,8 +6,7 @@ export const __ensureRuntimeEmit = true;
 export type {
   AppSharedState,
   AppStateContextType,
-} from './types/AppState'; 
-
+} from './types/AppState';
 
 export type {
   AuthUser,
@@ -19,8 +18,8 @@ export type {
   NavigationStateContextType,
 } from './types/NavigationState';
 
-export * from './types/PersistenceOptions'; 
-export * from './types/validation/authSchema'; 
+export * from './types/PersistenceOptions';
+export * from './types/validation/authSchema';
 
 // ─── Public Contexts ────────────────────────────────────────────
 export {
@@ -55,10 +54,11 @@ export type {
   PersistenceStrategyBase as PersistenceStrategy,
 } from './strategies/PersistenceStrategyBase';
 
-export { createPersistenceStrategy } from './strategies/factory/createPersistenceStrategy';
+export {
+  createBrowserPersistenceStrategy
+} from './strategies/factory/createBrowserPersistenceStrategy';
 
 export { LocalStorageStrategyImpl } from './strategies/implementations/LocalStorageStrategyImpl';
-
 export { NavigationStateStrategyImpl } from './strategies/implementations/NavigationStateStrategyImpl';
 
 // ─── Axios HTTP Layer ──────────────────────────────────────────
@@ -67,13 +67,6 @@ export { axiosApp, axiosAuth } from './lib/axiosClient';
 // ─── Utilities ─────────────────────────────────────────────────
 export { config } from './lib/config';
 export { auditLoginEvent, auditLogoutEvent } from './lib/auditLogger';
-export { verifyFirebaseToken } from './lib/verifyFirebaseToken';
-
-// ─── Optional Firebase / Redis (SSR only) ──────────────────────
-export { auth } from './lib/firebase';
-export { firebaseAdmin } from './lib/firebase-admin';
-export { firestore } from './lib/firestore';
-export { redis } from './lib/redis';
 
 // ─── Schema Validation ─────────────────────────────────────────
 export { validateSchema } from './lib/validateSchema';

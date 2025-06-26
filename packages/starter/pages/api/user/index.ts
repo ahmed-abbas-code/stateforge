@@ -1,10 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createPersistenceStrategy, validateSchema } from '@stateforge/core';
+
+import { createServerPersistenceStrategy } from '@stateforge/core/server';
 import { STRATEGY_TYPES } from '@stateforge/core/types/PersistenceOptions';
 import { appStateSchema } from '@stateforge/core/types/validation/appStateSchema';
+import { validateSchema } from '@stateforge/core';
 
-const strategy = createPersistenceStrategy({
-  type: STRATEGY_TYPES.REST_API, 
+const strategy = createServerPersistenceStrategy({
+  type: STRATEGY_TYPES.REST_API,
   namespace: 'user',
 });
 

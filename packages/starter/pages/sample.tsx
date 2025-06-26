@@ -1,6 +1,6 @@
 import { GetServerSideProps } from 'next';
 import { BasicStepWizard, WizardData } from '../components/BasicStepWizard';
-import { NavigationStateStrategyImpl } from '@stateforge/core';
+import { NavigationStateStrategyImpl } from 'packages/core/dist/client-only';
 
 const defaultState: WizardData = { step: 1 };
 

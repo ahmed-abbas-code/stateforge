@@ -1,4 +1,4 @@
-// packages/core/src/strategies/factory/createPersistenceStrategy.ts
+// packages/core/src/strategies/factory/createServerPersistenceStrategy.ts
 import { isStrategyIdentifier, PersistenceStrategy, PersistenceStrategyBase, STRATEGY_TYPES } from '../../types/PersistenceOptions';
 import { LocalStorageStrategyImpl } from '../implementations/LocalStorageStrategyImpl';
 import { RestApiStrategyImpl } from '../implementations/RestApiStrategyImpl';
@@ -11,7 +11,7 @@ type StrategyConfig<T> = {
   namespace?: string;
 };
 
-export function createPersistenceStrategy<T>(
+export function createServerPersistenceStrategy<T>(
   config: StrategyConfig<T>
 ): PersistenceStrategyBase<T> {
   const { type, namespace = 'default' } = config;

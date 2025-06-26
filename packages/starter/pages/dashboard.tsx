@@ -1,6 +1,6 @@
 
 
-import { useAuth, withAuthProtection } from "@stateforge/core";
+import { useAuth, withAuthProtection } from "packages/core/dist/client-only";
 
 function DashboardPage() {
   const { user, loading, error } = useAuth();

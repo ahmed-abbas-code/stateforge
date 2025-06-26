@@ -1,4 +1,4 @@
-import { useAuth } from '@stateforge/core';
+import { useAuth } from 'packages/core/dist/client-only';
 
 export const UserProfile = () => {
   const { user, logout } = useAuth();

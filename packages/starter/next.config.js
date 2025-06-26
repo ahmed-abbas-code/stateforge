@@ -1,10 +1,17 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@stateforge/core'], // Ensures TypeScript from core gets transpiled
+  transpilePackages: ['@stateforge/core'],
   reactStrictMode: true,
-  experimental: {
-    esmExternals: 'loose', // Helps with mixed ESM/CommonJS in monorepo deps
-  }
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        fs: false,
+        net: false,
+        tls: false,
+        path: false,
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;

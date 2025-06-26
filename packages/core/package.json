@@ -4,14 +4,29 @@
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Your Name or Org",
   "license": "MIT",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/client-only.js",
+  "types": "./dist/client-only.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/client-only.d.ts",
+      "import": "./dist/client-only.js",
+      "require": "./dist/client-only.js",
+      "default": "./dist/client-only.js"
+    },
+    "./client-only": {
+      "types": "./dist/client-only.d.ts",
+      "import": "./dist/client-only.js",
+      "require": "./dist/client-only.js"
+    },
+    "./server": {
+      "types": "./dist/server-only.d.ts",
+      "import": "./dist/server-only.js",
+      "require": "./dist/server-only.js"
+    },
+    "./universal": {
+      "types": "./dist/universal.d.ts",
+      "import": "./dist/universal.js",
+      "require": "./dist/universal.js"
     }
   },
   "files": [

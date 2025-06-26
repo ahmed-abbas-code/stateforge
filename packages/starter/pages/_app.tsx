@@ -5,7 +5,7 @@ import {
   AppStateProvider,
   NavigationStateProvider,
   AuthProvider,
-} from '@stateforge/core';
+} from '@stateforge/core'; 
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

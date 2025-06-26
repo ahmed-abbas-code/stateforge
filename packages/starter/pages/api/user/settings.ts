@@ -1,13 +1,14 @@
 // /packages/starter/pages/api/user/settings.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { appStateSchema } from '@stateforge/core/types/validation/appStateSchema';
-import { createPersistenceStrategy } from '@stateforge/core/strategies/factory/createPersistenceStrategy';
+
 import { z } from 'zod';
+import { createServerPersistenceStrategy } from '@stateforge/core/server-only';
 
 // Inferred type from schema
 type AppState = z.infer<typeof appStateSchema>;
 
-const strategy = createPersistenceStrategy<AppState>({
+const strategy = createServerPersistenceStrategy<AppState>({
   type: 'redis-server', // or 'firestore-server'
   namespace: 'user-settings',
 });

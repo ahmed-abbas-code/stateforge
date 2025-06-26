@@ -1,8 +1,8 @@
 // /packages/starter/pages/api/user/secure.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyFirebaseToken } from '@stateforge/core';
 import { getSession } from '@auth0/nextjs-auth0'; // Optional: only if using Auth0
+import { verifyFirebaseToken } from '@stateforge/core/server-only';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

@@ -1,18 +1,19 @@
+// packages/core/src/hooks/useUniversalPersistedFramework.ts
 import { useState, useEffect, useRef } from 'react';
-import { createBrowserPersistenceStrategy } from '../strategies/factory/createBrowserPersistenceStrategy';
-import type { PersistenceStrategyBase } from '../types/PersistenceOptions';
-
-// Define only the browser-compatible strategies
-type BrowserPersistenceStrategy = 'localStorage' | 'navigationState';
+import type {
+  PersistenceStrategy,
+  PersistenceStrategyBase,
+} from '../types/PersistenceOptions';
+import { createUniversalPersistenceStrategy } from '../strategies/factory/createUniversalPersistenceStrategy';
 
 export interface PersistOptions<T> {
   key: string;
   defaultValue: T;
-  strategy: BrowserPersistenceStrategy;
+  strategy: PersistenceStrategy;
   namespace?: string;
 }
 
-export function usePersistedFramework<T>({
+export function useUniversalPersistedFramework<T>({
   key,
   defaultValue,
   strategy,
@@ -21,9 +22,8 @@ export function usePersistedFramework<T>({
   const [value, setValue] = useState<T>(defaultValue);
   const strategyRef = useRef<PersistenceStrategyBase<T> | null>(null);
 
-  // Only create strategy once
   if (!strategyRef.current) {
-    strategyRef.current = createBrowserPersistenceStrategy<T>(strategy, namespace);
+    strategyRef.current = createUniversalPersistenceStrategy(strategy, namespace);
   }
 
   useEffect(() => {

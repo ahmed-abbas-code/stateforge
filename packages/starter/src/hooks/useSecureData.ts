@@ -1,4 +1,4 @@
-import { axiosApp } from '@stateforge/core';
+import { axiosApp } from 'packages/core/dist/client-only';
 import { useEffect, useState } from 'react';
 
 export function useSecureData() {
