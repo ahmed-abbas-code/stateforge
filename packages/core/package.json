@@ -37,6 +37,7 @@
     "dev": "tsc --watch --project tsconfig.json",
     "tsc": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "check:env": "tsx scripts/validate-and-generate-env.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

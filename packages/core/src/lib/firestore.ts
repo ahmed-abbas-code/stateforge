@@ -1,16 +1,36 @@
-import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { env } from './envConfig';
+import { isDryRunEnv } from './isDryRunEnv';
+import type { Firestore } from 'firebase-admin/firestore';
 
-const firebaseAdminConfig = {
-  credential: cert({
-    projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    clientEmail: env.FIREBASE_CLIENT_EMAIL,
-    privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  }),
-};
+let firestore: Firestore;
 
-// Prevent re-initialization in serverless / hot-reload environments
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseAdminConfig);
+if (isDryRunEnv) {
+  console.log('[DummyMode] Skipping Firestore initialization');
 
-export const firestore = getFirestore(app);
+  firestore = {
+    collection: () => ({
+      doc: () => ({
+        get: async () => ({ exists: false }),
+        set: async () => {},
+        update: async () => {},
+        delete: async () => {},
+      }),
+    }),
+  } as unknown as Firestore;
+} else {
+  const { initializeApp, cert, getApps, getApp } = require('firebase-admin/app');
+  const { getFirestore } = require('firebase-admin/firestore');
+  const { env } = require('./envConfig');
+
+  const firebaseAdminConfig = {
+    credential: cert({
+      projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      clientEmail: env.FIREBASE_CLIENT_EMAIL,
+      privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  };
+
+  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseAdminConfig);
+  firestore = getFirestore(app);
+}
+
+export { firestore };

@@ -1,16 +1,13 @@
-// ─── Persistence Factory (Node-only: Firestore, Redis, etc.) ───────
-export {
-  createServerPersistenceStrategy,
-} from './strategies/factory/createServerPersistenceStrategy';
+import { isDryRunEnv } from './lib/isDryRunEnv';
 
-// ─── Firebase Admin SDK (SSR/server-side only) ─────────────────────
-export { firebaseAdmin } from './lib/firebase-admin';
-export { firestore } from './lib/firestore';
+export { createServerPersistenceStrategy } from './strategies/factory/createServerPersistenceStrategy';
 
-// ─── Redis Integration (Node-only) ─────────────────────────────────
-export { redis } from './lib/redis';
-
-// ─── Server-side Auth Verification ────────────────────────────────
 export { verifyFirebaseToken } from './lib/verifyFirebaseToken';
-
 export { useUniversalPersistedFramework } from './hooks/useUniversalPersistedFramework';
+
+if (!isDryRunEnv) {
+  // Export server-only modules only if not in dryrun mode
+  module.exports.firebaseAdmin = require('./lib/firebase-admin').firebaseAdmin;
+  module.exports.firestore = require('./lib/firestore').firestore;
+  module.exports.redis = require('./lib/redis').redis;
+}

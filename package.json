@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "build": "pnpm -r run build",
+    "build:dryrun": "pnpm --filter @stateforge/core run build && pnpm --filter @stateforge/cli run build && pnpm --filter @stateforge/starter run build:dryrun",
     "dev": "pnpm --filter @stateforge/starter dev",
+    "dev:dryrun": "DOTENV_CONFIG_PATH=.env.dryrun pnpm --filter @stateforge/starter dev",
     "lint": "pnpm -r run lint",
-    "check:env": "tsx scripts/validate-and-generate-env.ts",
     "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:cli": "find packages/cli -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
@@ -34,6 +35,7 @@
   "dependencies": {
     "axios-retry": "^4.5.0",
     "dotenv": "^16.5.0",
+    "firebase-admin": "^13.4.0",
     "next-rate-limit": "^0.0.3",
     "redis": "^5.5.6",
     "zod": "^3.22.4"

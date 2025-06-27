@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:dryrun": "node scripts/build-dryrun.mjs",
     "start": "next start",
+    "start:dryrun": "DOTENV_CONFIG_PATH=../../.env.dryrun next start",
     "lint": "next lint"
   },
   "dependencies": {
