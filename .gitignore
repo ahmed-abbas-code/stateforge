@@ -1,22 +1,26 @@
-# Node and build artifacts
+# Node modules
 node_modules/
+
+# Build output
 dist/
 *.log
+
+# Environment files
+.env*
 pnpm-lock.yaml
 
-# IDE/editor config
+# Editor config
 .vscode/
 
-# Environment variables
-.env*
-.env.*.local
+# Next.js build output (recursive)
+**/.next
+**/.next/*
 
-# Ignore all .next output...
-.next/
-
-# ...except .tsbuildinfo under .next/cache anywhere in the repo
-!**/.next/cache/
+# Allow tsbuildinfo files inside .next/cache
 !**/.next/cache/.tsbuildinfo
 
-# Ignore all other .tsbuildinfo files
+# TypeScript
 *.tsbuildinfo
+
+# Mac system files
+.DS_Store
