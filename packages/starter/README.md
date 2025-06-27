@@ -1,38 +1,43 @@
 # @stateforge/starter
 
-A reference implementation of a Next.js application using the **StateForge Core Framework**.
+A reference implementation of a Next.js application powered by **@stateforge/core**.
 
-This starter demonstrates:
-- Persistent shared and client-side state
-- Secure multi-strategy state hydration (SSR + CSR)
-- Unified Auth context via Firebase or Auth0
-- Modular persistence via Redis, Firestore, REST API, or localStorage
-- Navigation state persistence across route changes
-- Sample UI flows (step wizards, settings panels, protected routes)
+This starter showcases how to build a modern SaaS frontend using StateForge’s modular architecture with support for:
+- Pluggable auth providers (Firebase or Auth0)
+- Strategy-driven state persistence (local, encrypted, Redis, Firestore, REST)
+- Navigation-aware UI flows (e.g., step wizards)
+- SSR + CSR-safe state hydration
+- Secure, token-aware API routing
 
 ---
 
 ## 🔧 Getting Started
 
-### 1. Install dependencies (from monorepo root)
+### 1. Install dependencies (from the monorepo root)
 
 ```bash
 pnpm install
 ```
 
-### 2. Set up your `.env.local` file
+### 2. Configure your environment
+
+Copy and edit the example `.env` file:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Update required values:
-- `FIREBASE_PROJECT_ID=...`
-- `AUTH0_DOMAIN=...`
-- `BACKEND_APP_REST_API_BASE_URL=...`
-- `BACKEND_AUTH_REST_API_BASE_URL=...`
+Then set values such as:
 
-### 3. Run the dev server
+```env
+NEXT_PUBLIC_AUTH_STRATEGY=firebase # or 'auth0'
+FIREBASE_PROJECT_ID=...
+AUTH0_DOMAIN=...
+BACKEND_APP_API_BASE_URL=https://api.example.com
+BACKEND_AUTH_API_BASE_URL=https://auth.example.com
+```
+
+### 3. Start the development server
 
 ```bash
 pnpm --filter @stateforge/starter dev
@@ -40,64 +45,80 @@ pnpm --filter @stateforge/starter dev
 
 ---
 
-## 📁 Structure Overview
+## 📁 Project Structure
 
-```txt
+```
 /pages
-  ├── index.tsx                  # Shared + client state example
-  ├── sample.tsx                 # Wizard with SSR navigation state
-  ├── _app.tsx                   # Loads global providers
-  ├── _document.tsx              # HTML structure and preload setup
+  ├── index.tsx            # Entry page using shared state
+  ├── sample.tsx           # Step wizard using navigation state
+  ├── dashboard.tsx        # Auth-protected page
+  ├── _app.tsx             # Global providers setup
+  ├── _document.tsx        # Custom document for SSR
   └── /api
-      ├── [...auth0].ts          # Auth0 handler route
-      ├── secure-data.ts         # Protected Firebase-auth API route
-      └── /user/                 # App-specific backend routes
+      └── /auth
+          ├── [...auth0].ts      # Auth0 route handler
+          └── firebase.ts        # Firebase login/token validator
+      └── /user
+          ├── index.ts           # Get current user
+          ├── settings.ts        # Persist user settings
+          └── secure.ts          # Auth-protected endpoint
 
 /components
-  ├── SettingsPanel.tsx          # Sample persisted settings UI
-  ├── SampleStepWizard.tsx       # Wizard steps with SSR + navigation state
-  └── UserProfile.tsx            # Reads from unified AuthContext
+  ├── Header.tsx           # Global header with auth info
+  ├── BasicStepWizard.tsx  # Example flow using navigation state
+  ├── SettingsPanel.tsx    # UI for updating persisted settings
+  └── UserProfile.tsx      # Unified view of Firebase/Auth0 user
+
+/src
+  ├── hooks/               # Reusable logic (e.g., useSecureData)
+  ├── lib/                 # Env patching for dry runs
+  ├── styles/              # Global styles (Tailwind/CSS)
+  └── utils.ts             # General app utilities
+
+/scripts
+  └── build-dryrun.mjs     # Simulates builds without real env secrets
 ```
 
 ---
 
 ## 🚀 Features Demonstrated
 
-- ✅ SSR-safe state hydration
-- ✅ Navigation state persistence
-- ✅ Redis & Firestore integration
-- ✅ Dual-mode Auth (Firebase/Auth0)
-- ✅ Global token-aware Axios wrapper
-- ✅ Protected routes via middleware
-- ✅ Step wizard with recovery and restart
-- ✅ Environment-aware API switching (staging, prod)
+- ✅ Persistent app + navigation state (with SSR)
+- ✅ Pluggable auth strategies (Auth0, Firebase)
+- ✅ Redis, Firestore, LocalStorage, and REST-based state strategies
+- ✅ Token-aware Axios client with context-based headers
+- ✅ Middleware for audit logging, SSO, rate limiting
+- ✅ Dynamic flow recovery (e.g., in wizards)
+- ✅ Multi-env dry run support for CI or previews
 
 ---
 
-## 🧩 Extend This Starter
+## 🧩 Extending This App
 
-You can build on this by:
-- Adding your own `PersistenceStrategyImpl` subclasses
-- Connecting to your own APIs via `axiosApp` or `axiosAuth`
-- Replacing or wrapping the default `AppProvider`/`AuthProvider`
+You can evolve this app by:
+
+- Creating new `PersistenceStrategyImpl` modules in `@stateforge/core`
+- Integrating more backend services using `axiosApp` or `axiosAuth`
+- Adding your own providers or shared state contexts
+- Using other Next.js features like server components or middleware routing
 
 ---
 
-## 📦 Based On
+## 📦 Built With
 
-- [@stateforge/core](https://github.com/ahmed-abbas-code/stateforge) (in monorepo)
-- [Next.js](https://nextjs.org)
-- [Firebase / Firestore](https://firebase.google.com)
-- [Auth0](https://auth0.com)
+- [@stateforge/core](../core) — framework logic for auth, persistence, and state
+- [Next.js](https://nextjs.org) — React-based SSR framework
+- [Firebase](https://firebase.google.com) / [Firestore](https://firebase.google.com/products/firestore)
+- [Auth0](https://auth0.com) — Identity-as-a-service
 
 ---
 
 ## 📚 License
 
-MIT — use it freely in commercial and personal projects.
+MIT — open for use in personal, commercial, or client projects.
 
 ---
 
 ## 🙌 Maintained by
 
-Ahmed Abbas
+**[Ahmed Abbas](https://github.com/ahmed-abbas-code)**

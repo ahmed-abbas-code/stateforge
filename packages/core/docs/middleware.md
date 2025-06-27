@@ -1,20 +1,19 @@
-
 # Middleware in StateForge
 
-StateForge includes built-in security, session, and audit middleware to protect routes, validate sessions, and enforce policies. These can be used in both Next.js API routes and custom server setups.
+StateForge includes a suite of pluggable, composable middleware designed for security, session validation, and audit logging. These can be used in both **Next.js API routes** and **custom server setups** (e.g., Express).
 
 ---
 
-## 🔐 Available Middleware
+## 🧩 Available Middleware
 
-| Middleware                 | Purpose                                                |
-|----------------------------|--------------------------------------------------------|
-| `withAuthValidation`       | Verifies tokens (Firebase or Auth0) in API routes     |
-| `withSSOGuard`             | Handles SSO session initialization and validation     |
-| `rateLimiter`              | IP- or user-based request throttling                  |
-| `ipGuard`                  | Blocks suspicious or disallowed IPs                   |
-| `auditLoggerMiddleware`    | Logs login/logout and session events                  |
-| `autoLogout`               | Expires user sessions on token invalidation           |
+| Middleware               | Purpose                                                 |
+|--------------------------|---------------------------------------------------------|
+| `withAuthValidation`     | Validates Firebase or Auth0 tokens in API handlers      |
+| `withSSOGuard`           | Ensures proper SSO session flow                         |
+| `rateLimiter`            | Limits requests per IP, user, or session                |
+| `ipGuard`                | Blocks disallowed or suspicious IP addresses            |
+| `auditLoggerMiddleware`  | Logs auth/session events (e.g., login/logout)           |
+| `autoLogout`             | Triggers logout if tokens are expired or revoked        |
 
 ---
 
@@ -28,14 +27,14 @@ src/middleware/
 ├── rateLimiter.ts
 ├── withAuthValidation.ts
 ├── withSSOGuard.ts
-└── index.ts                  # Re-exports all middleware
+└── index.ts            # Re-exports all middleware functions
 ```
 
 ---
 
-## 🛡 Example: `withAuthValidation`
+## 🔐 Example: `withAuthValidation`
 
-Wraps API handlers to validate auth tokens.
+Protects API routes by validating the incoming token.
 
 ```ts
 import { withAuthValidation } from '@/middleware/withAuthValidation';
@@ -45,13 +44,13 @@ export default withAuthValidation(async (req, res, user) => {
 });
 ```
 
-Supports Firebase and Auth0, using the strategy set in `.env.local`.
+Supports both Firebase and Auth0, based on the configured provider.
 
 ---
 
 ## 📊 Example: `auditLoggerMiddleware`
 
-Logs login/logout activity to console, file, or remote service:
+Tracks login/logout/session lifecycle events.
 
 ```ts
 import { auditLoggerMiddleware } from '@/middleware/auditLoggerMiddleware';
@@ -62,9 +61,13 @@ export default async function handler(req, res) {
 }
 ```
 
+Events can be logged to the console, file system, or external logging services.
+
 ---
 
 ## ⚙️ Example: `rateLimiter`
+
+Applies throttling based on IP, user, or custom token.
 
 ```ts
 import { rateLimiter } from '@/middleware/rateLimiter';
@@ -73,21 +76,45 @@ export default async function handler(req, res) {
   const allowed = await rateLimiter(req, res);
   if (!allowed) return;
 
-  res.status(200).send('Request allowed');
+  res.status(200).send('Allowed');
 }
 ```
 
-Configurable by IP, route, or session key.
+Highly configurable: time windows, thresholds, identifiers.
 
 ---
 
-## 🔄 Auto Logout
+## 🔁 Auto Logout
 
-Automatically clears tokens and app state after expiration:
+Auto-expires sessions and clears auth state after token invalidation.
 
-- Hooked into Axios response interceptors
-- Can dispatch logout or redirect
-- Optionally tied to persistent state expiration
+- Integrated with Axios response interceptors
+- Can trigger `logout()` or redirect
+- Optional linkage with persistence strategies for cleanup
+
+---
+
+## 🌐 Example Usage in API Routes
+
+```ts
+import { withAuthValidation, rateLimiter } from '@/middleware';
+
+export default withAuthValidation(async (req, res, user) => {
+  const allowed = await rateLimiter(req, res);
+  if (!allowed) return;
+
+  res.status(200).json({ message: `Hello ${user.email}` });
+});
+```
+
+---
+
+## 🔧 Best Practices
+
+- Chain middleware where applicable
+- Use `autoLogout` on both API and client Axios layers
+- Use `auditLoggerMiddleware` to build audit trails
+- Validate tokens early to fail fast
 
 ---
 

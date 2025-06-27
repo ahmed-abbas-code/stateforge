@@ -1,4 +1,3 @@
-
 # @stateforge/core
 
 Reusable logic for state, persistence strategies, and auth integrations.
@@ -94,4 +93,4 @@ MIT — use it freely in commercial and personal projects.
 
 ## 🙌 Maintained by
 
-**Ahmed Abbas**
+**[Ahmed Abbas](https://github.com/ahmed-abbas-code)**

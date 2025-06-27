@@ -1,24 +1,23 @@
-
 # Extending StateForge
 
-StateForge is designed with extensibility in mind. It follows SOLID principles, enabling developers to introduce new persistence strategies, authentication providers, and utilities with minimal coupling.
+StateForge is built to be modular and extensible. It uses interfaces, factory patterns, and runtime validation to let you safely add new strategies, auth providers, middleware, schemas, and utilities — all with minimal coupling.
 
 ---
 
 ## 🧱 Extendable Components
 
-| Component Type        | Base Interface/Class            | Example Implementation             |
-|------------------------|----------------------------------|------------------------------------|
-| Persistence Strategy   | `PersistenceStrategyBase`        | `RedisServerStrategyImpl.ts`       |
-| Auth Provider          | `AbstractAuthProvider`           | `FirebaseAuthProviderImpl.tsx`     |
-| Schema Validators      | `z.ZodSchema`                    | `appStateSchema.ts`                |
-| Middleware             | Functional middleware pattern    | `rateLimiter.ts`                   |
+| Component Type       | Base Interface/Class         | Example Implementation             |
+|----------------------|------------------------------|------------------------------------|
+| Persistence Strategy | `PersistenceStrategyBase`    | `RedisServerStrategyImpl.ts`       |
+| Auth Provider        | `AbstractAuthProvider`       | `FirebaseAuthProviderImpl.tsx`     |
+| Middleware           | Express-style function       | `rateLimiter.ts`                   |
+| Schema Validators    | `z.ZodSchema`                | `appStateSchema.ts`                |
 
 ---
 
-## 🧩 Adding a New Persistence Strategy
+## 🗃 Adding a New Persistence Strategy
 
-1. **Create the strategy file:**
+1. **Create the strategy class:**
 
 ```bash
 src/strategies/implementations/MyCustomStrategyImpl.ts
@@ -28,16 +27,16 @@ src/strategies/implementations/MyCustomStrategyImpl.ts
 
 ```ts
 export class MyCustomStrategyImpl implements PersistenceStrategyBase<MyType> {
-  async get() { /* your logic */ }
-  async set(value: MyType) { /* your logic */ }
-  async clear() { /* your logic */ }
+  async get() { /* logic */ }
+  async set(value: MyType) { /* logic */ }
+  async clear() { /* logic */ }
 }
 ```
 
 3. **Register it in the factory:**
 
 ```ts
-// createPersistenceStrategy.ts
+// factory/createPersistenceStrategy.ts
 if (type === 'myCustom') return new MyCustomStrategyImpl(schema);
 ```
 
@@ -45,7 +44,7 @@ if (type === 'myCustom') return new MyCustomStrategyImpl(schema);
 
 ## 🔐 Adding a New Auth Provider
 
-1. **Create your provider component:**
+1. **Create your provider:**
 
 ```bash
 src/context/auth/MyAuthProviderImpl.tsx
@@ -54,12 +53,16 @@ src/context/auth/MyAuthProviderImpl.tsx
 2. **Extend the abstract class:**
 
 ```ts
-export class MyAuthProviderImpl extends AbstractAuthProvider { ... }
+export class MyAuthProviderImpl extends AbstractAuthProvider {
+  async login() { ... }
+  async logout() { ... }
+  getUser() { ... }
+}
 ```
 
 3. **Update the strategy selector:**
 
-```ts
+```tsx
 // UnifiedAuthStrategySelector.tsx
 case 'mycustom': return <MyAuthProviderImpl>{children}</MyAuthProviderImpl>;
 ```
@@ -67,40 +70,58 @@ case 'mycustom': return <MyAuthProviderImpl>{children}</MyAuthProviderImpl>;
 4. **Add mapping logic (optional):**
 
 ```ts
-mapMyProviderToAuthUser(profile: any): AuthUser { ... }
+function mapMyProviderToAuthUser(profile: any): AuthUser { ... }
 ```
 
 ---
 
-## 📄 Adding a New Environment Variable
+## ⚙️ Adding a New Environment Variable
 
-1. Add it to `.env.example`
-2. Update `envSchema` in `validateEnvSchema.ts`
-3. Export via `config.ts`
+1. Add the key to `.env.example`
+2. Update validation in `validateEnvSchema.ts`
+3. Expose it via `config.ts`
 
 ---
 
 ## 🛡 Adding Middleware
 
-1. Create a file in `middleware/` (e.g., `roleGuard.ts`)
-2. Export a function that receives `(req, res, next)`
-3. Chain it in your handler or API route
+1. Create the file in `src/middleware/` (e.g., `roleGuard.ts`)
+2. Export a function of type `(req, res, next?) => void | Promise<void>`
+3. Use it directly in API routes or middleware chains
+
+Example:
+
+```ts
+export async function roleGuard(req, res, next) {
+  const user = await getUser(req);
+  if (!user.roles.includes('admin')) return res.status(403).end();
+  next?.();
+}
+```
 
 ---
 
-## 📑 Adding Zod Schemas
+## 🧪 Adding Zod Schemas
 
-1. Create a schema file under `types/validation/`
-2. Define and export with `z.object()`
-3. Use in strategies, hooks, or middleware
+1. Define schema in `types/validation/`:
+
+```ts
+export const userPrefsSchema = z.object({
+  theme: z.enum(['light', 'dark']),
+  showSidebar: z.boolean(),
+});
+```
+
+2. Use it in any persistence strategy, hook, or API handler
 
 ---
 
 ## 🧠 Best Practices
 
-- Reuse types across layers using shared `types/`
-- Validate all dynamic data using Zod
-- Keep implementation-specific logic out of `context/` and `hooks/`
+- Always co-locate schemas with the data they validate
+- Reuse types from `types/` to ensure consistency
+- Keep provider logic out of `context/` unless it's shared
+- Avoid importing server-only modules in client paths
 
 ---
 

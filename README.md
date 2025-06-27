@@ -1,93 +1,74 @@
+
 # StateForge
 
-**StateForge** is a secure, modular framework for managing app state, navigation state, and authentication across both client and server.
+**StateForge** is a modular, secure framework for building strategy-driven SaaS applications with **Next.js**. It provides unified abstractions for **authentication**, **state persistence**, and **navigation-aware flows**, with full SSR/CSR support.
 
-It supports pluggable strategies for persistence, authentication (Firebase/Auth0), navigation state hydration, and encrypted storage. Built with extensibility and production security in mind.
+Designed for extensibility and security, StateForge supports multiple auth providers, client/server persistence backends, and advanced session middleware.
 
 ---
 
 ## 📦 Monorepo Packages
 
-| Package                 | Description                                 |
-|-------------------------|---------------------------------------------|
-| `@stateforge/core`      | Core framework logic and abstractions       |
-| `@stateforge/starter`   | Full Next.js starter app using the core     |
-| `create-stateforge-app` | CLI tool to scaffold new projects           |
+| Package                 | Description                                                      |
+|-------------------------|------------------------------------------------------------------|
+| [`@stateforge/core`](./packages/core)      | Core framework: state, persistence, auth, middleware         |
+| [`@stateforge/starter`](./packages/starter)| Reference Next.js app demonstrating framework integration     |
+| [`create-stateforge-app`](./packages/cli)  | CLI tool for scaffolding new StateForge-based SaaS projects  |
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Install all dependencies
+### 1. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2. Start the development server (starter package)
+### 2. Start the starter app (dev mode)
 
 ```bash
-pnpm dev
+pnpm --filter @stateforge/starter dev
 ```
 
-### 3. Build all packages
+### 3. Scaffold a new app
 
 ```bash
-pnpm build
+npx create-stateforge-app my-saas-app
 ```
 
 ---
 
-## 🔧 Workspace Configuration
+## 🧠 Architecture Overview
 
-This monorepo uses **pnpm workspaces**:
+- 🔐 **Pluggable auth**: Firebase or Auth0 (with strategy auto-selection)
+- 🔄 **Persistent state strategies**: Redis, Firestore, REST, LocalStorage, Encrypted
+- 🔗 **Navigation state**: Step flow memory via context + strategy
+- 🛡 **Security middleware**: Rate limiting, auto logout, audit logging, IP guards
+- ⚙️ **Runtime validation**: Zod schemas for environment safety
+- 💡 **Strategy pattern**: Easily extend persistence or auth logic
+
+---
+
+## 🔧 Monorepo Structure
 
 ```
 stateforge/
 ├── packages/
-│   ├── core/       # Reusable framework
-│   ├── starter/    # Sample Next.js app
-│   └── cli/        # CLI scaffolder
-├── package.json
+│   ├── core/       # Reusable framework logic
+│   ├── starter/    # Example app showing integration patterns
+│   └── cli/        # App scaffolding CLI
+├── scripts/        # Tree viewer, dry run builders
 ├── pnpm-workspace.yaml
-└── .env.example
+├── .env.example
+└── package.json
 ```
 
 ---
 
-## 🛠 Technologies Used
+## 🔐 Environment Configuration
 
-- TypeScript
-- React / Next.js
-- Firebase / Auth0
-- Axios (with interceptors)
-- Redis / Firestore
-- Modular strategy pattern
-- SSR hydration
-
----
-
-## 🛡 Security Features
-
-- AES-encrypted tokens (for Firebase)
-- Rate limiter middleware
-- Auto logout on token expiration
-- Audit logs on login/logout events
-- SSO extensions for Auth0 & Firebase
-
----
-
-## ⚙️ Environment Configuration
-
-StateForge uses `.env` files to manage credentials and environment-specific behavior.
-
-### Supported Files
-
-- `.env.local` — Your working config (never committed)
-- `.env.development` — Defaults for dev
-- `.env.production` — Used during build/deploy
-
-### Example
+Use `.env.local` to define your runtime config. Examples:
 
 ```env
 NEXT_PUBLIC_AUTH_STRATEGY=firebase
@@ -95,64 +76,79 @@ NEXT_PUBLIC_AUTH_STRATEGY=firebase
 # Firebase
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 
 # Auth0
 AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 
-# REST endpoints
-BACKEND_APP_API_BASE_URL=https://api.myapp.com
-BACKEND_AUTH_API_BASE_URL=https://auth.myapp.com
+# API backends
+BACKEND_APP_API_BASE_URL=https://api.example.com
+BACKEND_AUTH_API_BASE_URL=https://auth.example.com
 
 # Encryption
-NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET=your-32-char-secret
+NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET=32-character-secret
 ```
+
+All variables are validated at runtime via `zod`. Missing or malformed entries will cause a fast failure.
 
 ---
 
-## ✅ Runtime Validation with `zod`
-
-All environment variables are validated at runtime using `zod`.
-
-If any variable is missing or malformed, the app will **fail fast** with an error message.
-
-### Example Usage
-
-```ts
-import { env } from '@/lib/envConfig';
-
-const apiBase = env.BACKEND_APP_API_BASE_URL;
-```
-
----
-
-## 📁 File Tree Commands
-
-Show package structures from the root:
+## 📁 Show Package Structure
 
 ```bash
-pnpm run show:core     # Lists files in core
-pnpm run show:starter  # Lists files in starter
-pnpm run show:cli      # Lists files in CLI
+pnpm run show:core     # Visualize @stateforge/core
+pnpm run show:starter  # Visualize the starter app
+pnpm run show:cli      # Visualize the CLI tool
 ```
 
 ---
 
-## 🧪 Planned Extensions
+## 🧪 Features Demonstrated in Starter
 
-- `stateforge-testkit`: Mock strategies for testing
-- `stateforge-devtools`: In-browser state inspector
-- `stateforge-vault`: Plugin for secrets storage via cloud KMS
+- ✅ SSR/CSR-compatible shared + navigation state
+- ✅ Firebase and Auth0 plug-and-play auth
+- ✅ Token-aware Axios clients with auth header injection
+- ✅ Dry run builds for preview/CI environments
+- ✅ Strategy factory pattern for persistence layers
+- ✅ Secure API routes with middleware chaining
+
+---
+
+## 🧰 CLI Tool (`create-stateforge-app`)
+
+Initialize a fully-wired project in seconds:
+
+```bash
+npx create-stateforge-app my-app
+```
+
+- Prompts for Firebase or Auth0
+- Copies `.env` template
+- Installs deps & prints setup instructions
+
+Supports local testing via:
+
+```bash
+pnpm --filter create-stateforge-app link --global
+create-stateforge-app test-app
+```
+
+---
+
+## 🔭 Future Plans
+
+- `stateforge-testkit`: Mock strategies for full-state testing
+- `stateforge-devtools`: In-browser context + strategy inspector
+- `stateforge-vault`: Secure KMS-backed secret storage
 
 ---
 
 ## 📚 License
 
-MIT — use it freely in commercial and personal projects.
+MIT — use freely in personal or commercial projects.
 
 ---
 
 ## 🙌 Maintained by
 
-**Ahmed Abbas**
+**[Ahmed Abbas](https://github.com/ahmed-abbas-code)**

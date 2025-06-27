@@ -1,92 +1,117 @@
+# Authentication in StateForge
 
-# Authentication Strategies in StateForge
-
-StateForge provides a modular and pluggable authentication layer with support for both **Firebase Authentication** and **Auth0**. It uses a strategy selector pattern to switch providers at runtime, while exposing a unified `AuthContext` to the application.
-
----
-
-## 🔐 Supported Providers
-
-### 1. Firebase Authentication
-
-- Uses `firebase` SDK (client and admin)
-- Supports email/password, social logins, and custom tokens
-- Tokens are validated using `firebase-admin` on the server
-- Optional: AES-encrypted local storage for sensitive auth state
-
-### 2. Auth0
-
-- Uses Auth0’s universal login via OAuth 2.0 / OIDC
-- Integrates with `@auth0/nextjs-auth0`
-- Automatically manages sessions and tokens securely
-- No client-side token storage required (uses secure cookies)
+StateForge provides a unified, strategy-based authentication system with support for **Firebase Authentication** and **Auth0**. It uses a runtime strategy selector and abstract provider base to offer a consistent `AuthContext` API across different identity providers.
 
 ---
 
-## 📁 File Structure
+## 🔐 Supported Authentication Strategies
 
-```
-src/context/auth/
-├── AbstractAuthProvider.ts                # Base class for all auth providers
-├── FirebaseAuthProviderImpl.tsx           # Firebase-specific implementation
-├── Auth0AuthProviderImpl.tsx              # Auth0-specific implementation
-├── UnifiedAuthStrategySelector.tsx        # Auto-selects provider based on env
-├── AuthContext.tsx                        # React context hook: useAuth()
-├── mappers/
-│   ├── mapAuth0ToAuthUser.ts              # Normalize Auth0 profile
-│   └── mapFirebaseToAuthUser.ts           # Normalize Firebase user
+### 1. **Firebase Authentication**
+
+- Uses `firebase` and `firebase-admin` SDKs
+- Supports email/password, social, and custom auth
+- Token validation via Firebase Admin on the server
+- Optional encrypted storage for tokens on the client
+
+### 2. **Auth0**
+
+- Uses `@auth0/nextjs-auth0`
+- Provides secure OAuth/OIDC login via universal login
+- Stores session in HttpOnly cookies
+- No client-side token exposure
+
+---
+
+## 🧠 Unified API
+
+All auth providers implement the same interface defined by `AbstractAuthProvider`.
+
+The app consumes a unified context via:
+
+```ts
+import { useAuth } from '@/context/auth/AuthContext';
+
+const { user, login, logout } = useAuth();
 ```
 
 ---
 
-## 🧠 How It Works
+## 🧩 Strategy Selection
 
-1. `.env.local` defines the provider:
+StateForge auto-selects the correct auth strategy at runtime using:
 
 ```env
 NEXT_PUBLIC_AUTH_STRATEGY=firebase  # or 'auth0'
 ```
 
-2. `UnifiedAuthStrategySelector` reads the environment and renders the correct provider.
-3. All providers implement the same interface exposed by `AbstractAuthProvider`.
-4. The app uses `useAuth()` — which is powered by `AuthContext.tsx`.
+The selector component:
+
+```tsx
+// UnifiedAuthStrategySelector.tsx
+switch (strategy) {
+  case 'firebase': return <FirebaseAuthProviderImpl>{children}</FirebaseAuthProviderImpl>;
+  case 'auth0': return <Auth0AuthProviderImpl>{children}</Auth0AuthProviderImpl>;
+}
+```
 
 ---
 
-## 🔄 Switching Providers
+## 🔁 Switching Providers
 
-To switch from Firebase to Auth0:
+To switch between Firebase and Auth0:
 
-1. Change `.env.local`:
+1. Update `.env.local`:
 ```env
 NEXT_PUBLIC_AUTH_STRATEGY=auth0
 ```
 
-2. Deploy — no code changes required unless you want to override the default mappers.
+2. Redeploy. No code changes are needed if the mappers and providers follow the shared interface.
 
 ---
 
-## 🔒 Security Best Practices
+## 🔧 File Structure
 
-- **Firebase**: Store token in AES-encrypted localStorage (`EncryptedStorageStrategyImpl`)
-- **Auth0**: Sessions use `HttpOnly` cookies; no client token exposure
-- Tokens are automatically injected into API calls via `axiosClient.ts`
+```
+src/context/auth/
+├── AbstractAuthProvider.ts                # Shared interface
+├── FirebaseAuthProviderImpl.tsx           # Firebase implementation
+├── Auth0AuthProviderImpl.tsx              # Auth0 implementation
+├── UnifiedAuthStrategySelector.tsx        # Auto-switch logic
+├── AuthContext.tsx                        # Global hook interface
+└── mappers/
+    ├── mapFirebaseToAuthUser.ts
+    └── mapAuth0ToAuthUser.ts
+```
 
 ---
 
-## 🔧 Extending
+## 🛡 Security Considerations
 
-To add another auth provider:
-1. Create `YourAuthProviderImpl.tsx`
-2. Extend `AbstractAuthProvider`
-3. Update `UnifiedAuthStrategySelector.tsx` to handle new strategy
-4. Add a user mapper if necessary
+| Provider | Client Token Storage | Session Handling          |
+|----------|----------------------|---------------------------|
+| Firebase | Encrypted localStorage (optional) | Firebase Admin SDK on server |
+| Auth0    | None (secure cookies)           | Auth0 session cookies         |
+
+- All tokens are injected into requests via Axios interceptors
+- Use `EncryptedStorageStrategyImpl` for sensitive state if using Firebase
+- Auth0 relies on cookie/session middleware from `@auth0/nextjs-auth0`
+
+---
+
+## ➕ Adding a Custom Provider
+
+To extend with your own auth provider:
+
+1. Create `MyAuthProviderImpl.tsx` and extend `AbstractAuthProvider`
+2. Implement all required methods (login, logout, getUser, etc.)
+3. Add a new case to `UnifiedAuthStrategySelector.tsx`
+4. Optionally create a mapper to normalize user data
 
 ---
 
 ## 🔗 Related
 
+- [axiosClient.ts](../lib/axiosClient.ts)
 - [firebase.ts](../lib/firebase.ts)
 - [firebase-admin.ts](../lib/firebase-admin.ts)
-- [axiosClient.ts](../lib/axiosClient.ts)
 - [withAuthValidation.ts](../middleware/withAuthValidation.ts)

@@ -1,16 +1,15 @@
-
 # API Clients in StateForge
 
-StateForge provides robust, secure, and token-aware API clients based on **Axios**. It separates application API calls from authentication flows, supports interceptors, and enables automatic token injection, retries, and environment-based configuration.
+StateForge provides secure, environment-aware, token-injecting API clients built on **Axios**. These clients streamline authenticated communication with both app and auth backends, supporting interceptors, retries, and automatic logout on session failure.
 
 ---
 
-## 🧩 Why Axios?
+## 🚀 Why Axios?
 
-- Native support for interceptors (pre/post request handling)
-- Full TypeScript support
-- Middleware-like architecture
-- Easy cancellation, retries, timeouts
+- Native support for request/response interceptors
+- TypeScript-first support
+- Middleware-like behavior
+- Easily supports retries, cancellations, and timeouts
 
 ---
 
@@ -18,38 +17,37 @@ StateForge provides robust, secure, and token-aware API clients based on **Axios
 
 ```
 src/lib/
-├── axiosClient.ts             # Core Axios instances and interceptor logic
-├── fetchAppApi.ts             # Thin wrapper for app data endpoints
-├── withAuthProtection.tsx     # Secures client-side pages with auth
+├── axiosClient.ts             # Base Axios instance setup and interceptors
+├── fetchAppApi.ts             # Wrapper for app-specific requests
+├── withAuthProtection.tsx     # HOC to secure client pages with auth
 ```
 
 ---
 
 ## 🧠 Axios Instances
 
-StateForge defines two primary Axios clients:
+StateForge defines two main Axios clients:
 
 ### 1. `axiosApp`
 
-Used for general app-to-backend API calls (e.g., `/user`, `/settings`).
+Used for general application API calls, such as `/profile`, `/settings`, etc.
 
 ```ts
 import { axiosApp } from '@/lib/axiosClient';
 
-const result = await axiosApp.get('/profile');
+const result = await axiosApp.get('/user/me');
 ```
 
-Automatically uses:
-
-- Base URL from `BACKEND_APP_API_BASE_URL`
-- `Authorization: Bearer <token>` header
-- Retry and error handling
+**Features:**
+- Reads base URL from `BACKEND_APP_API_BASE_URL`
+- Automatically injects `Authorization: Bearer <token>`
+- Retry logic with failure handling
 
 ---
 
 ### 2. `axiosAuth`
 
-Used for authentication-specific flows (e.g., token refresh, sign-in).
+Used for auth-related endpoints like login, refresh, and logout.
 
 ```ts
 import { axiosAuth } from '@/lib/axiosClient';
@@ -57,21 +55,20 @@ import { axiosAuth } from '@/lib/axiosClient';
 await axiosAuth.post('/token/refresh', { refresh_token });
 ```
 
-Uses:
-
-- `BACKEND_AUTH_API_BASE_URL`
-- Same token logic and retry policies
-- Kept logically separate from app logic
+**Features:**
+- Reads base URL from `BACKEND_AUTH_API_BASE_URL`
+- Shares token handling/interceptors with `axiosApp`
+- Isolated from app-specific logic
 
 ---
 
-## 🔒 Token Injection
+## 🔐 Token Injection
 
-Auth tokens (from Firebase or Auth0) are injected into each request automatically via request interceptors:
+Tokens (from Firebase or Auth0) are injected automatically:
 
 ```ts
 axiosInstance.interceptors.request.use(async (config) => {
-  const token = await getAuthToken();
+  const token = await getAuthToken(); // Unified token retriever
   config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -79,19 +76,17 @@ axiosInstance.interceptors.request.use(async (config) => {
 
 ---
 
-## 🔁 Retry Strategy
+## 🔁 Retry and Error Handling
 
-Built-in retry strategy handles:
+Includes:
 
-- Token expiration (auto-logout on failure)
-- Network errors
-- Server 5xx retries (configurable)
-
-Coming soon: pluggable retry backoff strategy.
+- Auto-retry on transient errors (network, 5xx)
+- Auto-logout on 401/403 (token expiry or revocation)
+- Optional backoff strategy (coming soon)
 
 ---
 
-## 🔧 Example: Custom Hook
+## 🧪 Example Hook
 
 ```ts
 const useUserData = () => {
@@ -109,16 +104,17 @@ const useUserData = () => {
 
 ## 💡 Best Practices
 
-- Use `axiosApp` for general backend logic
-- Use `axiosAuth` for login/session/token APIs
-- Avoid using `fetch` directly unless scoped to a specific edge case
-- Interceptors are shared across all requests
+- Use `axiosApp` for business logic endpoints
+- Use `axiosAuth` for session/token-related calls
+- Avoid raw `fetch` unless explicitly required
+- Share interceptors for consistency
+- Wrap API errors and expose via app state where possible
 
 ---
 
-## 🔗 Related
+## 🔗 Related Files
 
-- [axiosClient.ts](../lib/axiosClient.ts)
-- [config.ts](../lib/config.ts)
-- [fetchAppApi.ts](../utils/fetchAppApi.ts)
-- [AuthContext.tsx](../context/auth/AuthContext.tsx)
+- [`axiosClient.ts`](../lib/axiosClient.ts)
+- [`config.ts`](../lib/config.ts)
+- [`fetchAppApi.ts`](../utils/fetchAppApi.ts)
+- [`AuthContext.tsx`](../context/auth/AuthContext.tsx)

@@ -1,72 +1,115 @@
-
 # Persistence Strategies in StateForge
 
-StateForge uses the **Strategy Pattern** to provide a flexible, pluggable system for persisting state across different layers of your application — client, server, and navigation-based storage.
+StateForge uses the **Strategy Pattern** to manage state persistence across different environments and scopes — including client-side, server-side, and navigation-based storage.
 
 ---
 
-## 🧩 Strategy Categories
+## 🧩 Strategy Types
 
-### 1. Client-Side Strategies
-| Strategy                   | Description                                    |
-|----------------------------|------------------------------------------------|
-| `LocalStorageStrategyImpl` | Raw `localStorage` key/value storage           |
-| `EncryptedStorageStrategyImpl` | AES-encrypted storage for sensitive data     |
+### 1. **Client-Side Strategies**
 
-### 2. Server-Side Strategies
-| Strategy                   | Description                                    |
-|----------------------------|------------------------------------------------|
-| `RedisServerStrategyImpl`  | In-memory, fast cache layer for session data   |
-| `FirestoreStrategyImpl`    | Durable, NoSQL DB strategy (Firebase)          |
-| `RestApiStrategyImpl`      | Uses a backend API endpoint for persistence    |
+| Strategy                    | Description                                       |
+|-----------------------------|---------------------------------------------------|
+| `LocalStorageStrategyImpl`  | Plain key/value storage via `localStorage`        |
+| `EncryptedStorageStrategyImpl` | AES-encrypted storage for sensitive data      |
 
-### 3. Navigation-Scoped Strategy
-| Strategy                      | Description                                   |
-|-------------------------------|-----------------------------------------------|
-| `NavigationStateStrategyImpl` | Session/memory-bound state for routing flows  |
+### 2. **Server-Side Strategies**
+
+| Strategy                    | Description                                       |
+|-----------------------------|---------------------------------------------------|
+| `RedisServerStrategyImpl`   | Fast, ephemeral storage for sessions              |
+| `FirestoreStrategyImpl`     | Durable, NoSQL persistence using Firebase         |
+| `RestApiStrategyImpl`       | Proxy to backend REST API for state operations   |
+
+### 3. **Navigation Strategy**
+
+| Strategy                      | Description                                     |
+|-------------------------------|-------------------------------------------------|
+| `NavigationStateStrategyImpl` | Volatile session/memory state for flows         |
 
 ---
 
-## 🛠 Strategy Factory
+## 🏭 Strategy Factory
 
-StateForge provides a centralized factory to resolve and instantiate strategies:
+Create a persistence strategy using the factory:
 
 ```ts
 const strategy = createPersistenceStrategy({
-  type: 'localStorage',
+  type: 'localStorage', // or 'redis', 'firestore', etc.
   schema: userPrefsSchema,
 });
 ```
 
-> All strategies implement `PersistenceStrategyBase`.
+All strategies must implement the `PersistenceStrategyBase<T>` interface.
 
 ---
 
-## 🔒 Schema Validation
+## 🔐 Schema Validation with Zod
 
-Each strategy can optionally use a Zod schema for runtime validation:
+Ensure safe serialization and validation:
 
 ```ts
-createPersistenceStrategy({
+const strategy = createPersistenceStrategy({
   type: 'redis',
   schema: z.object({
-    theme: z.enum(['dark', 'light']),
+    theme: z.enum(['light', 'dark']),
     lastLogin: z.string().optional(),
   }),
 });
 ```
 
-This ensures only valid, typed data is persisted or restored.
+> Using schemas ensures safe rehydration of typed state.
 
 ---
 
-## 📁 File Structure
+## 🧠 Hook Usage
+
+Bind a strategy to a specific state key using hooks:
+
+```ts
+const { value, setValue } = usePersistedFramework({
+  key: 'user_prefs',
+  strategy,
+});
+```
+
+For navigation flows:
+
+```ts
+const { value, setValue } = useNavigationPersistedState({
+  key: 'onboarding_step',
+  defaultValue: { step: 1 },
+  schema: z.object({ step: z.number() }),
+});
+```
+
+---
+
+## 🛠 Extending with New Strategies
+
+1. Create `YourStrategyImpl.ts` in `strategies/implementations/`
+2. Implement the `PersistenceStrategyBase<T>` interface
+3. Register it in `createPersistenceStrategy.ts` factory
+
+---
+
+## ✅ Best Practices
+
+- Use `EncryptedStorageStrategyImpl` for storing client auth/session data
+- Use `RedisServerStrategyImpl` for short-lived session data
+- Use `FirestoreStrategyImpl` or `RestApiStrategyImpl` for durable persistence
+- Pair all strategies with Zod schemas for safety
+- Do not use navigation state for sensitive or permanent data
+
+---
+
+## 🗂 File Structure
 
 ```
 src/strategies/
 ├── factory/
-│   └── createPersistenceStrategy.ts       # Main factory resolver
-├── PersistenceStrategyBase.ts             # Interface definition
+│   └── createPersistenceStrategy.ts
+├── PersistenceStrategyBase.ts
 └── implementations/
     ├── LocalStorageStrategyImpl.ts
     ├── EncryptedStorageStrategyImpl.ts
@@ -78,38 +121,9 @@ src/strategies/
 
 ---
 
-## 🧠 Strategy Usage via Hook
-
-You typically use a strategy via the `usePersistedFramework` hook:
-
-```ts
-const { value, setValue } = usePersistedFramework({
-  key: 'user_prefs',
-  strategy: createPersistenceStrategy({ type: 'redis', schema }),
-});
-```
-
----
-
-## 🔧 Adding New Strategies
-
-1. Create `YourStrategyImpl.ts` in `strategies/implementations/`
-2. Implement `PersistenceStrategyBase`
-3. Extend `createPersistenceStrategy.ts` to handle your new `type`
-
----
-
-## ✅ Best Practices
-
-- Use `EncryptedStorageStrategyImpl` for any client-side auth or sensitive data.
-- Use `RedisServerStrategyImpl` for fast, ephemeral state (e.g. wizards).
-- Use `FirestoreStrategyImpl` or `RestApiStrategyImpl` for durable backend state.
-- Pair all strategies with runtime schema validation for safety.
-
----
-
 ## 🔗 Related
 
 - [usePersistedFramework.ts](../hooks/usePersistedFramework.ts)
-- [PersistenceStrategyBase.ts](./PersistenceStrategyBase.ts)
-- [createPersistenceStrategy.ts](./factory/createPersistenceStrategy.ts)
+- [useNavigationPersistedState.ts](../hooks/useNavigationPersistedState.ts)
+- [PersistenceStrategyBase.ts](../strategies/PersistenceStrategyBase.ts)
+- [createPersistenceStrategy.ts](../strategies/factory/createPersistenceStrategy.ts)
