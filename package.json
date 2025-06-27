@@ -22,12 +22,12 @@
     "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:cli": "find packages/cli -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
-    "release:core:patch": "node scripts/bootstrap-npmrc.js && node scripts/prepare-core-publish.js && cd packages/core && npm version patch && pnpm install --lockfile-only && pnpm build && npm publish --access=restricted --registry=https://npm.pkg.github.com --legacy-peer-deps --force",
-    "release:core:minor": "node scripts/bootstrap-npmrc.js && cd packages/core && npm version minor && pnpm install --lockfile-only && pnpm build && npx npm@latest publish --access=restricted --registry=https://npm.pkg.github.com --legacy-peer-deps --force",
-    "release:core:major": "node scripts/bootstrap-npmrc.js && cd packages/core && npm version major && pnpm install --lockfile-only && pnpm build && npx npm@latest publish --access=restricted --registry=https://npm.pkg.github.com --legacy-peer-deps --force",
-    "release:core:patch:flow": "pnpm release:core:patch && node scripts/use-published-core.js && pnpm install",
-    "release:core:minor:flow": "pnpm release:core:minor && node scripts/use-published-core.js && pnpm install",
-    "release:core:major:flow": "pnpm release:core:major && node scripts/use-published-core.js && pnpm install"
+    "release:core:patch": "node scripts/release-core.js patch",
+    "release:core:minor": "node scripts/release-core.js minor",
+    "release:core:major": "node scripts/release-core.js major",
+    "release:core:patch:flow": "node scripts/release-core-flow.js patch",
+    "release:core:minor:flow": "node scripts/release-core-flow.js minor",
+    "release:core:major:flow": "node scripts/release-core-flow.js major"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
