@@ -1,11 +1,25 @@
 {
-  "name": "@stateforge/core",
-  "version": "0.1.0",
+  "name": "@stateforge-framework/core",
+  "version": "2.0.0",
+  "private": false,
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
-  "author": "Your Name or Org",
+  "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
   "main": "./dist/client-only.js",
   "types": "./dist/client-only.d.ts",
+  "typesVersions": {
+    "*": {
+      "client-only": [
+        "dist/client-only.d.ts"
+      ],
+      "server": [
+        "dist/server-only.d.ts"
+      ],
+      "universal": [
+        "dist/universal.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/client-only.d.ts",
@@ -32,6 +46,21 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stateforge-framework/stateforge.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/stateforge-framework/stateforge#readme",
+  "bugs": {
+    "url": "https://github.com/stateforge-framework/stateforge/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.json",
@@ -50,8 +79,12 @@
     "zod": "^3.22.4"
   },
   "peerDependencies": {
-    "@auth0/nextjs-auth0": "^2.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
     "next": "^13.0.0 || ^14.0.0 || ^15.0.0",
-    "react": "^18.0.0"
+    "@auth0/nextjs-auth0": "^2.0.0"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0"
   }
 }

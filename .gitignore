@@ -24,3 +24,5 @@ pnpm-lock.yaml
 
 # Mac system files
 .DS_Store
+
+.npmrc

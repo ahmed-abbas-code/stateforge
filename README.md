@@ -1,4 +1,3 @@
-
 # StateForge
 
 **StateForge** is a modular, secure framework for building strategy-driven SaaS applications with **Next.js**. It provides unified abstractions for **authentication**, **state persistence**, and **navigation-aware flows**, with full SSR/CSR support.
@@ -11,8 +10,8 @@ Designed for extensibility and security, StateForge supports multiple auth provi
 
 | Package                 | Description                                                      |
 |-------------------------|------------------------------------------------------------------|
-| [`@stateforge/core`](./packages/core)      | Core framework: state, persistence, auth, middleware         |
-| [`@stateforge/starter`](./packages/starter)| Reference Next.js app demonstrating framework integration     |
+| [`@stateforge-framework/core`](./packages/core)      | Core framework: state, persistence, auth, middleware         |
+| [`@stateforge-framework/starter`](./packages/starter)| Reference Next.js app demonstrating framework integration     |
 | [`create-stateforge-app`](./packages/cli)  | CLI tool for scaffolding new StateForge-based SaaS projects  |
 
 ---
@@ -28,7 +27,7 @@ pnpm install
 ### 2. Start the starter app (dev mode)
 
 ```bash
-pnpm --filter @stateforge/starter dev
+pnpm --filter @stateforge-framework/starter dev
 ```
 
 ### 3. Scaffold a new app
@@ -96,7 +95,7 @@ All variables are validated at runtime via `zod`. Missing or malformed entries w
 ## 📁 Show Package Structure
 
 ```bash
-pnpm run show:core     # Visualize @stateforge/core
+pnpm run show:core     # Visualize @stateforge-framework/core
 pnpm run show:starter  # Visualize the starter app
 pnpm run show:cli      # Visualize the CLI tool
 ```
@@ -143,7 +142,6 @@ create-stateforge-app test-app
 
 ---
 
-
 ## 🛠 Scripts
 
 These scripts are available from the root of the `stateforge` monorepo:
@@ -152,14 +150,14 @@ These scripts are available from the root of the `stateforge` monorepo:
 |------------------------|------------------------------------------------------------------------------|
 | `pnpm build`           | Run `build` scripts for all workspace packages                               |
 | `pnpm build:dryrun`    | Build `core` and `cli`, and run dry-run build for `starter`                  |
-| `pnpm dev`             | Start the dev server for `@stateforge/starter`                               |
+| `pnpm dev`             | Start the dev server for `@stateforge-framework/starter`                     |
 | `pnpm dev:dryrun`      | Start `starter` in dev mode with `.env.dryrun` configuration                 |
 | `pnpm lint`            | Lint all packages using their respective `lint` scripts                      |
 | `pnpm show:core`       | Show tree structure of `packages/core`                                       |
 | `pnpm show:starter`    | Show tree structure of `packages/starter`                                    |
 | `pnpm show:cli`        | Show tree structure of `packages/cli`                                        |
-| `pnpm tsc:core`        | Run TypeScript compiler check specifically for `@stateforge/core`            |
-
+| `pnpm tsc:core`        | Run TypeScript compiler check specifically for `@stateforge-framework/core` |
+---
 
 ## 📚 License
 

@@ -1,4 +1,4 @@
-# @stateforge/core
+# @stateforge-framework/core
 
 Reusable logic for state, persistence strategies, and auth integrations.
 
@@ -6,7 +6,7 @@ Reusable logic for state, persistence strategies, and auth integrations.
 
 ## 🧩 What’s Inside
 
-`@stateforge/core` provides the foundational framework logic for:
+`@stateforge-framework/core` provides the foundational framework logic for:
 
 - ✅ Shared app + navigation state (with SSR hydration)
 - ✅ Pluggable persistence strategies (client/server/navigation)
@@ -22,7 +22,7 @@ Reusable logic for state, persistence strategies, and auth integrations.
 1. Install dependencies:
 
 ```bash
-pnpm install @stateforge/core
+pnpm install @stateforge-framework/core --registry=https://npm.pkg.github.com
 ```
 
 2. Create your `.env.local`:
@@ -44,6 +44,32 @@ BACKEND_AUTH_API_BASE_URL=https://auth.myapp.com
   </AppStateContextProvider>
 </UnifiedAuthStrategySelector>
 ```
+
+---
+
+## 📦 Publishing to GitHub Packages
+
+Publishing is automated via the root `release:core:*` scripts.
+
+1. Ensure your `.env` contains:
+
+   ```env
+   GITHUB_TOKEN=your_github_token
+   ```
+
+2. Run a release command from the root:
+
+   ```bash
+   pnpm release:core:patch
+   ```
+
+   Or for full flow including downstream usage:
+
+   ```bash
+   pnpm release:core:patch:flow
+   ```
+
+This handles `.npmrc` injection, versioning, building, publishing, and swapping to the published version in downstream packages.
 
 ---
 
@@ -80,15 +106,14 @@ Docs are located in the `docs/` folder:
 
 ## 🔗 Related Packages
 
-- [`@stateforge/starter`](https://github.com/your-org/stateforge/tree/main/packages/starter) – Sample Next.js app using this core
-- [`create-stateforge-app`](https://github.com/your-org/stateforge/tree/main/packages/cli) – CLI scaffolder
+- [`@stateforge-framework/starter`](https://github.com/stateforge-framework/stateforge/tree/main/packages/starter) – Sample Next.js app using this core
+- [`create-stateforge-app`](https://github.com/stateforge-framework/stateforge/tree/main/packages/cli) – CLI scaffolder
 
 ---
 
-
 ## 🛠 Scripts
 
-You can run the following scripts from the `@stateforge/core` package root:
+You can run the following scripts from the `@stateforge-framework/core` package root:
 
 | Script            | Description                                                 |
 |-------------------|-------------------------------------------------------------|
@@ -102,6 +127,7 @@ You can run the following scripts from the `@stateforge/core` package root:
 
 These scripts are designed for local development, testing, and CI validation of the core framework module.
 
+---
 
 ## 📚 License
 

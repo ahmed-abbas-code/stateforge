@@ -1,7 +1,7 @@
 {
   "name": "@stateforge/starter",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^2.7.0",
-    "@stateforge/core": "workspace:*",
     "next": "^15.3.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "@stateforge-framework/core": "^0.1.3"
   }
 }

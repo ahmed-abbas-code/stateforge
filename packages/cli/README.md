@@ -69,38 +69,37 @@ To release:
 ```bash
 cd packages/cli
 pnpm build
-pnpm publish --access public
+npm publish --access public
 ```
 
 Make sure `package.json` includes:
-```json
+\`\`\`json
 "bin": {
   "create-stateforge-app": "bin/index.js"
 }
-```
-
+\`\`\`
 And that `bin/index.js` has a shebang (auto-injected by `inject-shebang.js`).
 
 ---
 
 ## 📚 Related Packages
 
-- [`@stateforge/core`](../core) – Framework logic for auth, state, and persistence
-- [`@stateforge/starter`](../starter) – Fully wired reference implementation
+- [\`@stateforge-framework/core\`](../core) – Framework logic for auth, state, and persistence
+- [\`@stateforge-framework/starter\`](../starter) – Fully wired reference implementation
 
 ---
 
-
 ## 🛠 Scripts
 
-The following scripts are available from the `create-stateforge-app` package root:
+The following scripts are available from the \`create-stateforge-app\` package root:
 
 | Script         | Description                                                   |
 |----------------|---------------------------------------------------------------|
-| `pnpm dev`     | Run the CLI in development mode using `tsx`                   |
-| `pnpm build`   | Bundle the CLI using `tsup` and inject the shebang line       |
-| `pnpm start`   | Execute the built CLI entry file (`dist/index.js`) manually   |
+| \`pnpm dev\`     | Run the CLI in development mode using \`tsx\`                   |
+| \`pnpm build\`   | Bundle the CLI using \`tsup\` and inject the shebang line       |
+| \`pnpm start\`   | Execute the built CLI entry file (\`dist/index.js\`) manually   |
 
+---
 
 ## 📚 License
 

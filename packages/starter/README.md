@@ -40,7 +40,7 @@ BACKEND_AUTH_API_BASE_URL=https://auth.example.com
 ### 3. Start the development server
 
 ```bash
-pnpm --filter @stateforge/starter dev
+pnpm --filter @stateforge-starter dev
 ```
 
 ---
@@ -112,7 +112,6 @@ You can evolve this app by:
 - [Auth0](https://auth0.com) — Identity-as-a-service
 
 ---
-
 
 ## 🛠 Scripts
 
