@@ -90,6 +90,18 @@ And that `bin/index.js` has a shebang (auto-injected by `inject-shebang.js`).
 
 ---
 
+
+## 🛠 Scripts
+
+The following scripts are available from the `create-stateforge-app` package root:
+
+| Script         | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| `pnpm dev`     | Run the CLI in development mode using `tsx`                   |
+| `pnpm build`   | Bundle the CLI using `tsup` and inject the shebang line       |
+| `pnpm start`   | Execute the built CLI entry file (`dist/index.js`) manually   |
+
+
 ## 📚 License
 
 MIT — open for commercial and personal use.

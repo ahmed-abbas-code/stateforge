@@ -113,6 +113,21 @@ You can evolve this app by:
 
 ---
 
+
+## 🛠 Scripts
+
+The following scripts are available from the `@stateforge/starter` package root:
+
+| Script               | Description                                                       |
+|----------------------|-------------------------------------------------------------------|
+| `pnpm dev`           | Start the development server using Next.js                        |
+| `pnpm build`         | Build the production version of the app                           |
+| `pnpm build:dryrun`  | Build using a dry-run environment for CI or preview environments  |
+| `pnpm start`         | Start the production server                                       |
+| `pnpm start:dryrun`  | Start using `.env.dryrun` for runtime configuration               |
+| `pnpm lint`          | Run lint checks using Next.js ESLint integration                  |
+
+
 ## 📚 License
 
 MIT — open for use in personal, commercial, or client projects.

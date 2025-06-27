@@ -85,6 +85,24 @@ Docs are located in the `docs/` folder:
 
 ---
 
+
+## 🛠 Scripts
+
+You can run the following scripts from the `@stateforge/core` package root:
+
+| Script            | Description                                                 |
+|-------------------|-------------------------------------------------------------|
+| `pnpm build`      | Build the project using `tsconfig.build.json`               |
+| `pnpm dev`        | Start TypeScript in watch mode for active development       |
+| `pnpm tsc`        | Type-check the project without emitting any files           |
+| `pnpm lint`       | Run ESLint with autofix on all source files                 |
+| `pnpm check:env`  | Validate `.env` using Zod and generate derived config       |
+| `pnpm test`       | Run the full test suite using Vitest                        |
+| `pnpm test:watch` | Run tests in watch mode with Vitest                         |
+
+These scripts are designed for local development, testing, and CI validation of the core framework module.
+
+
 ## 📚 License
 
 MIT — use it freely in commercial and personal projects.

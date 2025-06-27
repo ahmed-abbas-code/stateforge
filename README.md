@@ -143,6 +143,24 @@ create-stateforge-app test-app
 
 ---
 
+
+## 🛠 Scripts
+
+These scripts are available from the root of the `stateforge` monorepo:
+
+| Script                | Description                                                                  |
+|------------------------|------------------------------------------------------------------------------|
+| `pnpm build`           | Run `build` scripts for all workspace packages                               |
+| `pnpm build:dryrun`    | Build `core` and `cli`, and run dry-run build for `starter`                  |
+| `pnpm dev`             | Start the dev server for `@stateforge/starter`                               |
+| `pnpm dev:dryrun`      | Start `starter` in dev mode with `.env.dryrun` configuration                 |
+| `pnpm lint`            | Lint all packages using their respective `lint` scripts                      |
+| `pnpm show:core`       | Show tree structure of `packages/core`                                       |
+| `pnpm show:starter`    | Show tree structure of `packages/starter`                                    |
+| `pnpm show:cli`        | Show tree structure of `packages/cli`                                        |
+| `pnpm tsc:core`        | Run TypeScript compiler check specifically for `@stateforge/core`            |
+
+
 ## 📚 License
 
 MIT — use freely in personal or commercial projects.
