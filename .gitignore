@@ -1,7 +1,22 @@
+# Node and build artifacts
 node_modules/
 dist/
-.env*
 *.log
-.vscode/
 pnpm-lock.yaml
+
+# IDE/editor config
+.vscode/
+
+# Environment variables
+.env*
+.env.*.local
+
+# Ignore all .next output...
 .next/
+
+# ...except .tsbuildinfo under .next/cache anywhere in the repo
+!**/.next/cache/
+!**/.next/cache/.tsbuildinfo
+
+# Ignore all other .tsbuildinfo files
+*.tsbuildinfo
