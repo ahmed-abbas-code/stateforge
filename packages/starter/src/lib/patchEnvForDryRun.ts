@@ -1,7 +1,7 @@
 // src/lib/patchEnvForDryRun.ts
 
 if (process.env.NEXT_PUBLIC_ENV === 'dryrun') {
-  console.log('[DryRun Mode] Patching env for Firebase & Redis');
+  console.log('[DryRunMode] Patching env for Firebase & Redis');
 
   // ✅ Real-looking fake PEM string
   process.env.FIREBASE_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----

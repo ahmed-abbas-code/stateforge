@@ -11,7 +11,7 @@ export async function verifyFirebaseToken(token: string) {
 
   // Optional: Log dryrun mode verification
   if (result?.uid === 'dummy-user') {
-    console.log('[DryRun Mode] Token verified as dummy user');
+    console.log('[DryRunMode] Token verified as dummy user');
   }
 
   return result;
