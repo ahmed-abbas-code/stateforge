@@ -17,33 +17,76 @@ Reusable logic for state, persistence strategies, and auth integrations.
 
 ---
 
-## 🔧 Setup
+## 🔧 Setup (for consuming projects)
 
-1. Install dependencies:
+1. **Configure `.npmrc`** (required even for public packages):
 
-```bash
-pnpm install @stateforge-framework/core --registry=https://npm.pkg.github.com
+   ```ini
+   # .npmrc (project root)
+
+   @stateforge-framework:registry=https://npm.pkg.github.com
+   ```
+
+   > ✅ This tells npm/pnpm to fetch **only** `@stateforge‑framework/*` packages from GitHub, while everything else continues to come from the default npm registry.
+
+2. **Install the package**:
+
+   ```bash
+   pnpm install @stateforge-framework/core
+   ```
+
+3. **Create your `.env.local`**:
+
+   ```env
+   NEXT_PUBLIC_AUTH_STRATEGY=firebase
+   BACKEND_APP_API_BASE_URL=https://api.myapp.com
+   BACKEND_AUTH_API_BASE_URL=https://auth.myapp.com
+   ```
+
+4. **Wrap your app in providers**:
+
+   ```tsx
+   <UnifiedAuthStrategySelector>
+     <AppStateContextProvider>
+       <NavigationStateContextProvider>
+         <YourApp />
+       </NavigationStateContextProvider>
+     </AppStateContextProvider>
+   </UnifiedAuthStrategySelector>
+   ```
+
+---
+
+## 🛠️ .npmrc Configuration Details
+
+### Public packages — **no token needed**
+
+If the package you’re consuming is **public**, the single‑line `.npmrc` above is all you need.<br>
+Keep the file *token‑free*:
+
+```ini
+@stateforge-framework:registry=https://npm.pkg.github.com
 ```
 
-2. Create your `.env.local`:
+### Private packages / CI pipelines — **token required**
 
-```env
-NEXT_PUBLIC_AUTH_STRATEGY=firebase
-BACKEND_APP_API_BASE_URL=https://api.myapp.com
-BACKEND_AUTH_API_BASE_URL=https://auth.myapp.com
+For private packages or when installing in CI:
+
+```ini
+@stateforge-framework:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+always-auth=true
 ```
 
-3. Wrap your app in providers:
+| Environment                 | How to set `GITHUB_TOKEN`                                                |
+|-----------------------------|--------------------------------------------------------------------------|
+| macOS / Linux (bash/zsh)    | `export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxx"`                       |
+| Windows (PowerShell)        | `$Env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxxxxxxx"`                       |
+| GitHub Actions              | `env:`<br>`  GITHUB_TOKEN: ${{ secrets.MY_PAT }}`                       |
+| `.env` + direnv / dotenv    | `echo "GITHUB_TOKEN=ghp_xxx" >> .env`                                   |
 
-```tsx
-<UnifiedAuthStrategySelector>
-  <AppStateContextProvider>
-    <NavigationStateContextProvider>
-      <YourApp />
-    </NavigationStateContextProvider>
-  </AppStateContextProvider>
-</UnifiedAuthStrategySelector>
-```
+The token needs **`read:packages`** (and `write:packages` if you publish).  
+After exporting the variable, open a new terminal *(or `source ~/.zshrc` / run `RefreshEnv`)* so the shell recognizes it.
 
 ---
 
@@ -51,25 +94,20 @@ BACKEND_AUTH_API_BASE_URL=https://auth.myapp.com
 
 Publishing is automated via the root `release:core:*` scripts.
 
-1. Ensure your `.env` contains:
-
-   ```env
-   GITHUB_TOKEN=your_github_token
-   ```
-
-2. Run a release command from the root:
+1. Ensure your CI or local environment exports `GITHUB_TOKEN` with `write:packages`.
+2. Run a release command from the repo root:
 
    ```bash
    pnpm release:core:patch
    ```
 
-   Or for full flow including downstream usage:
+   or
 
    ```bash
    pnpm release:core:patch:flow
    ```
 
-This handles `.npmrc` injection, versioning, building, publishing, and swapping to the published version in downstream packages.
+This script injects `.npmrc`, bumps version, builds, publishes, and updates downstream packages.
 
 ---
 
@@ -113,19 +151,15 @@ Docs are located in the `docs/` folder:
 
 ## 🛠 Scripts
 
-You can run the following scripts from the `@stateforge-framework/core` package root:
-
 | Script            | Description                                                 |
 |-------------------|-------------------------------------------------------------|
 | `pnpm build`      | Build the project using `tsconfig.build.json`               |
 | `pnpm dev`        | Start TypeScript in watch mode for active development       |
-| `pnpm tsc`        | Type-check the project without emitting any files           |
+| `pnpm tsc`        | Type‑check the project without emitting files               |
 | `pnpm lint`       | Run ESLint with autofix on all source files                 |
 | `pnpm check:env`  | Validate `.env` using Zod and generate derived config       |
-| `pnpm test`       | Run the full test suite using Vitest                        |
+| `pnpm test`       | Run the full test suite with Vitest                         |
 | `pnpm test:watch` | Run tests in watch mode with Vitest                         |
-
-These scripts are designed for local development, testing, and CI validation of the core framework module.
 
 ---
 
