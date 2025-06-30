@@ -1,5 +1,3 @@
-// packages/core/src/context/auth/UnifiedAuthStrategySelector.tsx
-
 import React, { ReactNode } from 'react';
 import { config } from '../../lib/config';
 
@@ -7,7 +5,8 @@ import { FirebaseAuthContextProvider } from './FirebaseAuthContextProvider';
 import { Auth0AuthContextProvider } from './Auth0AuthContextProvider';
 import { DummyAuthContextProvider } from './DummyAuthContextProvider';
 
-interface UnifiedAuthStrategySelectorProps {
+// ✅ Directly exported here
+export interface UnifiedAuthStrategySelectorProps {
   children: ReactNode;
 }
 
