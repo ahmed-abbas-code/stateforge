@@ -1,4 +1,4 @@
 export * from './AuthContext';
-export * from './FirebaseAuthProviderImpl';
-export * from './Auth0AuthProviderImpl';
+export * from './FirebaseAuthContextProvider';
+export * from './Auth0AuthContextProvider';
 export * from './UnifiedAuthStrategySelector';

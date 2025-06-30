@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { FirebaseAuthProviderImpl } from '@/context/auth/FirebaseAuthProviderImpl';
+import { FirebaseAuthProviderImpl } from '@/context/auth/FirebaseAuthContextProvider';
 import { AuthContext } from '@/context/auth/AuthContext';
 import { auth } from '@/lib/firebase';
 import {

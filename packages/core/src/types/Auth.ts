@@ -13,14 +13,19 @@ export interface AuthContextType {
   loading: boolean;
   error?: Error | null;
 
-  // ✅ Framework-level logic
   isAuthenticated: boolean;
 
-  // ✅ Standardized auth actions
-  login: () => Promise<void>;
+  login: () => Promise<void>; // Could also be overloaded later (e.g., login(provider))
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
+
+  // Optional: for redirect flows
+  handleRedirectCallback?: () => Promise<void>;
+
+  // Optional: for proactive refresh
+  refreshToken?: () => Promise<string | null>;
 }
+
 
 /**
  * Extends Next.js API request to include authenticated user info.

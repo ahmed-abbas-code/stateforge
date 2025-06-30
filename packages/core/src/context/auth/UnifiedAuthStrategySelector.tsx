@@ -1,29 +1,32 @@
+// packages/core/src/context/auth/UnifiedAuthStrategySelector.tsx
+
 import React, { ReactNode } from 'react';
-import { FirebaseAuthProviderImpl } from './FirebaseAuthProviderImpl';
-import { Auth0AuthProviderImpl } from './Auth0AuthProviderImpl';
-import { DummyAuthProviderImpl } from './DummyAuthProviderImpl';
 import { config } from '../../lib/config';
+
+import { FirebaseAuthContextProvider } from './FirebaseAuthContextProvider';
+import { Auth0AuthContextProvider } from './Auth0AuthContextProvider';
+import { DummyAuthContextProvider } from './DummyAuthContextProvider';
 
 interface UnifiedAuthStrategySelectorProps {
   children: ReactNode;
 }
 
-export const UnifiedAuthStrategySelector = ({ children }: UnifiedAuthStrategySelectorProps) => {
+export const UnifiedAuthStrategySelector: React.FC<UnifiedAuthStrategySelectorProps> = ({ children }) => {
   const strategy = config.AUTH_STRATEGY;
 
-  if (strategy === 'firebase') {
-    return <FirebaseAuthProviderImpl>{children}</FirebaseAuthProviderImpl>;
-  }
+  switch (strategy) {
+    case 'firebase':
+      return <FirebaseAuthContextProvider>{children}</FirebaseAuthContextProvider>;
 
-  if (strategy === 'auth0') {
-    return <Auth0AuthProviderImpl>{children}</Auth0AuthProviderImpl>;
-  }
+    case 'auth0':
+      return <Auth0AuthContextProvider>{children}</Auth0AuthContextProvider>;
 
-  if (strategy === 'dryrun') {
-    return <DummyAuthProviderImpl>{children}</DummyAuthProviderImpl>;
-  }
+    case 'dryrun':
+      return <DummyAuthContextProvider>{children}</DummyAuthContextProvider>;
 
-  throw new Error(
-    `Unsupported auth strategy "${strategy}". Set AUTH_STRATEGY in your .env file to "firebase", "auth0", or "dryrun".`
-  );
+    default:
+      throw new Error(
+        `Unsupported auth strategy "${strategy}". Set AUTH_STRATEGY in your .env file to "firebase", "auth0", or "dryrun".`
+      );
+  }
 };

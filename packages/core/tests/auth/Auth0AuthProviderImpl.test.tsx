@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { Auth0AuthProviderImpl } from '@/context/auth/Auth0AuthProviderImpl';
+import { Auth0AuthProviderImpl } from '@/context/auth/Auth0AuthContextProvider';
 import { AuthContext } from '@/context/auth/AuthContext';
 import { describe, expect, it, vi } from 'vitest';
 

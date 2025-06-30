@@ -74,3 +74,8 @@ export { validateSchema } from './lib/validateSchema';
 // ─── Auth Mappers ──────────────────────────────────────────────
 export { mapAuth0ToAuthUser } from './context/auth/mappers/mapAuth0ToAuthUser';
 export { mapFirebaseToAuthUser } from './context/auth/mappers/mapFirebaseToAuthUser';
+
+// ─── Auth Context Providers (React Only) ───────────────────────
+export { FirebaseAuthContextProvider } from './context/auth/FirebaseAuthContextProvider';
+export { Auth0AuthContextProvider } from './context/auth/Auth0AuthContextProvider';
+export { DummyAuthContextProvider } from './context/auth/DummyAuthContextProvider';
