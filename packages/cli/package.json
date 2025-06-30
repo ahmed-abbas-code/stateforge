@@ -13,7 +13,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsup && node ./scripts/inject-shebang.js",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "lint": "echo 'No lint configured for CLI'"
   },
   "dependencies": {
     "degit": "^2.8.0",

@@ -1,27 +1,27 @@
 import { isDryRunEnv } from './isDryRunEnv';
-import type { RedisClientType } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
+import { env } from './envConfig';
 
-let redis: RedisClientType;
-
-if (isDryRunEnv) {
-  console.log('[DryRunMode] Skipping Redis client initialization');
-
-  // ✅ Create a dummy stub with no-op methods
-  redis = {
+function createDummyRedisClient(): RedisClientType {
+  const mock = {
     connect: async () => {},
     disconnect: async () => {},
     get: async () => null,
     set: async () => {},
     on: () => {},
     isOpen: true,
-  } as unknown as RedisClientType;
-} else {
-  const { createClient } = require('redis');
-  const { env } = require('./envConfig');
+  };
 
-  redis = createClient({
-    url: env.REDIS_URL,
-  });
+  return mock as unknown as RedisClientType; // ✅ required double-cast
+}
+
+let redis: RedisClientType;
+
+if (isDryRunEnv) {
+  console.log('[DryRunMode] Skipping Redis client initialization');
+  redis = createDummyRedisClient();
+} else {
+  redis = createClient({ url: env.REDIS_URL });
 
   redis.on('error', (err: unknown) => {
     console.error('[Redis] Connection error:', err);

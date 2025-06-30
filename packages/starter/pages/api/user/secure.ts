@@ -34,6 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       secureData: `This is protected for user: ${userId}`,
     });
   } catch (err) {
+    console.error('Secure route error:', err);
     res.status(401).json({ error: 'Token invalid or missing' });
   }
+
 }

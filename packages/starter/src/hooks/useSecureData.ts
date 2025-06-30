@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { axiosApp } from 'packages/core/dist/client-only';
 import { useEffect, useState } from 'react';
 
@@ -10,10 +11,15 @@ export function useSecureData() {
       try {
         const res = await axiosApp.get('/api/user/secure');
         setData(res.data?.secureData ?? 'No data');
-      } catch (err: any) {
-        setError(err?.response?.data?.error ?? 'Secure fetch failed');
+      } catch (err: unknown) {
+        if (isAxiosError(err)) {
+          setError(err.response?.data?.error ?? 'Secure fetch failed');
+        } else {
+          setError('Secure fetch failed');
+        }
       }
     };
+
     fetchSecure();
   }, []);
 

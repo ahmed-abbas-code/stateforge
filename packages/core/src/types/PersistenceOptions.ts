@@ -19,7 +19,7 @@ export interface PersistenceStrategyBase<T> {
 }
 
 // ─── Final Strategy Type: string or object ────────────────────────
-export type PersistenceStrategy<T = any> =
+export type PersistenceStrategy<T = unknown> =
   | StrategyIdentifier
   | PersistenceStrategyBase<T>;
 

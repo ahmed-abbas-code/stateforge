@@ -1,5 +1,7 @@
 import { isDryRunEnv } from './isDryRunEnv';
-import type { Firestore } from 'firebase-admin/firestore';
+import { getApps, getApp, initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { env } from './envConfig';
 
 let firestore: Firestore;
 
@@ -17,10 +19,6 @@ if (isDryRunEnv) {
     }),
   } as unknown as Firestore;
 } else {
-  const { initializeApp, cert, getApps, getApp } = require('firebase-admin/app');
-  const { getFirestore } = require('firebase-admin/firestore');
-  const { env } = require('./envConfig');
-
   const firebaseAdminConfig = {
     credential: cert({
       projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,

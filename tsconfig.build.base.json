@@ -21,7 +21,5 @@
       "@stateforge/cli": ["packages/cli/src/index.ts"],
       "@stateforge/cli/*": ["packages/cli/src/*"]
     }
-  },
-  "include": ["packages/**/*"],
-  "exclude": ["node_modules", "dist"]
+  }
 }

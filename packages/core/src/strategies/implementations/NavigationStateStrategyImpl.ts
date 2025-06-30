@@ -51,6 +51,7 @@ export class NavigationStateStrategyImpl<T> implements PersistenceStrategyBase<T
   }
 
   async load(key: string, _ctx?: unknown): Promise<T | undefined> {
+    void _ctx; // ✅ suppress unused param warning
     return this.get(key);
   }
 }

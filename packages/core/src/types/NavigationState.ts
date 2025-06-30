@@ -1,5 +1,5 @@
 export interface NavigationState {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface NavigationStateContextType {

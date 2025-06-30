@@ -1,23 +1,29 @@
-/// <reference types="vitest" />
+
+
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePersistedFramework } from '@/hooks/usePersistedFramework';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PersistenceStrategyBase } from '@/types/PersistenceOptions';
 
-// ✅ Properly typed mocked strategy
-const mockStrategy = {
-  get: vi.fn<[string], Promise<string | undefined>>(),
-  set: vi.fn<[string, string], Promise<void>>(),
+const getMock: Mock<(key: string) => Promise<string | undefined>> = vi.fn();
+const setMock: Mock<(key: string, val: string) => Promise<void>> = vi.fn();
+
+const mockStrategy: PersistenceStrategyBase<string> = {
+  get: getMock,
+  set: setMock,
 };
+
 
 describe('usePersistedFramework', () => {
   const testKey = 'user';
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    getMock.mockReset();
+    setMock.mockReset();
   });
 
   it('hydrates from strategy if available', async () => {
-    mockStrategy.get.mockResolvedValueOnce('persisted-user');
+    getMock.mockResolvedValueOnce('persisted-user');
 
     const { result } = renderHook(() =>
       usePersistedFramework<string>({
@@ -27,15 +33,14 @@ describe('usePersistedFramework', () => {
       })
     );
 
-    // Allow hydration effect to run
     await new Promise(resolve => setTimeout(resolve));
 
     expect(result.current[0]).toBe('persisted-user');
-    expect(mockStrategy.get).toHaveBeenCalledWith(testKey);
+    expect(getMock).toHaveBeenCalledWith(testKey);
   });
 
   it('falls back to defaultValue if strategy returns undefined', async () => {
-    mockStrategy.get.mockResolvedValueOnce(undefined);
+    getMock.mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() =>
       usePersistedFramework<string>({
@@ -51,7 +56,7 @@ describe('usePersistedFramework', () => {
   });
 
   it('updates value and persists via strategy.set', async () => {
-    mockStrategy.get.mockResolvedValueOnce(undefined);
+    getMock.mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() =>
       usePersistedFramework<string>({
@@ -68,16 +73,16 @@ describe('usePersistedFramework', () => {
     });
 
     expect(result.current[0]).toBe('updated-user');
-    expect(mockStrategy.set).toHaveBeenCalledWith(testKey, 'updated-user');
+    expect(setMock).toHaveBeenCalledWith(testKey, 'updated-user');
   });
 
   it('does not crash in SSR environment', async () => {
     const originalWindow = globalThis.window;
     // simulate SSR
-    // @ts-expect-error
+    // @ts-expect-error simulating SSR by removing window
     delete globalThis.window;
 
-    mockStrategy.get.mockResolvedValueOnce(undefined);
+    getMock.mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() =>
       usePersistedFramework<string>({

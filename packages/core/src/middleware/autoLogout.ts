@@ -20,6 +20,8 @@ export async function autoLogoutOnExpire(token: string) {
     const decoded = await adminAuth.verifyIdToken(token, true);
     return decoded;
   } catch (err) {
+    console.error('[autoLogoutOnExpire] Token verification failed:', err);
     throw new Error('Token expired or revoked');
   }
+
 }

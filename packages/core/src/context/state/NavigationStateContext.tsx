@@ -1,3 +1,4 @@
+import React from 'react'; // ✅ Required for JSX if enforced
 import {
   createContext,
   useContext,
@@ -7,7 +8,6 @@ import {
 } from 'react';
 import { useRouter } from 'next/router';
 import { NavigationState, NavigationStateContextType } from '../../types/NavigationState';
-
 
 export const NavigationStateContext = createContext<NavigationStateContextType | undefined>(undefined);
 

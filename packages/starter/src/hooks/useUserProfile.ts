@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { axiosApp } from 'packages/core/dist/client-only';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -16,23 +17,34 @@ export function useUserProfile() {
     try {
       const res = await axiosApp.get('/api/user');
       setProfile(res.data);
-    } catch (err: any) {
-      setError(err?.message ?? 'Failed to fetch profile');
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.message ?? 'Failed to fetch profile');
+      } else {
+        setError('Failed to fetch profile');
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updateProfile = useCallback(async (newData: Partial<UserProfile>) => {
-    try {
-      const res = await axiosApp.post('/api/user', newData);
-      if (res.status === 200) {
-        await fetchProfile();
+  const updateProfile = useCallback(
+    async (newData: Partial<UserProfile>) => {
+      try {
+        const res = await axiosApp.post('/api/user', newData);
+        if (res.status === 200) {
+          await fetchProfile();
+        }
+      } catch (err: unknown) {
+        if (isAxiosError(err)) {
+          setError(err.message ?? 'Update failed');
+        } else {
+          setError('Update failed');
+        }
       }
-    } catch (err: any) {
-      setError(err?.message ?? 'Update failed');
-    }
-  }, [fetchProfile]);
+    },
+    [fetchProfile]
+  );
 
   useEffect(() => {
     fetchProfile();

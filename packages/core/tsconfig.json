@@ -6,7 +6,8 @@
       "@/*": ["*"]
     },
     "jsx": "react-jsx",
-    "types": ["vitest", "node"]
+    "types": ["vitest", "node"],
+    "noEmit": true
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

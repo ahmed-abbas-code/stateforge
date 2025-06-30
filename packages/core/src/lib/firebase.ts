@@ -1,25 +1,25 @@
 import { isDryRunEnv } from './isDryRunEnv';
-import type { Auth } from 'firebase/auth';
+import type { Auth, User } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 
 let auth: Auth;
 
 if (isDryRunEnv) {
   console.log('[DummyMode] Skipping Firebase client initialization');
 
+  const dummyUser: Partial<User> = {
+    uid: 'dummy-uid',
+    email: 'dummy@local.dev',
+  };
+
   auth = {
-    currentUser: {
-      uid: 'dummy-uid',
-      email: 'dummy@local.dev',
-    },
+    currentUser: dummyUser as User,
     onAuthStateChanged: () => () => {},
     signInWithPopup: async () => {},
     signOut: async () => {},
   } as unknown as Auth;
 } else {
-  // ✅ Use require instead of await import
-  const { initializeApp, getApps, getApp } = require('firebase/app');
-  const { getAuth } = require('firebase/auth');
-
   const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,

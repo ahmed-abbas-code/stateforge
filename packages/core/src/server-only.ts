@@ -1,13 +1,17 @@
-import { isDryRunEnv } from './lib/isDryRunEnv';
+import { isDryRunEnv } from './lib/isDryRunEnv.js';
 
-export { createServerPersistenceStrategy } from './strategies/factory/createServerPersistenceStrategy';
+export { createServerPersistenceStrategy } from './strategies/factory/createServerPersistenceStrategy.js';
+export { verifyFirebaseToken } from './lib/verifyFirebaseToken.js';
+export { useUniversalPersistedFramework } from './hooks/useUniversalPersistedFramework.js';
 
-export { verifyFirebaseToken } from './lib/verifyFirebaseToken';
-export { useUniversalPersistedFramework } from './hooks/useUniversalPersistedFramework';
+export const firebaseAdmin = isDryRunEnv
+  ? null
+  : (async () => (await import('./lib/firebase-admin.js')).firebaseAdmin)();
 
-if (!isDryRunEnv) {
-  // Export server-only modules only if not in dryrun mode
-  module.exports.firebaseAdmin = require('./lib/firebase-admin').firebaseAdmin;
-  module.exports.firestore = require('./lib/firestore').firestore;
-  module.exports.redis = require('./lib/redis').redis;
-}
+export const firestore = isDryRunEnv
+  ? null
+  : (async () => (await import('./lib/firestore.js')).firestore)();
+
+export const redis = isDryRunEnv
+  ? null
+  : (async () => (await import('./lib/redis.js')).redis)();

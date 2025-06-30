@@ -1,7 +1,8 @@
 {
-  "name": "stateforge",
+  "name": "stateforge-framework",
   "version": "0.1.0",
-  "private": false,
+  "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.0.0",
   "workspaces": [
     "packages/core",
@@ -13,21 +14,24 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "build": "pnpm -r run build",
-    "build:dryrun": "pnpm --filter @stateforge-framework/core run build && pnpm --filter @stateforge/cli run build && pnpm --filter @stateforge-framework/starter run build:dryrun",
-    "dev": "pnpm --filter @stateforge-framework/starter dev",
-    "dev:dryrun": "DOTENV_CONFIG_PATH=.env.dryrun pnpm --filter @stateforge-framework/starter dev",
+    "build": "pnpm run -r --filter=!./packages/starter build",
+    "build:all": "pnpm -r run build",
+    "build:starter": "pnpm --filter ./packages/starter build",
+    "build:dryrun": "pnpm --filter ./packages/core run build && pnpm --filter ./packages/cli run build && pnpm --filter ./packages/starter run build:dryrun",
+    "dev": "pnpm --filter ./packages/starter dev",
+    "dev:dryrun": "DOTENV_CONFIG_PATH=.env.dryrun pnpm --filter ./packages/starter dev",
     "lint": "pnpm -r run lint",
-    "tsc:core": "pnpm --filter @stateforge-framework/core exec tsc --project tsconfig.json",
+    "tsc:core": "pnpm --filter ./packages/core exec tsc --project tsconfig.json",
+    "test": "pnpm -r run test",
     "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "show:cli": "find packages/cli -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
-    "release:core:patch": "node scripts/release-core.js patch",
-    "release:core:minor": "node scripts/release-core.js minor",
-    "release:core:major": "node scripts/release-core.js major",
-    "release:core:patch:flow": "node scripts/release-core-flow.js patch",
-    "release:core:minor:flow": "node scripts/release-core-flow.js minor",
-    "release:core:major:flow": "node scripts/release-core-flow.js major"
+    "release:core:patch": "node scripts/release-core.mjs patch",
+    "release:core:minor": "node scripts/release-core.mjs minor",
+    "release:core:major": "node scripts/release-core.mjs major",
+    "release:core:patch:flow": "node scripts/release-core-flow.mjs patch",
+    "release:core:minor:flow": "node scripts/release-core-flow.mjs minor",
+    "release:core:major:flow": "node scripts/release-core-flow.mjs major"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
@@ -41,6 +45,7 @@
     "dotenv-cli": "^8.0.0",
     "eslint": "^8.57.0",
     "jsdom": "^26.1.0",
+    "tsup": "^7.3.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.5",
     "vitest": "^3.2.4"

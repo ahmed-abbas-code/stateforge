@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { createBrowserPersistenceStrategy } from '../strategies/factory/createBrowserPersistenceStrategy';
 import type { PersistenceStrategyBase } from '../types/PersistenceOptions';
 
-// Define only the browser-compatible strategies
 type BrowserPersistenceStrategy = 'localStorage' | 'navigationState';
 
 export interface PersistOptions<T> {
   key: string;
   defaultValue: T;
-  strategy: BrowserPersistenceStrategy;
+  strategy: BrowserPersistenceStrategy | PersistenceStrategyBase<T>;
   namespace?: string;
 }
 
@@ -21,9 +20,12 @@ export function usePersistedFramework<T>({
   const [value, setValue] = useState<T>(defaultValue);
   const strategyRef = useRef<PersistenceStrategyBase<T> | null>(null);
 
-  // Only create strategy once
   if (!strategyRef.current) {
-    strategyRef.current = createBrowserPersistenceStrategy<T>(strategy, namespace);
+    // ✅ Narrow the type before calling createBrowserPersistenceStrategy
+    strategyRef.current =
+      typeof strategy === 'string'
+        ? createBrowserPersistenceStrategy<T>(strategy, namespace)
+        : strategy;
   }
 
   useEffect(() => {

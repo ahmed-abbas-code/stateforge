@@ -126,6 +126,7 @@ The following scripts are available from the `@stateforge/starter` package root:
 | `pnpm start:dryrun`  | Start using `.env.dryrun` for runtime configuration               |
 | `pnpm lint`          | Run lint checks using Next.js ESLint integration                  |
 
+---
 
 ## 📚 License
 

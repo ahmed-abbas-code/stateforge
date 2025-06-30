@@ -146,17 +146,22 @@ create-stateforge-app test-app
 
 These scripts are available from the root of the `stateforge` monorepo:
 
-| Script                | Description                                                                  |
-|------------------------|------------------------------------------------------------------------------|
-| `pnpm build`           | Run `build` scripts for all workspace packages                               |
-| `pnpm build:dryrun`    | Build `core` and `cli`, and run dry-run build for `starter`                  |
-| `pnpm dev`             | Start the dev server for `@stateforge-framework/starter`                     |
-| `pnpm dev:dryrun`      | Start `starter` in dev mode with `.env.dryrun` configuration                 |
-| `pnpm lint`            | Lint all packages using their respective `lint` scripts                      |
-| `pnpm show:core`       | Show tree structure of `packages/core`                                       |
-| `pnpm show:starter`    | Show tree structure of `packages/starter`                                    |
-| `pnpm show:cli`        | Show tree structure of `packages/cli`                                        |
-| `pnpm tsc:core`        | Run TypeScript compiler check specifically for `@stateforge-framework/core` |
+| Script                  | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| `pnpm build`             | ⚙️ Build only `core` and `cli` (skips `starter` to avoid requiring secrets) |
+| `pnpm build:all`         | 🚀 Build all packages, including `starter` (requires valid `.env.local`)     |
+| `pnpm build:starter`     | 🌱 Build only the `starter` app                                              |
+| `pnpm build:dryrun`      | 🧪 Build all packages using dry-run env for the starter                     |
+| `pnpm dev`               | 🧑‍💻 Start the dev server for `@stateforge-framework/starter`                |
+| `pnpm dev:dryrun`        | 🧪 Start dev server with `.env.dryrun` config for safe preview              |
+| `pnpm lint`              | 🧹 Lint all workspace packages                                              |
+| `pnpm show:core`         | 📂 Show tree structure of `packages/core`                                   |
+| `pnpm show:starter`      | 📂 Show tree structure of `packages/starter`                                |
+| `pnpm show:cli`          | 📂 Show tree structure of `packages/cli`                                    |
+| `pnpm tsc:core`          | 🔍 Type-check `@stateforge-framework/core` using raw `tsc`                  |
+
+> ℹ️ `pnpm build` now excludes the `starter` app to avoid forcing secret environment variables at build time. Use `pnpm build:starter` or `pnpm build:all` if you want to build it explicitly.
+
 ---
 
 ## 📚 License
