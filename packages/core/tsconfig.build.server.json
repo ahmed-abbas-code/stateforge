@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.build.base.json",
+  "compilerOptions": {
+    "outDir": "dist/server",
+    "rootDir": "src",
+    "baseUrl": "src",
+    "paths": {
+      "@core/common/*": ["common/*"]
+    },
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": true
+  },
+  "include": ["src/server/**/*", "src/common/**/*"],
+  "exclude": ["tests", "**/*.test.*", "**/*.spec.*", "node_modules", "dist"]
+}

@@ -1,46 +1,46 @@
 {
   "name": "@stateforge-framework/core",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
-  "main": "./dist/client-only.js",
-  "types": "./dist/client-only.d.ts",
+  "main": "./dist/client/index.js",
+  "types": "./dist/client/index.d.ts",
   "typesVersions": {
     "*": {
-      "client-only": [
-        "dist/client-only.d.ts"
+      "client": [
+        "dist/client/index.d.ts"
       ],
       "server": [
-        "dist/server-only.d.ts"
+        "dist/server/index.d.ts"
       ],
-      "universal": [
-        "dist/universal.d.ts"
+      "common": [
+        "dist/common/index.d.ts"
       ]
     }
   },
   "exports": {
     ".": {
-      "types": "./dist/client-only.d.ts",
-      "import": "./dist/client-only.js",
-      "require": "./dist/client-only.js",
-      "default": "./dist/client-only.js"
+      "import": "./dist/client/index.js",
+      "require": "./dist/client/index.js",
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
     },
-    "./client-only": {
-      "types": "./dist/client-only.d.ts",
-      "import": "./dist/client-only.js",
-      "require": "./dist/client-only.js"
+    "./client": {
+      "import": "./dist/client/index.js",
+      "require": "./dist/client/index.js",
+      "types": "./dist/client/index.d.ts"
     },
     "./server": {
-      "types": "./dist/server-only.d.ts",
-      "import": "./dist/server-only.js",
-      "require": "./dist/server-only.js"
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
     },
-    "./universal": {
-      "types": "./dist/universal.d.ts",
-      "import": "./dist/universal.js",
-      "require": "./dist/universal.js"
+    "./common": {
+      "import": "./dist/common/index.js",
+      "require": "./dist/common/index.js",
+      "types": "./dist/common/index.d.ts"
     }
   },
   "files": [
@@ -62,13 +62,20 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "pnpm clean && pnpm build:types && pnpm build:tsup",
+    "build:types": "pnpm build:types:client && pnpm build:types:server && pnpm build:types:common",
+    "build:types:client": "tsc --project tsconfig.build.client.json",
+    "build:types:server": "tsc --project tsconfig.build.server.json",
+    "build:types:common": "tsc --project tsconfig.build.common.json",
+    "build:tsup": "tsup",
+    "clean": "rm -rf dist",
     "dev": "tsc --watch --project tsconfig.json",
     "tsc": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "check:env": "tsx scripts/validate-and-generate-env.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "publish:pkg": "pnpm build && pnpm publish --access public --tag latest"
   },
   "dependencies": {
     "axios": "^1.6.8",
