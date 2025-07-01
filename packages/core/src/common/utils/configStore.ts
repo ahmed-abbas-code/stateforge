@@ -7,6 +7,9 @@ export type FrameworkConfig = BaseEnv & { isDryRun: boolean };
 
 let cached: FrameworkConfig | null = null;
 
+/**
+ * Call this early in your app lifecycle (e.g., _app.tsx or server entrypoint).
+ */
 export function setupStateForgeConfig(): FrameworkConfig {
   const raw = process.env;
   const parsed = envSchema.safeParse(raw);
@@ -26,10 +29,23 @@ export function setupStateForgeConfig(): FrameworkConfig {
   return cached;
 }
 
+/**
+ * Returns the initialized config. Must call setupStateForgeConfig() before use.
+ */
 export function getFrameworkConfig(): FrameworkConfig {
   if (!cached) throw new Error('Call setupStateForgeConfig() first');
   return cached;
 }
 
-// ✅ Optional convenience export for shared usage
-export const config: FrameworkConfig = setupStateForgeConfig();
+/**
+ * Optional helper: lazy-loaded proxy to config.
+ * Useful if you're certain setup was already called during bootstrapping.
+ */
+export const config: FrameworkConfig = new Proxy(
+  {},
+  {
+    get(_, prop: keyof FrameworkConfig) {
+      return getFrameworkConfig()[prop];
+    },
+  }
+) as FrameworkConfig;
