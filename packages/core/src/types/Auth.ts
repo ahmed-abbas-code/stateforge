@@ -1,31 +1,35 @@
 import type { NextApiRequest } from 'next';
+import type { Auth } from 'firebase/auth';
 
 export interface AuthUser {
   uid: string;
   email: string | null;
   displayName?: string | null;
-  providerId?: string; 
+  providerId?: string;
   [key: string]: unknown;
 }
 
 export interface AuthContextType {
   user: AuthUser | null;
-  loading: boolean;
-  error?: Error | null;
 
-  isAuthenticated: boolean;
+  // Optional: for Firebase support
+  setUser?: (user: AuthUser | null) => void;
+  auth?: Auth;
+  signIn?: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
 
-  login: () => Promise<void>; // Could also be overloaded later (e.g., login(provider))
-  logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
 
-  // Optional: for redirect flows
+  isLoading: boolean;
+  error?: Error | null;
+  isAuthenticated: boolean;
+
+  // Optional: for redirect flows (e.g., Auth0)
   handleRedirectCallback?: () => Promise<void>;
 
   // Optional: for proactive refresh
   refreshToken?: () => Promise<string | null>;
 }
-
 
 /**
  * Extends Next.js API request to include authenticated user info.

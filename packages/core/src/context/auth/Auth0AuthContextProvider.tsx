@@ -1,5 +1,3 @@
-// packages/core/src/context/auth/Auth0AuthContextProvider.tsx
-
 import React, { useState } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 
@@ -10,14 +8,6 @@ import type { AuthUser, AuthContextType } from '@/types/Auth';
 export const Auth0AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user: auth0User, isLoading } = useUser();
   const [error, setError] = useState<Error | null>(null);
-
-  const login = async (): Promise<void> => {
-    try {
-      window.location.href = '/api/auth/login';
-    } catch (err) {
-      setError(err as Error);
-    }
-  };
 
   const logout = async (): Promise<void> => {
     try {
@@ -43,12 +33,12 @@ export const Auth0AuthContextProvider: React.FC<{ children: React.ReactNode }> =
 
   const contextValue: AuthContextType = {
     user: mappedUser,
-    loading: isLoading,
+    isLoading,
     error,
     isAuthenticated: !!mappedUser,
-    login,
-    logout,
+    signOut: logout,
     getToken,
+    // signIn is intentionally omitted for Auth0
   };
 
   return (

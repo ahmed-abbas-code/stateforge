@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 import { useAuth } from '../context/auth/AuthContext';
 import type { ComponentType, JSX } from 'react';
 
@@ -8,16 +7,16 @@ export function withAuthProtection<P extends JSX.IntrinsicAttributes>(
   WrappedComponent: ComponentType<P>
 ) {
   return function ProtectedComponent(props: P) {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-      if (!loading && !isAuthenticated) {
+      if (!isLoading && !isAuthenticated) {
         router.replace('/');
       }
-    }, [loading, isAuthenticated, router]);
+    }, [isLoading, isAuthenticated, router]);
 
-    if (loading || !isAuthenticated) {
+    if (isLoading || !isAuthenticated) {
       return null;
     }
 

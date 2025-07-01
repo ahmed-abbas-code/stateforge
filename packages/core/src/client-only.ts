@@ -37,6 +37,9 @@ export const AuthProvider = _AuthProvider;
 // ─── Public Hooks ───────────────────────────────────────────────
 export { usePersistedFramework } from './hooks/usePersistedFramework';
 export { useNavigationPersistedState } from './hooks/useNavigationPersistedState';
+export { useFirebaseAuthState } from './hooks/useFirebaseAuthState';
+export { useAuth0AuthState } from './hooks/useAuth0AuthState';
+export { useUniversalPersistedFramework } from './hooks/useUniversalPersistedFramework';
 
 // ─── Route Guards ───────────────────────────────────────────────
 export { withAuthProtection } from './lib/withAuthProtection';

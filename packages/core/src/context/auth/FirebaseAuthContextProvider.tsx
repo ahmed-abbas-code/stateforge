@@ -5,7 +5,7 @@ import {
   getAuth,
   onAuthStateChanged,
   signInWithPopup,
-  signOut,
+  signOut as firebaseSignOut,
   GoogleAuthProvider,
   User as FirebaseUser,
 } from 'firebase/auth';
@@ -24,7 +24,7 @@ const firebaseConfig = {
 
 export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -37,27 +37,29 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
       } catch (e) {
         setError(e as Error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const login = async (): Promise<void> => {
+  const signIn = async (): Promise<{ ok: boolean; error?: string }> => {
     try {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      return { ok: true };
     } catch (e) {
       setError(e as Error);
+      return { ok: false, error: (e as Error).message };
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const signOut = async (): Promise<void> => {
     try {
       const auth = getAuth();
-      await signOut(auth);
+      await firebaseSignOut(auth);
       setUser(null);
     } catch (e) {
       setError(e as Error);
@@ -72,11 +74,13 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
 
   const contextValue: AuthContextType = {
     user,
-    loading,
+    setUser,
+    auth: getAuth(),
+    isLoading,
     error,
     isAuthenticated: !!user,
-    login,
-    logout,
+    signIn,
+    signOut,
     getToken,
   };
 

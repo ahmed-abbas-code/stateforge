@@ -1,12 +1,10 @@
-// packages/core/src/context/auth/DummyAuthContextProvider.tsx
-
 import React, { useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
 import type { AuthUser, AuthContextType } from '@/types/Auth';
 
 export const DummyAuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -18,15 +16,16 @@ export const DummyAuthContextProvider: React.FC<{ children: React.ReactNode }> =
     };
 
     setUser(fakeUser);
-    setLoading(false);
+    setIsLoading(false);
   }, []);
 
-  const login = async (): Promise<void> => {
-    console.log('[DummyAuth] login triggered');
+  const signIn = async (): Promise<{ ok: boolean; error?: string }> => {
+    console.log('[DummyAuth] signIn triggered');
+    return { ok: true };
   };
 
-  const logout = async (): Promise<void> => {
-    console.log('[DummyAuth] logout triggered');
+  const signOut = async (): Promise<void> => {
+    console.log('[DummyAuth] signOut triggered');
     setUser(null);
   };
 
@@ -36,11 +35,11 @@ export const DummyAuthContextProvider: React.FC<{ children: React.ReactNode }> =
 
   const contextValue: AuthContextType = {
     user,
-    loading,
+    isLoading,
     error,
     isAuthenticated: !!user,
-    login,
-    logout,
+    signIn,
+    signOut,
     getToken,
   };
 
