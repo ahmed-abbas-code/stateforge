@@ -1,12 +1,11 @@
-
 import { getApps, getApp, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { env } from '../../common/utils/envConfig';
-import { isDryRunEnv } from '@core/common/index';
+import { config } from '@core/common/utils/configStore';
+const isDryRun = config.isDryRun;
 
 let firestore: Firestore;
 
-if (isDryRunEnv) {
+if (isDryRun) {
   console.log('[DummyMode] Skipping Firestore initialization');
 
   firestore = {
@@ -20,11 +19,16 @@ if (isDryRunEnv) {
     }),
   } as unknown as Firestore;
 } else {
+  // 🔒 Ensure required vars exist
+  if (!config.FIREBASE_PRIVATE_KEY || !config.FIREBASE_CLIENT_EMAIL || !config.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+    throw new Error('[Firestore] Missing required Firebase Admin env variables');
+  }
+
   const firebaseAdminConfig = {
     credential: cert({
-      projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: env.FIREBASE_CLIENT_EMAIL,
-      privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      projectId: config.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      clientEmail: config.FIREBASE_CLIENT_EMAIL,
+      privateKey: config.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     }),
   };
 

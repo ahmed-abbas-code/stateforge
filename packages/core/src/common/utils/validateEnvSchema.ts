@@ -1,7 +1,8 @@
 import { envSchema } from '../types/validation/envSchema';
-import { config } from './config'; 
+import { getFrameworkConfig } from './configStore';
 
 export function validateEnvSchema(): void {
+  const config = getFrameworkConfig();
   const result = envSchema.safeParse(config);
 
   if (!result.success) {

@@ -1,6 +1,8 @@
 export * from './lib/auditLogger';
-export * from '../common/utils/config';
-export * from '../common/utils/envConfig';
+
+// ✅ Use centralized config store instead of legacy config files
+export * from '../common/utils/configStore';
+
 export * from './lib/firebase';
 export * from './lib/firebase-admin';
 export * from './lib/firestore';

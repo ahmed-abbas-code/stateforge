@@ -1,18 +1,17 @@
+// packages/core/src/client/context/auth/UnifiedAuthStrategySelector.tsx
 import React, { ReactNode } from 'react';
 
 import { FirebaseAuthContextProvider } from './FirebaseAuthContextProvider';
 import { Auth0AuthContextProvider } from './Auth0AuthContextProvider';
 import { DummyAuthContextProvider } from './DummyAuthContextProvider';
-import { config } from '@core/common/utils/config';
 
-// ✅ Directly exported here
 export interface UnifiedAuthStrategySelectorProps {
   children: ReactNode;
 }
 
-export const UnifiedAuthStrategySelector: React.FC<UnifiedAuthStrategySelectorProps> = ({ children }) => {
-  const strategy = config.AUTH_STRATEGY;
+const strategy = process.env.NEXT_PUBLIC_AUTH_STRATEGY;
 
+export const UnifiedAuthStrategySelector: React.FC<UnifiedAuthStrategySelectorProps> = ({ children }) => {
   switch (strategy) {
     case 'firebase':
       return <FirebaseAuthContextProvider>{children}</FirebaseAuthContextProvider>;
@@ -25,7 +24,7 @@ export const UnifiedAuthStrategySelector: React.FC<UnifiedAuthStrategySelectorPr
 
     default:
       throw new Error(
-        `Unsupported auth strategy "${strategy}". Set AUTH_STRATEGY in your .env file to "firebase", "auth0", or "dryrun".`
+        `Unsupported auth strategy "${strategy}". Set NEXT_PUBLIC_AUTH_STRATEGY in your .env file to "firebase", "auth0", or "dryrun".`
       );
   }
 };

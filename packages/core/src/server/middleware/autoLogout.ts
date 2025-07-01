@@ -1,5 +1,7 @@
-import { isDryRunEnv } from '@core/common/index';
+// packages/core/src/server/middleware/autoLogout.ts
 import { adminAuth } from '../lib/firebase-admin';
+import { config } from '@core/common/utils/configStore';
+const isDryRun = config.isDryRun;
 
 /**
  * Validates the Firebase ID token.
@@ -7,7 +9,7 @@ import { adminAuth } from '../lib/firebase-admin';
  */
 export async function autoLogoutOnExpire(token: string) {
   try {
-    if (isDryRunEnv) {
+    if (isDryRun) {
       console.log('[DummyMode] Skipping token verification');
       return {
         uid: 'dummy-uid',

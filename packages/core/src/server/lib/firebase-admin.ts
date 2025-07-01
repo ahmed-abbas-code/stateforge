@@ -4,12 +4,13 @@ import * as admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
 import type { Auth } from 'firebase-admin/auth';
 import type * as adminType from 'firebase-admin';
-import { isDryRunEnv } from '@core/common/index';
+import { config } from '@core/common/utils/configStore';
+const isDryRun = config.isDryRun;
 
 let adminAuth: Auth;
 let firebaseAdmin: typeof adminType;
 
-if (isDryRunEnv) {
+if (isDryRun) {
   console.log('[DryRunMode] Skipping Firebase Admin initialization');
 
   adminAuth = {

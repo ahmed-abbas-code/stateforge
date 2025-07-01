@@ -2,7 +2,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
-import { config } from '@core/common/utils/config';
+import { config } from '@core/common/utils/configStore';
 import { auth } from '../lib/firebase'; // assumes server-only Firebase wrapper
 import { auditLogoutEvent } from '../lib/auditLogger';
 

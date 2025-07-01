@@ -3,9 +3,10 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "@core/client/*": ["client/*"],
+      "@core/common/*": ["common/*"],
       "@core/server/*": ["server/*"],
-      "@core/common/*": ["common/*"]
+      "@core/client/*": ["client/*"],
+      "@core/*": ["common/*", "server/*", "client/*"]
     },
     "jsx": "react-jsx",
     "types": ["vitest", "node"],

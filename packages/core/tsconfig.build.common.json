@@ -1,13 +1,12 @@
+// packages/core/tsconfig.build.common.json
 {
   "extends": "../../tsconfig.build.base.json",
   "compilerOptions": {
     "outDir": "dist/common",
-    "rootDir": "src",
+    "rootDir": "src/common",          // keep root here
     "baseUrl": "src",
     "paths": {
-      "@core/common/*": [
-        "common/*"
-      ]
+      "@core/common/*": ["common/*"]
     },
     "jsx": "react-jsx",
     "declaration": true,
@@ -15,9 +14,12 @@
     "noEmit": false
   },
   "include": [
-    "src/common/**/*"
+    "src/common/**/*.ts",
+    "src/common/**/*.tsx"
   ],
   "exclude": [
+    "src/client",
+    "src/server",
     "tests",
     "**/*.test.*",
     "**/*.spec.*",

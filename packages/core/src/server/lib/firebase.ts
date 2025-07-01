@@ -1,11 +1,12 @@
 import type { Auth, User } from 'firebase/auth';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { isDryRunEnv } from '@core/common/index';
+import { config } from '@core/common/utils/configStore';
+const isDryRun = config.isDryRun;
 
 let auth: Auth;
 
-if (isDryRunEnv) {
+if (isDryRun) {
   console.log('[DummyMode] Skipping Firebase client initialization');
 
   const dummyUser: Partial<User> = {

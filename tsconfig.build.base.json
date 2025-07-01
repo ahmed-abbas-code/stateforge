@@ -3,10 +3,7 @@
     "target": "ES2019",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": [
-      "DOM",
-      "ESNext"
-    ],
+    "lib": ["DOM", "ESNext"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
@@ -14,32 +11,21 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "packages/core/src/*"
-      ],
-      "@stateforge/core": [
-        "packages/core/dist/index.js"
-      ],
-      "@stateforge/core/*": [
-        "packages/core/dist/*"
-      ],
-      "@stateforge/starter": [
-        "packages/starter/src/index.ts"
-      ],
-      "@stateforge/starter/*": [
-        "packages/starter/src/*"
-      ],
-      "@stateforge/cli": [
-        "packages/cli/src/index.ts"
-      ],
-      "@stateforge/cli/*": [
-        "packages/cli/src/*"
-      ]
+      "@/*": ["packages/core/src/*"],
+
+      "@core/common/*": ["packages/core/src/common/*"],
+      "@core/client/*": ["packages/core/src/client/*"],
+      "@core/server/*": ["packages/core/src/server/*"],
+
+      "@stateforge/core": ["packages/core/dist/index.js"],
+      "@stateforge/core/*": ["packages/core/dist/*"],
+      "@stateforge/starter": ["packages/starter/src/index.ts"],
+      "@stateforge/starter/*": ["packages/starter/src/*"],
+      "@stateforge/cli": ["packages/cli/src/index.ts"],
+      "@stateforge/cli/*": ["packages/cli/src/*"]
     }
   }
 }

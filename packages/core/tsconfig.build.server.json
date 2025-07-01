@@ -5,19 +5,16 @@
     "rootDir": "src",
     "baseUrl": "src",
     "paths": {
-      "@core/common/*": [
-        "common/*"
-      ]
+      "@core/common/*": ["common/*"],
+      "@core/server/*": ["server/*"],
+      "@core/client/*": ["client/*"]
     },
     "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
     "noEmit": false
   },
-  "include": [
-    "src/server/**/*",
-    "src/common/**/*"
-  ],
+  "include": ["src/server/**/*", "src/common/**/*"],
   "exclude": [
     "tests",
     "**/*.test.*",
