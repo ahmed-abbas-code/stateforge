@@ -10,7 +10,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     target: 'node18',
-    clean: true,
+    clean: false, // <--- changed from true to false
     minify: false,
     splitting: false,
   },
@@ -41,3 +41,4 @@ export default defineConfig([
     splitting: false,
   }
 ]);
+
