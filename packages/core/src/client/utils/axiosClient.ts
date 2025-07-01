@@ -1,9 +1,10 @@
-// packages/core/src/client/utils/axiosClient.ts
-
 import axios, { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
 import { getAuth, getIdToken } from 'firebase/auth';
-import { config } from '@core/common/utils/config';
+
+/** Use client-safe public environment variables */
+const BACKEND_APP_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_APP_API_BASE_URL!;
+const BACKEND_AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_AUTH_API_BASE_URL!;
 
 /** Build a pre-configured Axios instance for client-side use */
 function createClient(baseURL: string): AxiosInstance {
@@ -31,5 +32,5 @@ function createClient(baseURL: string): AxiosInstance {
   return instance;
 }
 
-export const axiosApp = createClient(config.BACKEND_APP_API_BASE_URL);
-export const axiosAuth = createClient(config.BACKEND_AUTH_API_BASE_URL);
+export const axiosApp = createClient(BACKEND_APP_API_BASE_URL);
+export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL);

@@ -1,46 +1,45 @@
 {
   "name": "@stateforge-framework/core",
-  "version": "1.0.7",
+  "version": "1.0.11",
   "private": false,
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
-  "main": "./dist/client/index.js",
-  "types": "./dist/client/index.d.ts",
+  "main": "./dist/client/client.js",
+  "types": "./dist/client/client.d.ts",
   "typesVersions": {
     "*": {
       "client": [
-        "dist/client/index.d.ts"
+        "dist/client/client.d.ts"
       ],
       "server": [
-        "dist/server/index.d.ts"
+        "dist/server/server.d.ts"
       ],
       "common": [
-        "dist/common/index.d.ts"
+        "dist/common/common.d.ts"
       ]
     }
   },
   "exports": {
     ".": {
-      "import": "./dist/client/index.js",
-      "require": "./dist/client/index.js",
-      "types": "./dist/client/index.d.ts",
-      "default": "./dist/client/index.js"
+      "import": "./dist/client/client.js",
+      "require": "./dist/client/client.js",
+      "default": "./dist/client/client.js"
     },
     "./client": {
-      "import": "./dist/client/index.js",
-      "require": "./dist/client/index.js",
-      "types": "./dist/client/index.d.ts"
+      "import": "./dist/client/client.js",
+      "require": "./dist/client/client.js",
+      "default": "./dist/client/client.js"
     },
     "./server": {
-      "import": "./dist/server/index.js",
-      "require": "./dist/server/index.js",
-      "types": "./dist/server/index.d.ts"
+      "import": "./dist/server/server.js",
+      "require": "./dist/server/server.js",
+      "default": "./dist/server/server.js"
     },
     "./common": {
-      "import": "./dist/common/index.js",
-      "require": "./dist/common/index.js",
-      "types": "./dist/common/index.d.ts"
+      "import": "./dist/common/common.js",
+      "require": "./dist/common/common.js",
+      "default": "./dist/common/common.js"
     }
   },
   "files": [
