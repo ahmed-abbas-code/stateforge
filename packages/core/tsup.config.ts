@@ -9,10 +9,18 @@ export default defineConfig([
     format: ['cjs', 'esm'],
     dts: true,
     sourcemap: true,
-    target: 'node18',
-    clean: false, // <--- changed from true to false
+    target: 'es2020',
+    platform: 'browser',                 // ✅ Important
+    clean: false,
     minify: false,
     splitting: false,
+    external: [
+      'fs',
+      'path',
+      'os',
+      'crypto',
+      'dotenv',                          // ✅ Mark dotenv as external
+    ],
   },
   {
     entry: {
