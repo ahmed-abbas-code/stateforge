@@ -14,7 +14,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 
 import { AuthContext } from './AuthContext';
 import { AuthContextType, AuthUser } from '@core/common/types/Auth';
-import { getServerEnv, mapFirebaseToAuthUser } from '@core/common/index';
+import { mapFirebaseToAuthUser } from '@core/common/index';
 import { getRequiredEnv } from '@core/common/utils/getRequiredEnv';
 
 let firebaseApp: FirebaseApp | null = null;
@@ -25,7 +25,7 @@ function getOrInitFirebaseApp(): FirebaseApp {
       firebaseApp = getApps()[0];
     } else {
       firebaseApp = initializeApp({
-        apiKey: getServerEnv('FIREBASE_PRIVATE_KEY'),
+        apiKey: getRequiredEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
         authDomain: getRequiredEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
         projectId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
         storageBucket: getRequiredEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),

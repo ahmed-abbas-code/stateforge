@@ -7,7 +7,7 @@ export const envSchema = z.object({
   NEXT_PUBLIC_AUTH_STRATEGY: z.enum(['firebase', 'auth0', 'dryrun']),
 
   // Firebase (client)
-  // NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().min(1).optional(),
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().min(1).optional(),
