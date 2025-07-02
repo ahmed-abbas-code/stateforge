@@ -34,6 +34,7 @@ export const envSchema = z.object({
   // REST APIs
   BACKEND_APP_API_BASE_URL: z.string().url(),
   BACKEND_AUTH_API_BASE_URL: z.string().url(),
+  BACKEND_API_KEY: z.string().min(1).optional(),
 });
 
 export type EnvVars = z.infer<typeof envSchema>;
