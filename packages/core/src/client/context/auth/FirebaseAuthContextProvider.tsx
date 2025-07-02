@@ -15,7 +15,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { AuthContext } from './AuthContext';
 import { AuthContextType, AuthUser } from '@core/common/types/Auth';
 import { mapFirebaseToAuthUser } from '@core/common/index';
-import { getRequiredEnv } from '../../../common/utils/getRequiredEnv';
+import { getRequiredEnv } from '@core/common/utils/getRequiredEnv';
 
 let firebaseApp: FirebaseApp | null = null;
 
