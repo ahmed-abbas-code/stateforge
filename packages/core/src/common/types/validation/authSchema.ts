@@ -1,3 +1,4 @@
+// packages/core/src/common/types/validation/authSchema.ts
 import { z } from 'zod';
 
 export const authUserSchema = z.object({

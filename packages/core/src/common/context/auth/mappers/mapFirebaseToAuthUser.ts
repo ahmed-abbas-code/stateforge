@@ -1,3 +1,4 @@
+// packages/core/src/common/context/auth/mappers/mapFirebaseToAuthUser.ts
 import { User as FirebaseUser } from 'firebase/auth';
 import { authUserSchema } from '../../../types/validation/authSchema';
 import type { AuthUser } from '../../../types/Auth';
@@ -8,6 +9,7 @@ export function mapFirebaseToAuthUser(firebaseUser: FirebaseUser): AuthUser | nu
     uid: firebaseUser.uid,
     email: firebaseUser.email || '',
     displayName: firebaseUser.displayName || undefined,
+    provider: 'firebase',
     providerId: firebaseUser.providerData[0]?.providerId || 'firebase',
   };
 
