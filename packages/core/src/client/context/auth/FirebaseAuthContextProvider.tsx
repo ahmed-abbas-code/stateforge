@@ -8,19 +8,34 @@ import {
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   User as FirebaseUser,
+  Auth,
 } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 
 import { AuthContext } from './AuthContext';
 import { AuthContextType, AuthUser } from '@core/common/types/Auth';
 import { mapFirebaseToAuthUser } from '@core/common/index';
+import { getRequiredEnv } from '../../../common/utils/getRequiredEnv';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-};
+let firebaseApp: FirebaseApp | null = null;
+
+function getOrInitFirebaseApp(): FirebaseApp {
+  if (!firebaseApp) {
+    if (typeof window !== 'undefined' && getApps().length > 0) {
+      firebaseApp = getApps()[0];
+    } else {
+      firebaseApp = initializeApp({
+        apiKey: getRequiredEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
+        authDomain: getRequiredEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+        projectId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+        storageBucket: getRequiredEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+        messagingSenderId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+        appId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
+      });
+    }
+  }
+  return firebaseApp;
+}
 
 export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -28,25 +43,31 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    try {
+      const app = getOrInitFirebaseApp();
+      const auth = getAuth(app);
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      try {
-        setUser(firebaseUser ? mapFirebaseToAuthUser(firebaseUser) : null);
-      } catch (e) {
-        setError(e as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    });
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+        try {
+          setUser(firebaseUser ? mapFirebaseToAuthUser(firebaseUser) : null);
+        } catch (e) {
+          setError(e as Error);
+        } finally {
+          setIsLoading(false);
+        }
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (err) {
+      console.error('[Firebase Init Error]', err);
+      setError(err as Error);
+      setIsLoading(false);
+    }
   }, []);
 
   const signIn = async (): Promise<{ ok: boolean; error?: string }> => {
     try {
-      const auth = getAuth();
+      const auth = getAuth(getOrInitFirebaseApp());
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       return { ok: true };
@@ -58,7 +79,7 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
 
   const signOut = async (): Promise<void> => {
     try {
-      const auth = getAuth();
+      const auth = getAuth(getOrInitFirebaseApp());
       await firebaseSignOut(auth);
       setUser(null);
     } catch (e) {
@@ -67,7 +88,7 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
   };
 
   const getToken = async (): Promise<string | null> => {
-    const auth = getAuth();
+    const auth = getAuth(getOrInitFirebaseApp());
     if (!auth.currentUser) return null;
     return await auth.currentUser.getIdToken();
   };
@@ -75,7 +96,7 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
   const contextValue: AuthContextType = {
     user,
     setUser,
-    auth: getAuth(),
+    auth: getAuth(getOrInitFirebaseApp()) as Auth,
     isLoading,
     error,
     isAuthenticated: !!user,
@@ -84,9 +105,5 @@ export const FirebaseAuthContextProvider: React.FC<{ children: React.ReactNode }
     getToken,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
