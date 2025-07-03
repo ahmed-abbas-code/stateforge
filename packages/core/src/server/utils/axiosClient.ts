@@ -11,8 +11,17 @@ import { auditLogoutEvent } from '../lib/auditLogger';
 const { BACKEND_APP_API_BASE_URL, BACKEND_AUTH_API_BASE_URL } = getServerFrameworkConfig();
 const API_KEY = getServerEnvVar('BACKEND_API_KEY');
 
+/** Runtime validation to prevent silent misconfig */
+function assertBaseUrl(baseURL: string | undefined, label: string) {
+  if (!baseURL) {
+    throw new Error(`[axiosClient] ❌ ${label} is undefined. Check your environment variables and framework config.`);
+  }
+}
+
 /** Build a pre-configured Axios instance for server-side use */
-function createClient(baseURL: string): AxiosInstance {
+function createClient(baseURL: string, label: string): AxiosInstance {
+  assertBaseUrl(baseURL, label);
+
   const instance = axios.create({
     baseURL,
     timeout: 10_000,
@@ -23,6 +32,16 @@ function createClient(baseURL: string): AxiosInstance {
     },
   });
 
+  // Debug outgoing request URLs
+  instance.interceptors.request.use((config) => {
+    const fullUrl = config.baseURL
+      ? `${config.baseURL}${config.url ?? ''}`
+      : config.url ?? '';
+    console.log(`[axiosClient] ▶️ ${label} Request: ${fullUrl}`);
+    return config;
+  });
+
+  // Handle auth errors
   instance.interceptors.response.use(
     (res) => res,
     async (err: AxiosError) => {
@@ -36,6 +55,7 @@ function createClient(baseURL: string): AxiosInstance {
     }
   );
 
+  // Retry network/server errors
   axiosRetry(instance, {
     retries: 2,
     retryDelay: axiosRetry.exponentialDelay,
@@ -47,5 +67,6 @@ function createClient(baseURL: string): AxiosInstance {
   return instance;
 }
 
-export const axiosApp = createClient(BACKEND_APP_API_BASE_URL);
-export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL);
+// Create Axios instances with label for clarity
+export const axiosApp = createClient(BACKEND_APP_API_BASE_URL, 'axiosApp');
+export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL, 'axiosAuth');
