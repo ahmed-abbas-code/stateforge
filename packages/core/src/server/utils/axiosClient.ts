@@ -18,8 +18,14 @@ function assertBaseUrl(baseURL: string | undefined, label: string) {
   }
 }
 
-/** Build a pre-configured Axios instance for server-side use */
-function createClient(baseURL: string, label: string): AxiosInstance {
+/**
+ * Build a pre-configured Axios instance for server-side use
+ * 
+ * @param baseURL - The API base URL
+ * @param label - A label for logging/debugging purposes
+ * @param idToken - Optional Firebase ID token for user-authenticated requests
+ */
+function createClient(baseURL: string, label: string, idToken?: string): AxiosInstance {
   assertBaseUrl(baseURL, label);
 
   const instance = axios.create({
@@ -28,11 +34,15 @@ function createClient(baseURL: string, label: string): AxiosInstance {
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...(API_KEY ? { 'Authorization': `Api-Key ${API_KEY}` } : {}),
+      ...(idToken
+        ? { Authorization: `Bearer ${idToken}` }
+        : API_KEY
+        ? { Authorization: `Api-Key ${API_KEY}` }
+        : {}),
     },
   });
 
-  // Debug outgoing request URLs
+  // Log outgoing requests
   instance.interceptors.request.use((config) => {
     const fullUrl = config.baseURL
       ? `${config.baseURL}${config.url ?? ''}`
@@ -41,7 +51,7 @@ function createClient(baseURL: string, label: string): AxiosInstance {
     return config;
   });
 
-  // Handle auth errors
+  // Handle 401/403 errors and trigger logout
   instance.interceptors.response.use(
     (res) => res,
     async (err: AxiosError) => {
@@ -55,7 +65,7 @@ function createClient(baseURL: string, label: string): AxiosInstance {
     }
   );
 
-  // Retry network/server errors
+  // Retry strategy for transient errors
   axiosRetry(instance, {
     retries: 2,
     retryDelay: axiosRetry.exponentialDelay,
@@ -67,6 +77,10 @@ function createClient(baseURL: string, label: string): AxiosInstance {
   return instance;
 }
 
-// Create Axios instances with label for clarity
+// Static instances (API Key-based)
 export const axiosApp = createClient(BACKEND_APP_API_BASE_URL, 'axiosApp');
 export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL, 'axiosAuth');
+
+// Dynamic instance for user-authenticated requests
+export const createAuthenticatedAxiosApp = (idToken: string): AxiosInstance =>
+  createClient(BACKEND_APP_API_BASE_URL, 'axiosApp (user)', idToken);
