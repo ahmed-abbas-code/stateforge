@@ -1,4 +1,5 @@
 // packages/core/src/common/utils/configStore.ts
+
 import { z } from 'zod';
 import { envSchema } from '../types/validation/envSchema';
 
@@ -6,13 +7,24 @@ type BaseEnv = z.infer<typeof envSchema>;
 export type FrameworkConfig = BaseEnv & { isDryRun: boolean };
 
 let cached: FrameworkConfig | null = null;
+let initialized = false;
 
 /**
- * Call this early in your app lifecycle (e.g., _app.tsx or server entrypoint).
+ * Lazily parses and returns the framework config.
+ * Automatically caches after first call.
  */
-export function setupStateForgeConfig(): FrameworkConfig {
-  const raw = process.env;
-  const parsed = envSchema.safeParse(raw);
+export function getFrameworkConfig(): FrameworkConfig {
+  if (cached) return cached;
+
+  if (process.env.NODE_ENV === 'development') {
+    if (initialized) {
+      console.warn('[StateForge] Config already initialized. Skipping re-init.');
+      return cached!;
+    }
+    initialized = true;
+  }
+
+  const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
     console.error('❌ ENV PARSE FAILED:', parsed.error.format());
@@ -30,16 +42,8 @@ export function setupStateForgeConfig(): FrameworkConfig {
 }
 
 /**
- * Returns the initialized config. Must call setupStateForgeConfig() before use.
- */
-export function getFrameworkConfig(): FrameworkConfig {
-  if (!cached) throw new Error('Call setupStateForgeConfig() first');
-  return cached;
-}
-
-/**
- * Optional helper: lazy-loaded proxy to config.
- * Useful if you're certain setup was already called during bootstrapping.
+ * Proxy-based accessor for config fields after setup.
+ * Safe for use after boot (e.g. in React, API routes).
  */
 export const config: FrameworkConfig = new Proxy(
   {},
