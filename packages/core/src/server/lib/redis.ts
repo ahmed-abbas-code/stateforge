@@ -10,9 +10,8 @@ function createDummyRedisClient(): RedisClientType {
     get: async () => null,
     set: async () => {},
     on: () => {},
-    isOpen: true,
+    isOpen: false,
   };
-
   return mock as unknown as RedisClientType;
 }
 
@@ -23,17 +22,23 @@ let redis: RedisClientType;
 if (isDryRun) {
   console.log('[DryRunMode] Skipping Redis client initialization');
   redis = createDummyRedisClient();
+} else if (!REDIS_URL) {
+  console.warn('[Redis] REDIS_URL not set — using dummy Redis client.');
+  redis = createDummyRedisClient();
 } else {
-  redis = createClient({ url: REDIS_URL });
+  try {
+    redis = createClient({ url: REDIS_URL });
 
-  redis.on('error', (err: unknown) => {
-    console.error('[Redis] Connection error:', err);
-  });
+    redis.on('error', (err: unknown) => {
+      console.error('[Redis] Connection error:', err);
+    });
 
-  if (!redis.isOpen) {
     redis.connect().catch((err: unknown) => {
       console.error('[Redis] Failed to connect:', err);
     });
+  } catch (e) {
+    console.error('[Redis] Unexpected failure during client setup. Using dummy client.', e);
+    redis = createDummyRedisClient();
   }
 }
 

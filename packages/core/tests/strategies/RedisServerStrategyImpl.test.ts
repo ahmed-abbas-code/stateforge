@@ -1,14 +1,15 @@
 /// <reference types="vitest" />
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-import type { Mock } from 'vitest'; 
+import type { Mock } from 'vitest';
 import { RedisServerStrategyImpl } from '@/strategies/implementations/RedisServerStrategyImpl';
 import { redis } from '@/lib/redis';
 
+// Mock Redis client methods
 vi.mock('@/lib/redis', () => ({
   redis: {
     get: vi.fn(),
     set: vi.fn(),
-    setEx: vi.fn()
+    setEx: vi.fn(),
   }
 }));
 
@@ -36,24 +37,25 @@ describe('RedisServerStrategyImpl', () => {
   });
 
   it('retrieves and parses stored value', async () => {
-    (redis.get as Mock).mockResolvedValueOnce(JSON.stringify(testValue)); // ✅ Use Mock
+    (redis.get as Mock).mockResolvedValueOnce(JSON.stringify(testValue));
     const result = await strategy.get(testKey);
     expect(result).toEqual(testValue);
   });
 
   it('returns undefined if key is not found', async () => {
-    (redis.get as Mock).mockResolvedValueOnce(null); // ✅ Use Mock
+    (redis.get as Mock).mockResolvedValueOnce(null);
     const result = await strategy.get(testKey);
     expect(result).toBeUndefined();
   });
 
   it('returns undefined on JSON parse error', async () => {
-    (redis.get as Mock).mockResolvedValueOnce('{bad json'); // ✅ Use Mock
+    (redis.get as Mock).mockResolvedValueOnce('{bad json');
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await strategy.get(testKey);
     expect(result).toBeUndefined();
     expect(consoleSpy).toHaveBeenCalledOnce();
+
     consoleSpy.mockRestore();
   });
 });
