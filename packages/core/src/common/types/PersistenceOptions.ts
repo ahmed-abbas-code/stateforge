@@ -3,7 +3,6 @@ export const STRATEGY_TYPES = {
   LOCAL_STORAGE: 'localStorage',
   REST_API: 'restApi',
   FIRESTORE: 'firestore',
-  REDIS: 'redis',
   ENCRYPTED_STORAGE: 'encryptedStorage',
   REDIS_SERVER: 'redis-server',
   FIRESTORE_SERVER: 'firestore-server',

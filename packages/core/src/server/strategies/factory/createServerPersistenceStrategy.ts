@@ -1,9 +1,6 @@
 // packages/core/src/strategies/factory/createServerPersistenceStrategy.ts
 
-
-import { RestApiStrategyImpl } from '../implementations/RestApiStrategyImpl';
-import { FirestoreStrategyImpl } from '../implementations/FirestoreStrategyImpl';
-import { RedisServerStrategyImpl } from '../implementations/RedisServerStrategyImpl';
+import { FirestoreStrategyImpl, RedisServerStrategyImpl, RestApiStrategyImpl } from '@core/server/index';
 import { isStrategyIdentifier, PersistenceStrategy, PersistenceStrategyBase, STRATEGY_TYPES } from '@core/common/types/PersistenceOptions';
 
 type StrategyConfig<T> = {
@@ -26,7 +23,6 @@ export function createServerPersistenceStrategy<T>(
       return new RestApiStrategyImpl<T>(namespace);
     case STRATEGY_TYPES.FIRESTORE:
       return new FirestoreStrategyImpl<T>(namespace);
-    case STRATEGY_TYPES.REDIS:
     case STRATEGY_TYPES.REDIS_SERVER:
       return new RedisServerStrategyImpl<T>(namespace);
     default:

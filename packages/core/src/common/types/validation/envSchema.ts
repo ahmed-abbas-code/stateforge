@@ -42,7 +42,7 @@ export const envPrivateSchema = z.object({
   AUTH0_ISSUER_BASE_URL: z.string().url().optional(),
 
   // Redis
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z.string().url().optional().or(z.literal('')).optional(),
 
   // Internal REST APIs (required on server)
   BACKEND_APP_API_BASE_URL: z.string().url(),
