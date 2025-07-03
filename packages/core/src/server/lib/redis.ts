@@ -1,45 +1,37 @@
 // packages/core/src/server/lib/redis.ts
 
-import { createClient, type RedisClientType } from 'redis';
+import type { RedisClientType } from 'redis';
 import { getServerFrameworkConfig } from '@core/common/utils/getServerFrameworkConfig';
 
-function createDummyRedisClient(): RedisClientType {
-  const mock = {
-    connect: async () => {},
-    disconnect: async () => {},
-    get: async () => null,
-    set: async () => {},
-    on: () => {},
-    isOpen: false,
-  };
-  return mock as unknown as RedisClientType;
-}
+export let redis: RedisClientType | undefined;
 
-const { isDryRun, REDIS_URL } = getServerFrameworkConfig();
+export async function getRedisClient(): Promise<RedisClientType | undefined> {
+  const { isDryRun, REDIS_URL } = getServerFrameworkConfig();
 
-let redis: RedisClientType;
+  if (isDryRun) {
+    console.log('[StateForge] Dry run mode — skipping Redis initialization');
+    return undefined;
+  }
 
-if (isDryRun) {
-  console.log('[DryRunMode] Skipping Redis client initialization');
-  redis = createDummyRedisClient();
-} else if (!REDIS_URL) {
-  console.warn('[Redis] REDIS_URL not set — using dummy Redis client.');
-  redis = createDummyRedisClient();
-} else {
+  if (!REDIS_URL) {
+    console.log('[StateForge] REDIS_URL not set — Redis will not be used');
+    return undefined;
+  }
+
+  if (redis) return redis;
+
   try {
+    const { createClient } = await import('redis');
     redis = createClient({ url: REDIS_URL });
 
     redis.on('error', (err: unknown) => {
-      console.error('[Redis] Connection error:', err);
+      console.error('[StateForge][Redis] Connection error:', err);
     });
 
-    redis.connect().catch((err: unknown) => {
-      console.error('[Redis] Failed to connect:', err);
-    });
-  } catch (e) {
-    console.error('[Redis] Unexpected failure during client setup. Using dummy client.', e);
-    redis = createDummyRedisClient();
+    await redis.connect();
+    return redis;
+  } catch (error) {
+    console.error('[StateForge][Redis] Failed to initialize Redis:', error);
+    return undefined;
   }
 }
-
-export { redis };

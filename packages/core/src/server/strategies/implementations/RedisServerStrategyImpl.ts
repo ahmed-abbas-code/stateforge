@@ -1,5 +1,6 @@
+// packages/core/src/server/strategies/implementations/RedisServerStrategyImpl.ts
 import { PersistenceStrategyBase } from '@core/common/types/PersistenceOptions';
-import { redis } from '../../lib/redis';
+import { getRedisClient } from '../../lib/redis';
 
 export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;
@@ -15,14 +16,18 @@ export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
   }
 
   async get(key: string): Promise<T | undefined> {
+    const redis = await getRedisClient();
+    if (!redis) {
+      console.warn('[RedisServerStrategy] Redis unavailable — skipping get.');
+      return undefined;
+    }
+
     const namespacedKey = this.withNamespace(key);
 
     try {
       const raw = await redis.get(namespacedKey);
       if (!raw) return undefined;
-
-      const parsed = JSON.parse(raw);
-      return parsed as T;
+      return JSON.parse(raw) as T;
     } catch (err) {
       console.error(`[RedisServerStrategy] Failed to get key "${key}" (namespaced: "${namespacedKey}")`, err);
       return undefined;
@@ -30,6 +35,12 @@ export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
   }
 
   async set(key: string, value: T): Promise<void> {
+    const redis = await getRedisClient();
+    if (!redis) {
+      console.warn('[RedisServerStrategy] Redis unavailable — skipping set.');
+      return;
+    }
+
     const namespacedKey = this.withNamespace(key);
 
     try {
