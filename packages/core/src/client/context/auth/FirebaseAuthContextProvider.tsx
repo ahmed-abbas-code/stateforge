@@ -15,7 +15,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { AuthContext } from './AuthContext';
 import { AuthContextType, AuthUser } from '@core/common/types/Auth';
 import { mapFirebaseToAuthUser } from '@core/common/index';
-import { getRequiredEnv } from '@core/common/utils/getRequiredEnv';
+import { getClientEnvVar } from '@core/common/utils/getClientEnvVar';
 
 let firebaseApp: FirebaseApp | null = null;
 
@@ -25,12 +25,12 @@ function getOrInitFirebaseApp(): FirebaseApp {
       firebaseApp = getApps()[0];
     } else {
       firebaseApp = initializeApp({
-        apiKey: getRequiredEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
-        authDomain: getRequiredEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-        projectId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
-        storageBucket: getRequiredEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-        messagingSenderId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-        appId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
+        apiKey: getClientEnvVar('NEXT_PUBLIC_FIREBASE_API_KEY'),
+        authDomain: getClientEnvVar('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+        projectId: getClientEnvVar('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+        storageBucket: getClientEnvVar('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+        messagingSenderId: getClientEnvVar('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+        appId: getClientEnvVar('NEXT_PUBLIC_FIREBASE_APP_ID'),
       });
     }
   }

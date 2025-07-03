@@ -1,11 +1,15 @@
 // packages/core/src/server/utils/axiosClient.ts
+
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
-import { config } from '@core/common/utils/configStore';
+
+import { getServerFrameworkConfig } from '@core/common/utils/getServerFrameworkConfig';
+import { getServerEnvVar } from '@core/common/utils/getServerEnvVar';
 import { auth } from '../lib/firebase';
 import { auditLogoutEvent } from '../lib/auditLogger';
 
-const API_KEY = process.env.BACKEND_API_KEY;
+const { BACKEND_APP_API_BASE_URL, BACKEND_AUTH_API_BASE_URL } = getServerFrameworkConfig();
+const API_KEY = getServerEnvVar('BACKEND_API_KEY');
 
 /** Build a pre-configured Axios instance for server-side use */
 function createClient(baseURL: string): AxiosInstance {
@@ -42,5 +46,5 @@ function createClient(baseURL: string): AxiosInstance {
   return instance;
 }
 
-export const axiosApp = createClient(config.BACKEND_APP_API_BASE_URL);
-export const axiosAuth = createClient(config.BACKEND_AUTH_API_BASE_URL);
+export const axiosApp = createClient(BACKEND_APP_API_BASE_URL);
+export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL);

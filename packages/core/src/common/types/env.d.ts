@@ -1,7 +1,7 @@
 // packages/core/src/common/types/env.d.ts
 
-// Public keys available to client-side code
-export type PublicEnvKey =
+// Public environment variables (exposed to client/browser)
+export type PublicEnvVar =
   | 'NEXT_PUBLIC_BACKEND_APP_REST_API_BASE_URL'
   | 'NEXT_PUBLIC_BACKEND_AUTH_REST_API_BASE_URL'
   | 'NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET'
@@ -12,19 +12,22 @@ export type PublicEnvKey =
   | 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
   | 'NEXT_PUBLIC_FIREBASE_APP_ID';
 
-// Optional: Private keys for server-side only access
-export type PrivateEnvKey =
+// Private environment variables (server-only, sensitive)
+export type PrivateEnvVar =
   | 'FIREBASE_PRIVATE_KEY'
   | 'FIREBASE_CLIENT_EMAIL'
-  | 'FIREBASE_PROJECT_ID';
+  | 'FIREBASE_PROJECT_ID'
+  | 'BACKEND_APP_API_BASE_URL'
+  | 'BACKEND_AUTH_API_BASE_URL'
+  | 'BACKEND_API_KEY';
 
-// Combined type if needed for helpers
-export type EnvKey = PublicEnvKey | PrivateEnvKey;
+// Union type for general usage
+export type EnvVar = PublicEnvVar | PrivateEnvVar;
 
-// Augment the global `window` object to support __SF_ENV on the client
+// Augment the global `window` object for SSR-safe hydration
 declare global {
   interface Window {
-    __SF_ENV?: Record<PublicEnvKey, string>;
+    __SF_ENV?: Record<PublicEnvVar, string>;
   }
 }
 

@@ -1,7 +1,7 @@
 // packages/core/src/server/lib/redis.ts
 
 import { createClient, type RedisClientType } from 'redis';
-import { config } from '@core/common/utils/configStore';
+import { getServerFrameworkConfig } from '@core/common/utils/getServerFrameworkConfig';
 
 function createDummyRedisClient(): RedisClientType {
   const mock = {
@@ -16,13 +16,15 @@ function createDummyRedisClient(): RedisClientType {
   return mock as unknown as RedisClientType;
 }
 
+const { isDryRun, REDIS_URL } = getServerFrameworkConfig();
+
 let redis: RedisClientType;
 
-if (config.isDryRun) {
+if (isDryRun) {
   console.log('[DryRunMode] Skipping Redis client initialization');
   redis = createDummyRedisClient();
 } else {
-  redis = createClient({ url: config.REDIS_URL });
+  redis = createClient({ url: REDIS_URL });
 
   redis.on('error', (err: unknown) => {
     console.error('[Redis] Connection error:', err);

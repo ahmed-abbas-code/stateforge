@@ -1,11 +1,17 @@
+// packages/core/src/server/lib/firebase-admin.ts
+
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import * as admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
 import type { Auth } from 'firebase-admin/auth';
 import type * as adminType from 'firebase-admin';
-import { config } from '@core/common/utils/configStore';
-const isDryRun = config.isDryRun;
+
+import { getServerFrameworkConfig } from '@core/common/utils/getServerFrameworkConfig';
+import { getServerEnvVar } from '@core/common/utils/getServerEnvVar';
+import { getClientEnvVar } from '@core/common/utils';
+
+const { isDryRun } = getServerFrameworkConfig();
 
 let adminAuth: Auth;
 let firebaseAdmin: typeof adminType;
@@ -19,25 +25,19 @@ if (isDryRun) {
 
   firebaseAdmin = {} as typeof adminType;
 } else {
-  if (
-    !process.env.FIREBASE_CLIENT_EMAIL ||
-    !process.env.FIREBASE_PRIVATE_KEY ||
-    !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  ) {
-    throw new Error(
-      'Missing Firebase Admin environment variables. Check FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, or NEXT_PUBLIC_FIREBASE_PROJECT_ID.'
-    );
-  }
+  const clientEmail = getServerEnvVar('FIREBASE_CLIENT_EMAIL');
+  const privateKey = getServerEnvVar('FIREBASE_PRIVATE_KEY');
+  const projectId = getClientEnvVar('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
 
   const adminApp: App =
     getApps().length === 0
       ? initializeApp({
-          credential: cert({
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          }),
-        })
+        credential: cert({
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'),
+          projectId,
+        }),
+      })
       : getApps()[0];
 
   adminAuth = getAuth(adminApp);

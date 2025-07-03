@@ -1,7 +1,9 @@
 // packages/core/src/server/middleware/autoLogout.ts
+
 import { adminAuth } from '../lib/firebase-admin';
-import { config } from '@core/common/utils/configStore';
-const isDryRun = config.isDryRun;
+import { getServerFrameworkConfig } from '@core/common/utils/getServerFrameworkConfig';
+
+const { isDryRun } = getServerFrameworkConfig();
 
 /**
  * Validates the Firebase ID token.
@@ -10,7 +12,7 @@ const isDryRun = config.isDryRun;
 export async function autoLogoutOnExpire(token: string) {
   try {
     if (isDryRun) {
-      console.log('[DummyMode] Skipping token verification');
+      console.log('[DryRunMode] Skipping token verification');
       return {
         uid: 'dummy-uid',
         email: 'dummy@local.dev',
@@ -25,5 +27,4 @@ export async function autoLogoutOnExpire(token: string) {
     console.error('[autoLogoutOnExpire] Token verification failed:', err);
     throw new Error('Token expired or revoked');
   }
-
 }

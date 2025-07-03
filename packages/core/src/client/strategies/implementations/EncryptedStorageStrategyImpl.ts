@@ -1,8 +1,8 @@
 import { PersistenceStrategyBase } from '@core/common/index';
-import { getRequiredEnv } from '@core/common/utils';
+import { getClientEnvVar } from '@core/common/utils/getClientEnvVar';
 import CryptoJS from 'crypto-js';
 
-const SECRET = getRequiredEnv('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
+const SECRET = getClientEnvVar('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
 
 export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;
