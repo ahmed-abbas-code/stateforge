@@ -7,14 +7,16 @@ let cached: PublicEnvVars | null = null;
 export function getClientFrameworkConfig(): PublicEnvVars {
   if (cached) return cached;
 
-  const env =
-    typeof window !== 'undefined' && window.__SF_ENV
-      ? window.__SF_ENV
-      : {};
+  const isBrowser = typeof window !== 'undefined';
+  const rawEnv = isBrowser && window.__SF_ENV
+    ? window.__SF_ENV
+    : Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => key.startsWith('NEXT_PUBLIC_'))
+      );
 
-  const parsed = envPublicSchema.safeParse(env);
+  const parsed = envPublicSchema.safeParse(rawEnv);
   if (!parsed.success) {
-    console.error('❌ ENV PARSE FAILED (client):', parsed.error.format());
+    console.error('❌ ENV PARSE FAILED:', parsed.error.format());
     throw new Error('Invalid client-side environment config');
   }
 
