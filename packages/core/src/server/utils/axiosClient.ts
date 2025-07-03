@@ -11,8 +11,16 @@ import { auditLogoutEvent } from '../lib/auditLogger';
 const { BACKEND_APP_API_BASE_URL, BACKEND_AUTH_API_BASE_URL } = getServerFrameworkConfig();
 const API_KEY = getServerEnvVar('BACKEND_API_KEY');
 
+if (!API_KEY) {
+  console.warn('[StateForge] Warning: BACKEND_API_KEY is not set — requests may fail with 403');
+}
+
 /** Build a pre-configured Axios instance for server-side use */
 function createClient(baseURL: string): AxiosInstance {
+  if (!baseURL) {
+    throw new Error('[StateForge] Axios client creation failed — baseURL is missing');
+  }
+
   const instance = axios.create({
     baseURL,
     timeout: 10_000,
@@ -26,11 +34,14 @@ function createClient(baseURL: string): AxiosInstance {
     (res) => res,
     async (err: AxiosError) => {
       const status = err.response?.status;
+      console.error(`[StateForge][AxiosClient] Response error ${status}:`, err.message);
+
       if (status === 401 || status === 403) {
         const user = auth?.currentUser;
         if (user) auditLogoutEvent(user.uid);
         await auth.signOut().catch(console.error);
       }
+
       return Promise.reject(err);
     }
   );
