@@ -1,6 +1,6 @@
 {
   "name": "@stateforge-framework/core",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "private": false,
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
