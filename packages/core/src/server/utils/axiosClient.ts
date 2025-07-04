@@ -51,17 +51,17 @@ function createClient(
       ? `${config.baseURL}${config.url ?? ''}`
       : config.url ?? '';
     console.log(`[axiosClient] ▶️ ${label} Request: ${fullUrl}`);
-    console.debug(`[axiosClient] Authorization header: ${config.headers['Authorization'] || 'none'}`);
 
     config.headers['Content-Type'] = 'application/json';
     config.headers['Accept'] = 'application/json';
 
     if (idToken) {
-      config.headers['Authorization'] = `Bearer ${idToken}`;
+      config.headers.Authorization = `Bearer ${idToken}`;
     } else if (API_KEY) {
-      config.headers['Authorization'] = `Api-Key ${API_KEY}`;
+      config.headers.Authorization = `Api-Key ${API_KEY}`;
     }
 
+    console.debug(`[axiosClient] Authorization header: ${config.headers.Authorization || 'none'}`);
     return config;
   });
 
