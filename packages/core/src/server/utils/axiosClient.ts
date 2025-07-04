@@ -51,6 +51,7 @@ function createClient(
       ? `${config.baseURL}${config.url ?? ''}`
       : config.url ?? '';
     console.log(`[axiosClient] ▶️ ${label} Request: ${fullUrl}`);
+    console.debug(`[axiosClient] Authorization header: ${config.headers['Authorization'] || 'none'}`);
 
     config.headers['Content-Type'] = 'application/json';
     config.headers['Accept'] = 'application/json';
