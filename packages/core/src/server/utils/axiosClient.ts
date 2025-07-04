@@ -32,12 +32,12 @@ function assertBaseUrl(baseURL: string | undefined, label: string) {
  *
  * @param baseURL - The API base URL
  * @param label - A label for logging/debugging purposes
- * @param idToken - Optional Firebase ID token for user-authenticated requests
+ * @param token - Optional JWT or Firebase ID token for authenticated requests
  */
 function createClient(
   baseURL: string,
   label: string,
-  idToken?: string
+  token?: string
 ): AxiosInstance {
   assertBaseUrl(baseURL, label);
 
@@ -55,8 +55,9 @@ function createClient(
     config.headers['Content-Type'] = 'application/json';
     config.headers['Accept'] = 'application/json';
 
-    if (idToken) {
-      config.headers.Authorization = `Bearer ${idToken}`;
+    if (token) {
+      // Use Bearer token for JWT or ID token
+      config.headers.Authorization = `Bearer ${token}`;
     } else if (API_KEY) {
       config.headers.Authorization = `Api-Key ${API_KEY}`;
     }
@@ -95,6 +96,6 @@ function createClient(
 export const axiosApp = createClient(BACKEND_APP_API_BASE_URL, 'axiosApp');
 export const axiosAuth = createClient(BACKEND_AUTH_API_BASE_URL, 'axiosAuth');
 
-// Dynamic instance for user-authenticated requests
-export const createAuthenticatedAxiosApp = (idToken: string): AxiosInstance =>
-  createClient(BACKEND_APP_API_BASE_URL, 'axiosApp (user)', idToken);
+// Dynamic instance for authenticated requests
+export const createAuthenticatedAxiosApp = (token: string): AxiosInstance =>
+  createClient(BACKEND_APP_API_BASE_URL, 'axiosApp (user)', token);
