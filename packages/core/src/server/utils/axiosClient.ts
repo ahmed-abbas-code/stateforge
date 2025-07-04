@@ -7,6 +7,7 @@ import { auditLogoutEvent } from '../lib/auditLogger';
 import type { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
 import { BaseAxiosClient } from '@core/common/utils/baseAxiosClient';
+import type { AuthStrategy } from '@core/common/utils/baseAxiosClient';
 
 const {
   BACKEND_APP_API_BASE_URL,
@@ -70,15 +71,60 @@ export class ServerAxiosClient extends BaseAxiosClient {
 
 const instance = new ServerAxiosClient();
 
-export const axiosApp = instance.createClientWithInterceptors(BACKEND_APP_API_BASE_URL, 'axiosApp');
-export const axiosAuth = instance.createClientWithInterceptors(BACKEND_AUTH_API_BASE_URL, 'axiosAuth');
+// Default Axios clients (unauthenticated or preconfigured)
+export const axiosApp = instance.createClientWithInterceptors(
+  BACKEND_APP_API_BASE_URL,
+  'axiosApp'
+);
+export const axiosAuth = instance.createClientWithInterceptors(
+  BACKEND_AUTH_API_BASE_URL,
+  'axiosAuth'
+);
 
+// Explicit JWT-based authenticated client
 export const createAuthenticatedAxiosApp = (token: string): AxiosInstance => {
-  const client = instance.createClientWithInterceptors(BACKEND_APP_API_BASE_URL, 'axiosApp (user)');
+  const client = instance.createClientWithInterceptors(
+    BACKEND_APP_API_BASE_URL,
+    'axiosApp (user)'
+  );
+
   client.interceptors.request.use((config) => {
     config.headers = config.headers || {};
     config.headers['Authorization'] = `Bearer ${token}`;
     return config;
   });
+
+  return client;
+};
+
+// New: Flexible strategy-based server-side Axios client
+type ServerAuthOptions =
+  | { type: 'jwt'; token: string }
+  | { type: 'apiKey' };
+
+export const createServerAxiosApp = (auth: ServerAuthOptions): AxiosInstance => {
+  const label =
+    auth.type === 'jwt' ? 'axiosApp (jwt)' : 'axiosApp (apiKey)';
+
+  const client = instance.createClientWithInterceptors(
+    BACKEND_APP_API_BASE_URL,
+    label
+  );
+
+  client.interceptors.request.use((config) => {
+    config.authConfig = {
+      strategy: auth.type as AuthStrategy,
+      overrideToken: auth.type === 'jwt' ? auth.token : undefined,
+    };
+
+    // Optional: redundant but explicit header setting
+    if (auth.type === 'jwt') {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${auth.token}`;
+    }
+
+    return config;
+  });
+
   return client;
 };
