@@ -1,4 +1,5 @@
 // scripts/release-core-flow.mjs
+
 import { execSync } from 'child_process';
 import { log, success, error } from '../lib/log-utils.js';
 
@@ -11,12 +12,6 @@ if (!['patch', 'minor', 'major'].includes(type)) {
 try {
   log(`🚀 Starting core release flow: ${type}`);
   execSync(`node scripts/release-core.mjs ${type}`, { stdio: 'inherit' });
-
-  log('🔁 Updating starter to use published core package...');
-  execSync('node scripts/use-published-core.mjs', { stdio: 'inherit' });
-
-  log('📦 Installing updated dependencies...');
-  execSync('pnpm install', { stdio: 'inherit' });
 
   success('Core release flow completed.');
 } catch (e) {

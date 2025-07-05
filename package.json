@@ -5,27 +5,19 @@
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "workspaces": [
-    "packages/core",
-    "packages/starter",
-    "packages/cli"
+    "packages/core"
   ],
   "publishConfig": {
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "build": "pnpm run -r --filter=!./packages/starter build",
-    "build:all": "pnpm -r run build",
-    "build:starter": "pnpm --filter ./packages/starter build",
-    "build:dryrun": "pnpm --filter ./packages/core run build && pnpm --filter ./packages/cli run build && pnpm --filter ./packages/starter run build:dryrun",
-    "dev": "pnpm --filter ./packages/starter dev",
-    "dev:dryrun": "DOTENV_CONFIG_PATH=.env.dryrun pnpm --filter ./packages/starter dev",
-    "lint": "pnpm -r run lint",
+    "build": "pnpm --filter ./packages/core run build",
+    "build:all": "pnpm run build",
     "tsc:core": "pnpm --filter ./packages/core exec tsc --project tsconfig.json",
-    "test": "pnpm -r run test",
-    "show:core": "find packages/core -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
-    "show:starter": "find packages/starter -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.next/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
-    "show:cli": "find packages/cli -type f \\( -name '.env*' -o ! -name '.*' \\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
+    "lint": "pnpm --filter ./packages/core run lint",
+    "test": "pnpm --filter ./packages/core run test",
+    "show:core": "find packages/core -type f \\(-name '.env*' -o ! -name '.*'\\) ! -path '*/node_modules/*' ! -path '*/dist/*' ! -path '*/.git/*' | sort | scripts/show-tree.py",
     "release:core:patch": "node scripts/release-core.mjs patch",
     "release:core:minor": "node scripts/release-core.mjs minor",
     "release:core:major": "node scripts/release-core.mjs major",

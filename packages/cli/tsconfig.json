@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "types": ["node"]
-  },
-  "include": ["src", "tsup.config.ts"],
-  "exclude": ["node_modules", "dist"]
-}
