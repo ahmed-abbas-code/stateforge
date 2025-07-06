@@ -32,9 +32,6 @@
       ],
       "@state/state/*": [
         "src/state/*"
-      ],
-      "@auth0/nextjs-auth0": [
-        "node_modules/@auth0/nextjs-auth0/dist/index.js"
       ]
     }
   },

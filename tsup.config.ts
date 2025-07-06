@@ -12,5 +12,5 @@ export default defineConfig({
   clean: true,
   splitting: false,
   minify: false,
-  external: ['next', '@auth0/nextjs-auth0']
+  external: ['next']
 });
