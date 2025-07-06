@@ -13,11 +13,11 @@ import type { JwtPayload } from 'jsonwebtoken';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
-const rawSecret = process.env.JWT_SECRET;
+const rawSecret = process.env.ENCRYPTION_SECRET_KEY;
 if (!rawSecret || typeof rawSecret !== 'string') {
-  throw new Error('JWT_SECRET environment variable is required and must be a string');
+  throw new Error('ENCRYPTION_SECRET_KEY environment variable is required and must be a string');
 }
-const JWT_SECRET: string = rawSecret;
+const ENCRYPTION_SECRET_KEY: string = rawSecret;
 
 const { verify } = jwt;
 
@@ -54,7 +54,7 @@ export async function verifyToken(req: NextApiRequest): Promise<AuthUser> {
   if (!token) throw new Error('No session cookie found');
 
   try {
-    const decoded = verify(token, JWT_SECRET);
+    const decoded = verify(token, ENCRYPTION_SECRET_KEY);
 
     if (!isJwtPayload(decoded)) {
       throw new Error('Invalid JWT payload structure');
@@ -81,7 +81,7 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
       return;
     }
 
-    const decoded = verify(token, JWT_SECRET);
+    const decoded = verify(token, ENCRYPTION_SECRET_KEY);
 
     if (!isJwtPayload(decoded)) {
       throw new Error('Invalid JWT payload structure');
