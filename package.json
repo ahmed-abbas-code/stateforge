@@ -1,5 +1,5 @@
 {
-  "name": "@stateforge/framework",
+  "name": "@stateforge-framework/framework",
   "version": "1.0.3",
   "private": false,
   "type": "module",
