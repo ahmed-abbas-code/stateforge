@@ -92,6 +92,7 @@
     "typescript": "^5.4.5"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
   }
 }
