@@ -1,9 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
 import type { ComponentType, JSX } from 'react';
 import { useAuth } from '@authentication/auth/client/useAuth';
+
+interface Router {
+  replace: (path: string) => void;
+}
+
+interface WithRouterProps {
+  router: Router;
+}
 
 /**
  * Higher-order component to protect pages behind authentication.
@@ -11,9 +18,9 @@ import { useAuth } from '@authentication/auth/client/useAuth';
 export function withAuthProtection<P extends JSX.IntrinsicAttributes>(
   WrappedComponent: ComponentType<P>
 ) {
-  const ProtectedComponent = (props: P) => {
+  const ProtectedComponent = (props: P & WithRouterProps) => {
     const { isAuthenticated, isLoading } = useAuth();
-    const router = useRouter();
+    const { router, ...rest } = props;
 
     useEffect(() => {
       if (!isLoading && !isAuthenticated) {
@@ -25,7 +32,7 @@ export function withAuthProtection<P extends JSX.IntrinsicAttributes>(
       return null;
     }
 
-    return <WrappedComponent {...props} />;
+    return <WrappedComponent {...(rest as unknown as P)} />;
   };
 
   ProtectedComponent.displayName = `WithAuthProtection(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;

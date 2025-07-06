@@ -7,17 +7,30 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
-import { useRouter } from 'next/router';
 import type {
   NavigationState,
   NavigationStateContextType,
 } from '@state/state/shared';
 
+interface Router {
+  events: {
+    on(event: 'routeChangeStart', handler: () => void): void;
+    off(event: 'routeChangeStart', handler: () => void): void;
+  };
+}
+
 const NavigationStateContext = createContext<NavigationStateContextType | undefined>(undefined);
 
-export const NavigationStateProvider = ({ children }: { children: ReactNode }) => {
+interface NavigationStateProviderProps {
+  children: ReactNode;
+  router: Router;
+}
+
+export const NavigationStateProvider = ({
+  children,
+  router,
+}: NavigationStateProviderProps) => {
   const [navState, setNavState] = useState<NavigationState>({});
-  const router = useRouter();
 
   useEffect(() => {
     const resetNavState = () => setNavState({});
@@ -26,7 +39,7 @@ export const NavigationStateProvider = ({ children }: { children: ReactNode }) =
     return () => {
       router.events.off('routeChangeStart', resetNavState);
     };
-  }, [router.events]);
+  }, [router]);
 
   return (
     <NavigationStateContext.Provider value={{ navState, setNavState }}>

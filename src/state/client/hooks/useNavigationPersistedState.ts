@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+
+interface Router {
+  events: {
+    on(event: 'routeChangeStart', handler: () => void): void;
+    off(event: 'routeChangeStart', handler: () => void): void;
+  };
+}
 
 interface NavigationPersistOptions<T> {
   key: string;
@@ -9,6 +15,7 @@ interface NavigationPersistOptions<T> {
   initialState?: T;
   useSessionStorage?: boolean;
   clearOnLeave?: boolean;
+  router?: Router;
 }
 
 export function useNavigationPersistedState<T>({
@@ -17,8 +24,8 @@ export function useNavigationPersistedState<T>({
   initialState,
   useSessionStorage = true,
   clearOnLeave = false,
+  router,
 }: NavigationPersistOptions<T>): readonly [T, (val: T) => void] {
-  const router = useRouter();
   const storageKey = `stateforge:nav:${key}`;
   const storage =
     typeof window !== 'undefined' && useSessionStorage
@@ -52,7 +59,7 @@ export function useNavigationPersistedState<T>({
 
   // Cleanup on route change if enabled
   useEffect(() => {
-    if (typeof window === 'undefined' || !storage || !clearOnLeave) return;
+    if (typeof window === 'undefined' || !storage || !clearOnLeave || !router) return;
 
     const cleanup = () => {
       try {
@@ -66,7 +73,7 @@ export function useNavigationPersistedState<T>({
     return () => {
       router.events.off('routeChangeStart', cleanup);
     };
-  }, [clearOnLeave, router.events, storageKey, storage]);
+  }, [clearOnLeave, router, storageKey, storage]);
 
   return [value, setValue] as const;
 }
