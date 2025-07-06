@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2021",
+      "ESNext"
+    ],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "declaration": true,
+    "types": [
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@authentication/auth/*": [
+        "src/authentication/*"
+      ],
+      "@shared/shared/*": [
+        "src/shared/*"
+      ],
+      "@state/state/*": [
+        "src/state/*"
+      ],
+      "@auth0/nextjs-auth0": [
+        "node_modules/@auth0/nextjs-auth0/dist/index.js"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "pages/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

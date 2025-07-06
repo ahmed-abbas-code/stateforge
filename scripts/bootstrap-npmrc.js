@@ -3,12 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { log, error, success } from '../lib/log-utils.js';
 
-// Recreate __dirname in ESM
+// ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env if needed
+// Load .env if GITHUB_TOKEN is not already set
 if (!process.env.GITHUB_TOKEN) {
   const envPath = path.resolve(__dirname, '../.env');
   if (fs.existsSync(envPath)) {
@@ -16,36 +17,37 @@ if (!process.env.GITHUB_TOKEN) {
     if (result.error) throw result.error;
 
     if (process.env.GITHUB_TOKEN) {
-      console.log('🔐 Loaded GITHUB_TOKEN from .env');
+      success('Loaded GITHUB_TOKEN from .env');
     } else {
-      console.warn('⚠️ .env file found but GITHUB_TOKEN is missing.');
+      log('.env file found but GITHUB_TOKEN is missing');
     }
   } else {
-    console.warn('⚠️ No GITHUB_TOKEN set and no .env file found.');
+    log('No .env file found and GITHUB_TOKEN not set');
   }
 }
 
 // Abort if token still missing
 if (!process.env.GITHUB_TOKEN) {
-  console.error('❌ GITHUB_TOKEN is required to proceed.');
+  error('GITHUB_TOKEN is required to proceed');
   process.exit(1);
 }
 
+// Registry and scope config
+const registry = process.env.NPM_REGISTRY || 'npm.pkg.github.com';
 const npmrcPath = path.resolve(__dirname, '../.npmrc');
-let content = '';
+const authLine = `//${registry}/:_authToken=${process.env.GITHUB_TOKEN}`;
 
+// Read and update .npmrc content
+let content = '';
 if (fs.existsSync(npmrcPath)) {
   content = fs.readFileSync(npmrcPath, 'utf-8');
+  content = content.replace(/\/\/.*npm\.pkg\.github\.com\/:_authToken=.*\n?/g, '');
 }
 
-const authLine = `//npm.pkg.github.com/:_authToken=${process.env.GITHUB_TOKEN}`;
-
-// Replace or inject token line
 if (!content.includes(authLine)) {
-  content = content.replace(/\/\/npm\.pkg\.github\.com\/:_authToken=.*\n?/g, '');
   content += `\n${authLine}\n`;
   fs.writeFileSync(npmrcPath, content.trim() + '\n');
-  console.log('✅ Updated .npmrc with resolved GITHUB_TOKEN');
+  success(`Updated .npmrc with token for ${registry}`);
 } else {
-  console.log('ℹ️ .npmrc already contains correct token line');
+  log('.npmrc already contains correct token line');
 }
