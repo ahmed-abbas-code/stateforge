@@ -1,8 +1,8 @@
 // src/state/client/strategies/implementations/EncryptedStorageStrategyImpl.ts
 
-import { getClientEnvVar } from '@shared/shared/utils';
-import { PersistenceStrategyBase } from '@state/state/shared';
 import CryptoJS from 'crypto-js';
+import { getClientEnvVar } from '@shared/shared/utils/client';
+import { PersistenceStrategyBase } from '@state/state/shared';
 
 const SECRET = getClientEnvVar('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
 

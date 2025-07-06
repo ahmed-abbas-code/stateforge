@@ -8,12 +8,15 @@ let cached: PublicEnvVars | null = null;
 export function getClientFrameworkConfig(): PublicEnvVars {
   if (cached) return cached;
 
-  const isBrowser = typeof window !== 'undefined';
-  const rawEnv = isBrowser && window.__SF_ENV
-    ? window.__SF_ENV
-    : Object.fromEntries(
-        Object.entries(process.env).filter(([key]) => key.startsWith('NEXT_PUBLIC_'))
-      );
+  if (typeof window === 'undefined') {
+    throw new Error('[getClientFrameworkConfig] Called on the server. This must run in the browser.');
+  }
+
+  const rawEnv = window.__SF_ENV;
+
+  if (!rawEnv) {
+    throw new Error('[getClientFrameworkConfig] Missing window.__SF_ENV. It must be injected via _document.tsx');
+  }
 
   const parsed = envPublicSchema.safeParse(rawEnv);
   if (!parsed.success) {

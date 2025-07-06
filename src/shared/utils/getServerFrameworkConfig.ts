@@ -6,6 +6,12 @@ let cached: EnvVars & { isDryRun: boolean } | null = null;
 let initialized = false;
 
 export function getServerFrameworkConfig(): EnvVars & { isDryRun: boolean } {
+  if (typeof window !== 'undefined') {
+    const errorMsg = `[getServerFrameworkConfig] Attempted to run on the client. This must only be used in server-side code.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
   if (cached) return cached;
 
   if (process.env.NODE_ENV === 'development') {

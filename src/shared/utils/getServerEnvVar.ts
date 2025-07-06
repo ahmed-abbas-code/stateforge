@@ -1,23 +1,23 @@
 // packages/shared/utils/getServerEnvVar.ts
 
-import { PrivateEnvVar } from "../types/env";
+import { PrivateEnvVar } from '../types/env';
 
 /**
- * Safely access server-only environment variables.
- * Throws if accessed from the browser or if missing.
+ * Access server-only environment variables safely.
+ * Throws immediately if executed in a browser environment.
  */
 export function getServerEnvVar(name: PrivateEnvVar): string {
+  // Block client-side execution early
   if (typeof window !== 'undefined') {
-    const message = `[Env] Attempted to access server-only variable '${name}' in the browser`;
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(message);
-    }
-    throw new Error(message);
+    const errorMsg = `[getServerEnvVar] Server-only variable "${name}" was accessed on the client. This is a critical misuse.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   const value = process.env?.[name];
+
   if (!value) {
-    throw new Error(`[Env] Missing server environment variable: ${name}`);
+    throw new Error(`[getServerEnvVar] Missing required server env var: "${name}"`);
   }
 
   return value;

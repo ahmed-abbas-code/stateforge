@@ -1,6 +1,8 @@
 // src/state/server/lib/firestore.ts
 
-import { getClientEnvVar, getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils';
+// import { getClientEnvVar, getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils';
+import { getClientEnvVar } from '@shared/shared/utils/client';
+import { getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils/server';
 import { getApps, getApp, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 

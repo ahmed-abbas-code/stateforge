@@ -1,7 +1,9 @@
 // src/state/server/utils/axiosClient.ts
 
 import { auditLogoutEvent } from '@authentication/auth/shared';
-import { AuthStrategy, BaseAxiosClient, getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils';
+import { AuthStrategy, BaseAxiosClient } from '@shared/shared/index';
+import { getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils/server';
+// import { AuthStrategy, BaseAxiosClient, getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils';
 import type { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
 

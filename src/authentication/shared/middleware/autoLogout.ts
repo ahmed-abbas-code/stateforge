@@ -1,7 +1,7 @@
 // src/authentication/shared/middleware/autoLogout.ts
 
 import { adminAuth } from '@authentication/auth/shared/middleware';
-import { getServerFrameworkConfig } from '@shared/shared/index';
+import { getServerFrameworkConfig } from '@shared/shared/utils/server';
 
 const { isDryRun } = getServerFrameworkConfig();
 

@@ -1,7 +1,7 @@
 // src/state/server/lib/redis.ts
 
-import { getServerFrameworkConfig } from '@shared/shared/utils';
 import type { RedisClientType } from 'redis';
+import { getServerFrameworkConfig } from '@shared/shared/utils/server';
 
 
 export let redis: RedisClientType | undefined;
