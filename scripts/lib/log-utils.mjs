@@ -1,9 +1,7 @@
 /* eslint-disable no-undef */
-// scripts/lib/log-utils.js
 
-/* eslint-env node */
+// scripts/lib/log-utils.mjs
 
-// Only load ANSI color codes and logging in a Node.js environment
 const isNode = typeof process !== 'undefined' && typeof process.versions?.node !== 'undefined';
 
 function rawLog(prefix, colorCode, msg) {
@@ -16,21 +14,14 @@ function rawError(prefix, colorCode, msg) {
   console.error(`\x1b[${colorCode}m${prefix} ${msg}\x1b[0m`);
 }
 
-function log(msg) {
+export function log(msg) {
   rawLog('ℹ️', '36', msg); // cyan
 }
 
-function error(msg) {
+export function error(msg) {
   rawError('❌', '31', msg); // red
 }
 
-function success(msg) {
+export function success(msg) {
   rawLog('✅', '32', msg); // green
 }
-
-module.exports = {
-  log,
-  error,
-  success,
-};
-

@@ -1,12 +1,14 @@
 /* eslint-disable no-undef */
+
 // scripts/bootstrap-npmrc.js
+
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { log, error, success } from './lib/log-utils.js';
+import { log, error, success } from './lib/log-utils.mjs';
 
-// ESM-compatible __dirname
+// Resolve current script location
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -20,35 +22,37 @@ if (!process.env.GITHUB_TOKEN) {
     if (process.env.GITHUB_TOKEN) {
       success('Loaded GITHUB_TOKEN from .env');
     } else {
-      log('.env file found but GITHUB_TOKEN is missing');
+      error('.env loaded but GITHUB_TOKEN is still missing');
     }
   } else {
-    log('No .env file found and GITHUB_TOKEN not set');
+    error('No .env file found and GITHUB_TOKEN is not set');
   }
 }
 
-// Abort if token still missing
+// Abort if token is still missing
 if (!process.env.GITHUB_TOKEN) {
-  error('GITHUB_TOKEN is required to proceed');
+  error('GITHUB_TOKEN is required to proceed. Aborting.');
   process.exit(1);
 }
 
-// Registry and scope config
+// Determine registry
 const registry = process.env.NPM_REGISTRY || 'npm.pkg.github.com';
 const npmrcPath = path.resolve(__dirname, '../.npmrc');
 const authLine = `//${registry}/:_authToken=${process.env.GITHUB_TOKEN}`;
 
-// Read and update .npmrc content
+// Read and update .npmrc
 let content = '';
 if (fs.existsSync(npmrcPath)) {
   content = fs.readFileSync(npmrcPath, 'utf-8');
+  // Remove any previous token lines for GitHub registry
   content = content.replace(/\/\/.*npm\.pkg\.github\.com\/:_authToken=.*\n?/g, '');
 }
 
+// Append only if needed
 if (!content.includes(authLine)) {
   content += `\n${authLine}\n`;
   fs.writeFileSync(npmrcPath, content.trim() + '\n');
-  success(`Updated .npmrc with token for ${registry}`);
+  success(`.npmrc updated with token for ${registry}`);
 } else {
-  log('.npmrc already contains correct token line');
+  log('.npmrc already contains the correct token line');
 }
