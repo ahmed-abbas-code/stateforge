@@ -4,28 +4,52 @@ import { AuthProvider, AuthUser } from '@authentication/auth/shared';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { JwtPayload } from 'jsonwebtoken';
 
+type DecodedTokenLike = Partial<DecodedIdToken> & JwtPayload;
+
+/**
+ * Type guard to check if object is a Firebase DecodedIdToken.
+ */
+function isDecodedIdToken(token: unknown): token is DecodedIdToken {
+  return (
+    typeof token === 'object' &&
+    token !== null &&
+    'uid' in token &&
+    'email' in token
+  );
+}
+
 /**
  * Accepts either a Firebase DecodedIdToken or a generic JwtPayload.
  */
 export function mapDecodedToAuthUser(
-  decoded: Partial<DecodedIdToken> | JwtPayload,
+  decoded: DecodedTokenLike,
   provider: AuthProvider
 ): AuthUser {
-  const uid = decoded.uid || decoded.sub || decoded.id;
+  const uid = decoded.uid ?? decoded.sub ?? (decoded as Record<string, unknown>).id;
   const email = decoded.email ?? '';
 
   if (!uid || !email) {
     throw new Error(`[mapDecodedToAuthUser] Missing required fields: uid=${uid}, email=${email}`);
   }
 
+  const rawName =
+    decoded.name ??
+    decoded.displayName ??
+    (decoded as Record<string, unknown>).nickname;
+
+  const displayName = typeof rawName === 'string' ? rawName : undefined;
+
+  const providerId =
+    provider === 'firebase' && isDecodedIdToken(decoded)
+      ? decoded.firebase?.sign_in_provider ?? 'firebase'
+      : provider;
+
   return {
-    uid,
+    uid: String(uid),
     email,
-    displayName: decoded.name ?? decoded.displayName ?? null,
-    providerId:
-      provider === 'firebase'
-        ? (decoded as DecodedIdToken).firebase?.sign_in_provider ?? 'firebase'
-        : provider,
+    displayName,
     provider,
+    providerId,
   };
 }
+

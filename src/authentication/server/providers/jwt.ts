@@ -1,9 +1,15 @@
-// packages/authentication/server/providers/jwt.ts
+// src/authentication/server/providers/jwt.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import { verify } from 'jsonwebtoken';
-import { AuthUser, mapDecodedToAuthUser, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/auth/shared';
+import jwt from 'jsonwebtoken';
+import {
+  AuthUser,
+  mapDecodedToAuthUser,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from '@authentication/auth/shared';
+import type { JwtPayload } from 'jsonwebtoken';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
@@ -12,6 +18,25 @@ if (!rawSecret || typeof rawSecret !== 'string') {
   throw new Error('JWT_SECRET environment variable is required and must be a string');
 }
 const JWT_SECRET: string = rawSecret;
+
+const { verify } = jwt;
+
+/**
+ * Type guard to validate JwtPayload shape.
+ */
+function isJwtPayload(decoded: unknown): decoded is JwtPayload {
+  return typeof decoded === 'object' && decoded !== null && 'sub' in decoded;
+}
+
+/**
+ * Normalize `aud` field from array to string if needed.
+ */
+function normalizeJwtPayload(payload: JwtPayload): JwtPayload & { aud?: string } {
+  return {
+    ...payload,
+    aud: Array.isArray(payload.aud) ? payload.aud[0] : payload.aud,
+  };
+}
 
 /**
  * Extracts the JWT session cookie from the request.
@@ -31,11 +56,12 @@ export async function verifyToken(req: NextApiRequest): Promise<AuthUser> {
   try {
     const decoded = verify(token, JWT_SECRET);
 
-    if (typeof decoded !== 'object' || decoded === null) {
+    if (!isJwtPayload(decoded)) {
       throw new Error('Invalid JWT payload structure');
     }
 
-    return mapDecodedToAuthUser(decoded, 'jwt');
+    const normalized = normalizeJwtPayload(decoded);
+    return mapDecodedToAuthUser(normalized, 'jwt');
   } catch (err) {
     console.error('[JWT] Token verification failed:', err);
     throw new Error('Invalid or expired JWT session');
@@ -55,11 +81,13 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
       return;
     }
 
-    // Validate token before setting it
     const decoded = verify(token, JWT_SECRET);
-    if (typeof decoded !== 'object' || decoded === null) {
+
+    if (!isJwtPayload(decoded)) {
       throw new Error('Invalid JWT payload structure');
     }
+
+    normalizeJwtPayload(decoded); // Optional: validated but unused
 
     res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, token, {
       ...sessionCookieOptions,
@@ -88,4 +116,3 @@ export async function signOut(_req: NextApiRequest, res: NextApiResponse): Promi
     res.status(500).json({ error: 'Sign-out failed' });
   }
 }
-
