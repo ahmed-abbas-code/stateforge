@@ -1,4 +1,5 @@
-// lib/replace-workspace-versions.js
+/* eslint-disable no-undef */
+// scripts/lib/replace-workspace-versions.js
 
 export function replaceWorkspaceVersions(pkg, logger = console) {
   let replaced = false;

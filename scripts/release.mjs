@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // scripts/release.mjs
 
 import { execSync } from 'child_process';
@@ -5,8 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { log, error, success } from '../lib/log-utils.js';
-import { replaceWorkspaceVersions } from '../lib/replace-workspace-versions.js';
+import { log, error, success } from './lib/log-utils.js';
+import { replaceWorkspaceVersions } from './lib/replace-workspace-versions.js';
 
 // ESM workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);

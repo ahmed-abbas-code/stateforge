@@ -1,9 +1,10 @@
+/* eslint-disable no-undef */
 // scripts/bootstrap-npmrc.js
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { log, error, success } from '../lib/log-utils.js';
+import { log, error, success } from './lib/log-utils.js';
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
