@@ -1,32 +1,32 @@
-// src/state/client/context/NavigationStateContext.tsx
+'use client';
 
 import {
   createContext,
   useContext,
   useState,
-  ReactNode,
   useEffect,
+  type ReactNode,
 } from 'react';
 import { useRouter } from 'next/router';
-import { NavigationState, NavigationStateContextType } from '@state/state/shared';
+import type {
+  NavigationState,
+  NavigationStateContextType,
+} from '@state/state/shared';
 
-export const NavigationStateContext = createContext<NavigationStateContextType | undefined>(undefined);
+const NavigationStateContext = createContext<NavigationStateContextType | undefined>(undefined);
 
 export const NavigationStateProvider = ({ children }: { children: ReactNode }) => {
   const [navState, setNavState] = useState<NavigationState>({});
   const router = useRouter();
 
-  // Optional cleanup: reset state on route change
   useEffect(() => {
-    const handleRouteChange = () => {
-      setNavState({});
-    };
+    const resetNavState = () => setNavState({});
 
-    router.events.on('routeChangeStart', handleRouteChange);
+    router.events.on('routeChangeStart', resetNavState);
     return () => {
-      router.events.off('routeChangeStart', handleRouteChange);
+      router.events.off('routeChangeStart', resetNavState);
     };
-  }, [router]);
+  }, [router.events]);
 
   return (
     <NavigationStateContext.Provider value={{ navState, setNavState }}>
