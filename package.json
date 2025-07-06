@@ -1,6 +1,6 @@
 {
   "name": "@stateforge-framework/framework",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": false,
   "type": "module",
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
