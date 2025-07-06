@@ -1,7 +1,5 @@
 // src/state/server/lib/firestore.ts
 
-// import { getClientEnvVar, getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils';
-import { getClientEnvVar } from '@shared/shared/utils/client';
 import { getServerEnvVar, getServerFrameworkConfig } from '@shared/shared/utils/server';
 import { getApps, getApp, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
@@ -26,7 +24,7 @@ if (isDryRun) {
 } else {
   const clientEmail = getServerEnvVar('FIREBASE_CLIENT_EMAIL');
   const privateKey = getServerEnvVar('FIREBASE_PRIVATE_KEY');
-  const projectId = getClientEnvVar('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  const projectId = getServerEnvVar('FIREBASE_PROJECT_ID');
 
   const firebaseAdminConfig = {
     credential: cert({

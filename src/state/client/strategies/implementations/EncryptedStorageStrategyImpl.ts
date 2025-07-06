@@ -4,8 +4,6 @@ import CryptoJS from 'crypto-js';
 import { getClientEnvVar } from '@shared/shared/utils/client';
 import { PersistenceStrategyBase } from '@state/state/shared';
 
-const SECRET = getClientEnvVar('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
-
 export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;
 
@@ -17,6 +15,13 @@ export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<
     return `${this.namespace}:${key}`;
   }
 
+  private getSecret(): string {
+    if (typeof window === 'undefined') {
+      throw new Error('[EncryptedStorage] Tried to access client env var on server');
+    }
+    return getClientEnvVar('NEXT_PUBLIC_AUTH_ENCRYPTION_SECRET');
+  }
+
   async get(key: string): Promise<T | undefined> {
     if (typeof window === 'undefined') return undefined;
 
@@ -24,7 +29,7 @@ export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<
       const encrypted = localStorage.getItem(this.withNamespace(key));
       if (!encrypted) return undefined;
 
-      const bytes = CryptoJS.AES.decrypt(encrypted, SECRET);
+      const bytes = CryptoJS.AES.decrypt(encrypted, this.getSecret());
       const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
       if (!decrypted) throw new Error('Decryption returned empty string');
@@ -41,7 +46,7 @@ export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<
 
     try {
       const stringified = JSON.stringify(value);
-      const encrypted = CryptoJS.AES.encrypt(stringified, SECRET).toString();
+      const encrypted = CryptoJS.AES.encrypt(stringified, this.getSecret()).toString();
 
       localStorage.setItem(this.withNamespace(key), encrypted);
     } catch (err) {
