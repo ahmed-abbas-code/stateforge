@@ -1,9 +1,7 @@
-// src/state/client/context/AppStateContext.tsx
+'use client';
 
-import { AppSharedState, AppStateContextType } from '@state/shared';
-import React from 'react';
-import { createContext, useContext, useState, ReactNode } from 'react';
-// import { AppSharedState, AppStateContextType } from '../../types/AppState';
+import { createContext, useState, type ReactNode } from 'react';
+import type { AppSharedState, AppStateContextType } from '@state/shared';
 
 const defaultState: AppSharedState = {
   hydrated: false,
@@ -12,7 +10,11 @@ const defaultState: AppSharedState = {
 
 export const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
-export const AppStateProvider = ({ children }: { children: ReactNode }) => {
+interface AppStateProviderProps {
+  children: ReactNode;
+}
+
+export const AppStateProvider = ({ children }: AppStateProviderProps) => {
   const [appSharedState, setAppSharedState] = useState<AppSharedState>(defaultState);
 
   return (
@@ -20,12 +22,4 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AppStateContext.Provider>
   );
-};
-
-export const useAppState = (): AppStateContextType => {
-  const context = useContext(AppStateContext);
-  if (!context) {
-    throw new Error('useAppState must be used within an AppStateProvider');
-  }
-  return context;
 };

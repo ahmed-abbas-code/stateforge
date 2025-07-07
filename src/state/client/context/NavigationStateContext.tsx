@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   type ReactNode,
@@ -34,7 +33,6 @@ export const NavigationStateProvider = ({
 
   useEffect(() => {
     const resetNavState = () => setNavState({});
-
     router.events.on('routeChangeStart', resetNavState);
     return () => {
       router.events.off('routeChangeStart', resetNavState);
@@ -48,10 +46,4 @@ export const NavigationStateProvider = ({
   );
 };
 
-export const useNavigationState = (): NavigationStateContextType => {
-  const context = useContext(NavigationStateContext);
-  if (!context) {
-    throw new Error('useNavigationState must be used within a NavigationStateProvider');
-  }
-  return context;
-};
+export { NavigationStateContext };
