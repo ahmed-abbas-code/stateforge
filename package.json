@@ -29,6 +29,9 @@
     "./state/server": {
       "import": "./dist/state/server/index.js"
     },
+    "./state": {
+      "import": "./dist/state/index.js"
+    },
     "./shared": {
       "import": "./dist/shared/index.js"
     }

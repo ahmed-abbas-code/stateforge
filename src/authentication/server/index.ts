@@ -1,3 +1,5 @@
+// src/authentication/server/index.ts
+
 export {
   signIn as signInWithAuth0,
   signOut as signOutFromAuth0,

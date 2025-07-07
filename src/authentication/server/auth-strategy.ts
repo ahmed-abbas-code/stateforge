@@ -1,10 +1,17 @@
-// packages/authentication/server/auth-strategy.ts
-
 import { AuthUser } from '@authentication/shared';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import * as FirebaseProvider from '@authentication/server/providers/firebase';
-import * as Auth0Provider from '@authentication/server/providers/auth0';
-import * as JWTProvider from '@authentication/server/providers/jwt';
+
+import {
+  signInWithFirebase,
+  signOutFromFirebase,
+  verifyFirebaseToken,
+  signInWithAuth0,
+  signOutFromAuth0,
+  verifyAuth0Token,
+  signInWithJwt,
+  signOutFromJwt,
+  verifyJwtToken,
+} from '@authentication/server';
 
 const STRATEGY = process.env.AUTH_STRATEGY;
 
@@ -21,11 +28,23 @@ type Provider = {
 function getProvider(): Provider {
   switch (STRATEGY) {
     case 'firebase':
-      return FirebaseProvider;
+      return {
+        signIn: signInWithFirebase,
+        signOut: signOutFromFirebase,
+        verifyToken: verifyFirebaseToken,
+      };
     case 'auth0':
-      return Auth0Provider;
+      return {
+        signIn: signInWithAuth0,
+        signOut: signOutFromAuth0,
+        verifyToken: verifyAuth0Token,
+      };
     case 'jwt':
-      return JWTProvider;
+      return {
+        signIn: signInWithJwt,
+        signOut: signOutFromJwt,
+        verifyToken: verifyJwtToken,
+      };
     default:
       throw new Error(`Unsupported AUTH_STRATEGY: ${STRATEGY}`);
   }
@@ -34,26 +53,12 @@ function getProvider(): Provider {
 const provider = getProvider();
 
 export const AuthStrategy = {
-  /**
-   * Verifies the current session using the configured strategy.
-   * Returns AuthUser or throws if invalid/expired.
-   */
   verifyToken(req: NextApiRequest): Promise<AuthUser> {
     return provider.verifyToken(req);
   },
-
-  /**
-   * Handles sign-in for the active strategy.
-   * Firebase/JWT: expects idToken/token in body.
-   * Auth0: performs redirect.
-   */
   signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     return provider.signIn(req, res);
   },
-
-  /**
-   * Handles sign-out and session termination for the active strategy.
-   */
   signOut(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     return provider.signOut(req, res);
   },

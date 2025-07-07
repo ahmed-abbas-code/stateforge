@@ -7,10 +7,11 @@ export default defineConfig({
     'src/authentication/shared/index.ts',
     'src/authentication/client/index.ts',
     'src/authentication/server/index.ts',
+    'src/state/index.ts',
     'src/state/shared/index.ts',
     'src/state/client/index.ts',
     'src/state/server/index.ts',
-    'src/shared/index.ts',
+    'src/shared/index.ts'
   ],
   outDir: 'dist',
   format: ['esm'],

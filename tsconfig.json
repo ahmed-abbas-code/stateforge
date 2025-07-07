@@ -16,11 +16,25 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@authentication/*": ["src/authentication/*"],
-      "@shared/*": ["src/shared/*"],
-      "@state/*": ["src/state/*"]
+      "@authentication/shared": ["src/authentication/shared"],
+      "@authentication/shared/*": ["src/authentication/shared/*"],
+      "@authentication/client": ["src/authentication/client"],
+      "@authentication/client/*": ["src/authentication/client/*"],
+      "@authentication/server": ["src/authentication/server"],
+      "@authentication/server/*": ["src/authentication/server/*"],
+
+      "@state/shared": ["src/state/shared"],
+      "@state/shared/*": ["src/state/shared/*"],
+      "@state/client": ["src/state/client"],
+      "@state/client/*": ["src/state/client/*"],
+      "@state/server": ["src/state/server"],
+      "@state/server/*": ["src/state/server/*"],
+      "@state": ["src/state/index.ts"],
+
+      "@shared": ["src/shared"],
+      "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*", "src/authentication/server/pages/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
