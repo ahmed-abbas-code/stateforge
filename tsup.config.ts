@@ -2,17 +2,16 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-    'src/authentication/shared/index.ts',
-    'src/authentication/client/index.ts',
-    'src/authentication/server/index.ts',
-    'src/state/index.ts',
-    'src/state/shared/index.ts',
-    'src/state/client/index.ts',
-    'src/state/server/index.ts',
-    'src/shared/index.ts'
-  ],
+  entry: {
+    index: 'src/index.ts',
+    shared: 'src/shared/index.ts',
+    'authentication-client': 'src/authentication/client/index.ts',
+    'authentication-server': 'src/authentication/server/index.ts',
+    'authentication-shared': 'src/authentication/shared/index.ts',
+    'state-client': 'src/state/client/index.ts',
+    'state-server': 'src/state/server/index.ts',
+    'state-shared': 'src/state/shared/index.ts',
+  },
   outDir: 'dist',
   format: ['esm'],
   dts: true,

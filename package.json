@@ -11,6 +11,12 @@
     "dist"
   ],
   "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    },
+    "./shared": {
+      "import": "./dist/shared.js"
+    },
     "./state/client": {
       "import": "./dist/state-client.js"
     },
@@ -28,12 +34,6 @@
     },
     "./authentication/shared": {
       "import": "./dist/authentication-shared.js"
-    },
-    "./state": {
-      "import": "./dist/state.js"
-    },
-    "./shared": {
-      "import": "./dist/shared.js"
     }
   },
   "repository": {
@@ -52,7 +52,7 @@
     "clean": "rm -rf dist",
     "build": "pnpm clean && pnpm build:types && pnpm build:tsup",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
-    "build:tsup": "tsup src/index.ts --dts --format esm --out-dir dist",
+    "build:tsup": "tsup",
     "dev": "tsc --watch --project tsconfig.json",
     "tsc": "tsc --noEmit",
     "lint": "pnpm exec eslint src --fix --no-ignore",
