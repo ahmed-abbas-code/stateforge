@@ -14,7 +14,7 @@ export default defineConfig({
   },
   outDir: 'dist',
   format: ['esm'],
-  dts: true, // Re-enable declaration generation
+  dts: true, // Let tsup infer declarations from entry points
   sourcemap: true,
   target: 'es2021',
   platform: 'node',
