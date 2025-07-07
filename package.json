@@ -12,31 +12,40 @@
   ],
   "exports": {
     ".": {
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./state": {
-      "import": "./dist/state.js"
+      "import": "./dist/state.js",
+      "types": "./dist/state.d.ts"
     },
     "./state/client": {
-      "import": "./dist/state-client.js"
+      "import": "./dist/state-client.js",
+      "types": "./dist/state-client.d.ts"
     },
     "./state/server": {
-      "import": "./dist/state-server.js"
+      "import": "./dist/state-server.js",
+      "types": "./dist/state-server.d.ts"
     },
     "./state/shared": {
-      "import": "./dist/state-shared.js"
+      "import": "./dist/state-shared.js",
+      "types": "./dist/state-shared.d.ts"
     },
     "./authentication/client": {
-      "import": "./dist/authentication-client.js"
+      "import": "./dist/authentication-client.js",
+      "types": "./dist/authentication-client.d.ts"
     },
     "./authentication/server": {
-      "import": "./dist/authentication-server.js"
+      "import": "./dist/authentication-server.js",
+      "types": "./dist/authentication-server.d.ts"
     },
     "./authentication/shared": {
-      "import": "./dist/authentication-shared.js"
+      "import": "./dist/authentication-shared.js",
+      "types": "./dist/authentication-shared.d.ts"
     },
     "./shared": {
-      "import": "./dist/shared.js"
+      "import": "./dist/shared.js",
+      "types": "./dist/shared.d.ts"
     }
   },
   "repository": {
