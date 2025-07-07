@@ -14,8 +14,8 @@
     ".": {
       "import": "./dist/index.js"
     },
-    "./shared": {
-      "import": "./dist/shared.js"
+    "./state": {
+      "import": "./dist/state.js"
     },
     "./state/client": {
       "import": "./dist/state-client.js"
@@ -34,6 +34,9 @@
     },
     "./authentication/shared": {
       "import": "./dist/authentication-shared.js"
+    },
+    "./shared": {
+      "import": "./dist/shared.js"
     }
   },
   "repository": {

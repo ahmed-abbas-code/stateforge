@@ -11,6 +11,7 @@ export default defineConfig({
     'state-client': 'src/state/client/index.ts',
     'state-server': 'src/state/server/index.ts',
     'state-shared': 'src/state/shared/index.ts',
+    state: 'src/state/index.ts',
   },
   outDir: 'dist',
   format: ['esm'],
