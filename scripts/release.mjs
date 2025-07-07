@@ -20,7 +20,7 @@ await import(path.resolve(__dirname, './bootstrap-npmrc.js'));
 const versionType = process.argv[2];
 
 if (!['patch', 'minor', 'major'].includes(versionType)) {
-  error('❌ Usage: node scripts/release.mjs [patch|minor|major]');
+  error('Usage: node scripts/release.mjs [patch|minor|major]');
   process.exit(1);
 }
 
@@ -28,7 +28,7 @@ const rootPath = path.resolve(__dirname, '..');
 const pkgPath = path.join(rootPath, 'package.json');
 
 if (!fs.existsSync(pkgPath)) {
-  error('❌ package.json not found in project root.');
+  error('package.json not found in project root.');
   process.exit(1);
 }
 
@@ -54,8 +54,8 @@ try {
     { cwd: rootPath, stdio: 'inherit' }
   );
 
-  success('✅ Package published successfully.');
+  success('Package published successfully.');
 } catch (err) {
-  error(`❌ Publish failed: ${err?.message || err}`);
+  error(`Publish failed: ${err?.message || err}`);
   process.exit(1);
 }
