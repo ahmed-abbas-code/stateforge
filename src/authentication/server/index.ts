@@ -16,7 +16,7 @@ export {
   verifyToken as verifyJwtToken,
 } from './providers/jwt';
 
-export * from './pages/api/auth/me';
-export * from './pages/api/auth/session';
-export * from './pages/api/auth/signin';
-export * from './pages/api/auth/signout';
+export { default as authMeHandler } from './pages/api/auth/me';
+export { default as authSessionHandler } from './pages/api/auth/session';
+export { default as authSigninHandler } from './pages/api/auth/signin';
+export { default as authSignoutHandler } from './pages/api/auth/signout';
