@@ -63,7 +63,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm clean && pnpm build:types && pnpm build:tsup",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "build:types": "tsc --build --emitDeclarationOnly --verbose",
     "build:tsup": "tsup",
     "dev": "tsc --watch --project tsconfig.json",
     "tsc": "tsc --noEmit",

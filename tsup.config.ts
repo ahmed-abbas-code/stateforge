@@ -1,4 +1,3 @@
-// tsup.config.ts
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -11,16 +10,17 @@ export default defineConfig({
     'state-client': 'src/state/client/index.ts',
     'state-server': 'src/state/server/index.ts',
     'state-shared': 'src/state/shared/index.ts',
-    state: 'src/state/index.ts',
+    state: 'src/state/index.ts'
   },
   outDir: 'dist',
   format: ['esm'],
-  dts: true,
+  dts: true, // Re-enable declaration generation
   sourcemap: true,
   target: 'es2021',
   platform: 'node',
   clean: true,
   splitting: false,
   minify: false,
-  external: ['next']
+  external: ['next'],
+  tsconfig: 'tsconfig.json'
 });

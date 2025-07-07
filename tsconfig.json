@@ -7,12 +7,16 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "declaration": true,
+    "declarationMap": true,
+    "noEmitOnError": true,
+    "outDir": "dist",
+    "rootDir": "src",
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
@@ -22,7 +26,6 @@
       "@authentication/client/*": ["src/authentication/client/*"],
       "@authentication/server": ["src/authentication/server"],
       "@authentication/server/*": ["src/authentication/server/*"],
-
       "@state/shared": ["src/state/shared"],
       "@state/shared/*": ["src/state/shared/*"],
       "@state/client": ["src/state/client"],
@@ -30,11 +33,21 @@
       "@state/server": ["src/state/server"],
       "@state/server/*": ["src/state/server/*"],
       "@state": ["src/state/index.ts"],
-
       "@shared": ["src/shared"],
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "src/index.ts",
+    "src/shared/index.ts",
+    "src/state/index.ts",
+    "src/authentication/client/index.ts",
+    "src/authentication/server/index.ts",
+    "src/authentication/shared/index.ts",
+    "src/state/client/index.ts",
+    "src/state/server/index.ts",
+    "src/state/shared/index.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
