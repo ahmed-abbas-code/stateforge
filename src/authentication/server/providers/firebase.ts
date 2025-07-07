@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import { adminAuth, AuthUser, mapDecodedToAuthUser, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/auth/shared';
+import { adminAuth, AuthUser, mapDecodedToAuthUser, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
 
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 

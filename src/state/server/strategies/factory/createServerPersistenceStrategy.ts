@@ -1,8 +1,8 @@
 // src/state/server/strategies/factory/createServerPersistenceStrategy.ts
 
-import { FirestoreStrategyImpl, RedisServerStrategyImpl, RestApiStrategyImpl } from "@state/state/server";
-import { PersistenceStrategyBase } from "@state/state/shared";
-import { isStrategyIdentifier, PersistenceStrategy, STRATEGY_TYPES } from "@state/state/shared/types/PersistenceOptions";
+import { FirestoreStrategyImpl, RedisServerStrategyImpl, RestApiStrategyImpl } from "@state/server";
+import { PersistenceStrategyBase } from "@state/shared";
+import { isStrategyIdentifier, PersistenceStrategy, STRATEGY_TYPES } from "@state/shared/types/PersistenceOptions";
 
 type StrategyConfig<T> = {
   type: PersistenceStrategy<T>;

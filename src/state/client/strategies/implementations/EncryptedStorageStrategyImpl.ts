@@ -1,8 +1,8 @@
 // src/state/client/strategies/implementations/EncryptedStorageStrategyImpl.ts
 
 import CryptoJS from 'crypto-js';
-import { getClientEnvVar } from '@shared/shared/utils/client';
-import { PersistenceStrategyBase } from '@state/state/shared';
+import { getClientEnvVar } from '@shared/utils/client';
+import { PersistenceStrategyBase } from '@state/shared';
 
 export class EncryptedStorageStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;

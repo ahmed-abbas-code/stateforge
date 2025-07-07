@@ -1,6 +1,7 @@
 // src/authentication/server/pages/api/auth/signin.ts
 
-import { AuthStrategy } from '@authentication/auth/server/auth-strategy';
+
+import { AuthStrategy } from '@authentication/server/auth-strategy';
 import type { NextApiRequest, NextApiResponse } from 'next';
  
 /**

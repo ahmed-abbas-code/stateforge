@@ -1,6 +1,6 @@
 // src/authentication/shared/utils/mapDecodedToAuthUser.ts
 
-import { AuthProvider, AuthUser } from '@authentication/auth/shared';
+import { AuthProvider, AuthUser } from '@authentication/shared';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { JwtPayload } from 'jsonwebtoken';
 

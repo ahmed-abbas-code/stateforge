@@ -2,7 +2,7 @@
 
 import type { NextApiRequest } from 'next';
 import { Auth } from 'firebase-admin/auth';
-import { AuthUser } from '@authentication/auth/shared';
+import { AuthUser } from '@authentication/shared';
 
 export interface AuthContextType {
   user: AuthUser | null;

@@ -1,7 +1,7 @@
 // src/state/server/strategies/implementations/FirestoreStrategyImpl.ts
 
-import { firestore } from '@state/state/server';
-import { PersistenceStrategyBase } from '@state/state/shared';
+import { firestore } from '@state/server';
+import { PersistenceStrategyBase } from '@state/shared';
 
 export class FirestoreStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly collection: string;

@@ -1,6 +1,6 @@
 // src/state/client/strategies/implementations/LocalStorageStrategyImpl.ts
 
-import { PersistenceStrategyBase } from "@state/state/shared";
+import { PersistenceStrategyBase } from "@state/shared";
 
 
 export class LocalStorageStrategyImpl<T> implements PersistenceStrategyBase<T> {

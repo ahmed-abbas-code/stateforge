@@ -1,7 +1,8 @@
 // src/authentication/client/useAuth.ts
 
+import { AuthContextType, AuthUser } from '@authentication/shared';
 import useSWR from 'swr';
-import { AuthContextType, AuthUser } from '@authentication/auth/shared';
+
 
 // SWR fetcher function
 const fetchUser = async (): Promise<AuthUser | null> => {

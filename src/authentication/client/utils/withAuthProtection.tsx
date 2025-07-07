@@ -1,8 +1,8 @@
 'use client';
 
+import { useAuth } from '@authentication/client/useAuth';
 import { useEffect } from 'react';
 import type { ComponentType, JSX } from 'react';
-import { useAuth } from '@authentication/auth/client/useAuth';
 
 interface Router {
   replace: (path: string) => void;

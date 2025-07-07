@@ -1,6 +1,8 @@
 // src/authentication/server/providers/auth0.ts
 
-import { AuthUser } from '@authentication/auth/shared';
+import { AuthUser } from "@authentication/shared";
+
+
 
 export async function verifyToken(): Promise<AuthUser> {
   throw new Error('[auth0.verifyToken] Not implemented');

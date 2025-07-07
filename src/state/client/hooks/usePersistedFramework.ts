@@ -1,8 +1,8 @@
 // src/state/client/hooks/usePersistedFramework.ts
 
 import { useState, useEffect, useRef } from 'react';
-import { PersistenceStrategyBase } from '@state/state/shared';
-import { createBrowserPersistenceStrategy } from '@state/state/client';
+import { PersistenceStrategyBase } from '@state/shared';
+import { createBrowserPersistenceStrategy } from '@state/client';
 
 type BrowserPersistenceStrategy = 'localStorage' | 'navigationState';
 

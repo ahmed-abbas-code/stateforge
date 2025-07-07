@@ -1,6 +1,6 @@
 // src/authentication/shared/AuthProvider.tsx
 
-import { AuthContextType, AuthUser } from '@authentication/auth/shared';
+import { AuthContextType, AuthUser } from '@authentication/shared';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useSWR from 'swr';
 

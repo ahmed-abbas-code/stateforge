@@ -1,7 +1,7 @@
 // src/state/server/strategies/implementations/RestApiStrategyImpl.ts
 
-import { fetchAppApi } from "@shared/shared/utils/client";
-import { PersistenceStrategyBase } from "@state/state/shared";
+import { fetchAppApi } from "@shared/utils/client";
+import { PersistenceStrategyBase } from "@state/shared";
 
 
 

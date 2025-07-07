@@ -11,8 +11,26 @@
     "dist"
   ],
   "exports": {
-    ".": {
-      "import": "./dist/index.js"
+    "./authentication/shared": {
+      "import": "./dist/authentication/shared/index.js"
+    },
+    "./authentication/client": {
+      "import": "./dist/authentication/client/index.js"
+    },
+    "./authentication/server": {
+      "import": "./dist/authentication/server/index.js"
+    },
+    "./state/shared": {
+      "import": "./dist/state/shared/index.js"
+    },
+    "./state/client": {
+      "import": "./dist/state/client/index.js"
+    },
+    "./state/server": {
+      "import": "./dist/state/server/index.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.js"
     }
   },
   "repository": {

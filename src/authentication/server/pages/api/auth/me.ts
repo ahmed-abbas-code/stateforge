@@ -1,7 +1,8 @@
 // src/authentication/server/pages/api/auth/me.ts
 
-import { AuthStrategy } from '@authentication/auth/server/auth-strategy';
-import { AuthUser } from '@authentication/auth/shared';
+
+import { AuthStrategy } from '@authentication/server/auth-strategy';
+import { AuthUser } from '@authentication/shared';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**

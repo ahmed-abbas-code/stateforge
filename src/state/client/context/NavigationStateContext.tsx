@@ -10,7 +10,7 @@ import {
 import type {
   NavigationState,
   NavigationStateContextType,
-} from '@state/state/shared';
+} from '@state/shared';
 
 interface Router {
   events: {

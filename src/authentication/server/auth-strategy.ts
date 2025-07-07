@@ -1,10 +1,10 @@
 // packages/authentication/server/auth-strategy.ts
 
-import { AuthUser } from '@authentication/auth/shared';
+import { AuthUser } from '@authentication/shared';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import * as FirebaseProvider from '@authentication/auth/server/providers/firebase';
-import * as Auth0Provider from '@authentication/auth/server/providers/auth0';
-import * as JWTProvider from '@authentication/auth/server/providers/jwt';
+import * as FirebaseProvider from '@authentication/server/providers/firebase';
+import * as Auth0Provider from '@authentication/server/providers/auth0';
+import * as JWTProvider from '@authentication/server/providers/jwt';
 
 const STRATEGY = process.env.AUTH_STRATEGY;
 

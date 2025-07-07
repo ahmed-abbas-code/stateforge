@@ -8,7 +8,7 @@ import {
   mapDecodedToAuthUser,
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
-} from '@authentication/auth/shared';
+} from '@authentication/shared';
 import type { JwtPayload } from 'jsonwebtoken';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days

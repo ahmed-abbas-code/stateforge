@@ -1,6 +1,6 @@
 // src/state/client/strategies/implementations/NavigationStateStrategyImpl.ts
 
-import { PersistenceStrategyBase } from "@state/state/shared";
+import { PersistenceStrategyBase } from "@state/shared";
 
 
 type MemoryStore = Record<string, string>;

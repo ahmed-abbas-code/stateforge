@@ -1,7 +1,7 @@
 // src/state/server/strategies/implementations/RedisServerStrategyImpl.ts
 
-import { getRedisClient } from "@state/state/server";
-import { PersistenceStrategyBase } from "@state/state/shared";
+import { getRedisClient } from "@state/server";
+import { PersistenceStrategyBase } from "@state/shared";
 
 export class RedisServerStrategyImpl<T> implements PersistenceStrategyBase<T> {
   private readonly namespace: string;

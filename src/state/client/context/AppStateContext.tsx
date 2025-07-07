@@ -1,6 +1,6 @@
 // src/state/client/context/AppStateContext.tsx
 
-import { AppSharedState, AppStateContextType } from '@state/state/shared';
+import { AppSharedState, AppStateContextType } from '@state/shared';
 import React from 'react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 // import { AppSharedState, AppStateContextType } from '../../types/AppState';
