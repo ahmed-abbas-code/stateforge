@@ -1,4 +1,5 @@
-// /pages/api/auth/session.ts
+// src/authentication/server/pages/api/auth/session.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { serialize } from 'cookie';
 import { adminAuth } from '@authentication/auth/shared';
@@ -20,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Verify the ID token first to ensure it's valid before creating a session
-    const decodedIdToken = await adminAuth.verifyIdToken(idToken);
+    // const decodedIdToken = await adminAuth.verifyIdToken(idToken);
 
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
       expiresIn: EXPIRES_IN_MS,

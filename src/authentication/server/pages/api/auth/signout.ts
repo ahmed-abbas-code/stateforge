@@ -1,4 +1,4 @@
-// pages/api/auth/signout.ts
+// src/authentication/server/pages/api/auth/signout.ts
 
 import { AuthStrategy } from '@authentication/auth/server/auth-strategy';
 import type { NextApiRequest, NextApiResponse } from 'next';

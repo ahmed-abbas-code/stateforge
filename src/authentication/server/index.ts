@@ -15,3 +15,8 @@ export {
   signOut as signOutFromJwt,
   verifyToken as verifyJwtToken,
 } from './providers/jwt';
+
+export * from './pages/api/auth/me';
+export * from './pages/api/auth/session';
+export * from './pages/api/auth/signin';
+export * from './pages/api/auth/signout';

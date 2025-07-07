@@ -37,7 +37,7 @@
   },
   "include": [
     "src/**/*",
-    "pages/**/*"
+    "src/authentication/server/pages/**/*"
   ],
   "exclude": [
     "node_modules",
