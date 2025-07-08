@@ -20,14 +20,18 @@ function getSessionCookie(req: NextApiRequest): string | null {
 export async function verifyToken(req: NextApiRequest): Promise<AuthUser> {
   const sessionCookie = getSessionCookie(req);
   if (!sessionCookie) {
+    // Unauthenticated (no cookie) — don’t log this as an error
     throw new Error('No session cookie found');
   }
 
   try {
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     return mapDecodedToAuthUser(decoded, 'firebase');
-  } catch (err) {
-    console.error('[Firebase] Session cookie verification failed:', err);
+  } catch (error: unknown) {
+    // Only log truly unexpected failures
+    if (error instanceof Error && error.message !== 'No session cookie found') {
+      console.error('[Firebase] Session cookie verification failed:', error);
+    }
     throw new Error('Invalid or expired Firebase session');
   }
 }
