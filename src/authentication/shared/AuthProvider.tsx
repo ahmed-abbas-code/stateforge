@@ -1,15 +1,25 @@
-// src/authentication/shared/AuthProvider.tsx
-
 import { AuthContextType, AuthUser } from '@authentication/shared';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useSWR from 'swr';
+import { SWRConfig } from 'swr';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Fetcher for /api/auth/me
+// Fetcher for /api/auth/me with 401 suppression
 const fetchUser = async (): Promise<AuthUser | null> => {
-  const res = await fetch('/api/auth/me');
-  if (!res.ok) return null;
+  const res = await fetch('/api/auth/me', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    if (res.status !== 401) {
+      console.error(`Auth fetch failed: ${res.status} ${res.statusText}`);
+    }
+    return null;
+  }
+
   const { user } = await res.json();
   return user || null;
 };
@@ -20,9 +30,28 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
-  const { data: userFromSWR, isLoading } = useSWR<AuthUser | null>('/api/auth/me', fetchUser, {
-    fallbackData: initialUser,
-  });
+  return (
+    <SWRConfig
+      value={{
+        refreshInterval: 0,
+        revalidateOnFocus: false,
+        errorRetryCount: 0,
+        onErrorRetry: () => {},
+      }}
+    >
+      <InnerAuthProvider initialUser={initialUser}>
+        {children}
+      </InnerAuthProvider>
+    </SWRConfig>
+  );
+};
+
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
+  const { data: userFromSWR, error, isLoading } = useSWR<AuthUser | null>(
+    '/api/auth/me',
+    fetchUser,
+    { fallbackData: initialUser }
+  );
 
   const [user, setUser] = useState<AuthUser | null>(initialUser ?? null);
 
@@ -37,10 +66,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
     setUser,
     isAuthenticated: !!user,
     isLoading,
-    error: null, // Optional: Add error handling if desired
-    signIn: async () => ({ ok: true }), // No-op, use useSignIn
-    signOut: async () => {}, // No-op, use useSignOut
-    getToken: async () => null, // Optional: implement a hook for token fetch
+    error: error ?? null,
+    signIn: async () => ({ ok: true }),
+    signOut: async () => {},
+    getToken: async () => null,
+    // setUser provided above
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
