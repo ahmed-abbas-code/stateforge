@@ -1,4 +1,4 @@
-// src/state/server/utils/axiosClient.ts
+// src/shared/utils/serverAxiosClient.ts
 
 import { auditLogoutEvent } from '@authentication/server';
 import { AuthStrategyValue, BaseAxiosClient } from '@shared';

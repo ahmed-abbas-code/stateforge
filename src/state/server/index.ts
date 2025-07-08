@@ -8,5 +8,3 @@ export * from './strategies/implementations/RedisServerStrategyImpl';
 export * from './strategies/implementations/RestApiStrategyImpl';
 export * from './strategies/factory/createServerPersistenceStrategy';
 
-// Utils
-export * from './utils/axiosClient';
