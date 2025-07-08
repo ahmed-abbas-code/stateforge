@@ -8,10 +8,10 @@ import axios, {
 } from 'axios';
 import axiosRetry from 'axios-retry';
 
-export type AuthStrategy = 'apiKey' | 'jwt' | 'idToken' | 'none';
+export type AuthStrategyValue = 'apiKey' | 'jwt' | 'idToken' | 'none';
 
 export interface AuthConfig {
-  strategy?: AuthStrategy;
+  strategy?: AuthStrategyValue;
   overrideToken?: string;
   userId?: string; 
 }

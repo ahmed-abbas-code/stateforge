@@ -1,14 +1,13 @@
 // src/authentication/shared/types/Auth.ts
-
 import type { NextApiRequest } from 'next';
 import type { Auth } from 'firebase/auth';
-import { AuthUser } from '@authentication/shared';
+import { AuthUserType } from '@authentication/shared/types'
 
 export interface AuthContextType {
-  user: AuthUser | null;
+  user: AuthUserType | null;
 
   // For Firebase support
-  setUser?: (user: AuthUser | null) => void;
+  setUser?: (user: AuthUserType | null) => void;
   auth?: Auth;
   signIn?: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
 
@@ -27,5 +26,5 @@ export interface AuthContextType {
 }
 
 export interface AuthApiRequest extends NextApiRequest {
-  user: AuthUser;
+  user: AuthUserType;
 }

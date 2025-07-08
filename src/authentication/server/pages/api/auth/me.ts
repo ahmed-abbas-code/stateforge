@@ -1,8 +1,7 @@
 // src/authentication/server/pages/api/auth/me.ts
 
-
-import { AuthStrategy } from '@authentication/server/auth-strategy';
-import { AuthUser } from '@authentication/shared';
+import { AuthStrategyProvider } from '@authentication/server';
+import { AuthUserType } from '@authentication/shared';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -11,10 +10,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
  */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ user: AuthUser | null; error?: string }>
+  res: NextApiResponse<{ user: AuthUserType | null; error?: string }>
 ): Promise<void> {
   try {
-    const user = await AuthStrategy.verifyToken(req);
+    const user = await AuthStrategyProvider.verifyToken(req);
     res.status(200).json({ user });
   } catch (err: unknown) {
     // Only warn on unexpected failures (not the normal "no cookie" case)
@@ -24,4 +23,3 @@ export default async function handler(
     res.status(401).json({ user: null, error: 'Invalid or expired session' });
   }
 }
-

@@ -1,12 +1,16 @@
-import { AuthContextType, AuthUser } from '@authentication/shared';
+// src/authentication/client/components/AuthProvider.tsx
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { SWRConfig } from 'swr';
 
+import { AuthContextType, AuthUserType } from '@authentication/shared';
+
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Fetcher for /api/auth/me with 401 suppression
-const fetchUser = async (): Promise<AuthUser | null> => {
+const fetchUser = async (): Promise<AuthUserType | null> => {
   const res = await fetch('/api/auth/me', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -21,39 +25,37 @@ const fetchUser = async (): Promise<AuthUser | null> => {
   }
 
   const { user } = await res.json();
-  return user || null;
+  return (user as AuthUserType) || null;
 };
 
 interface AuthProviderProps {
   children: React.ReactNode;
-  initialUser?: AuthUser;
+  initialUser?: AuthUserType;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
-  return (
-    <SWRConfig
-      value={{
-        refreshInterval: 0,
-        revalidateOnFocus: false,
-        errorRetryCount: 0,
-        onErrorRetry: () => {},
-      }}
-    >
-      <InnerAuthProvider initialUser={initialUser}>
-        {children}
-      </InnerAuthProvider>
-    </SWRConfig>
-  );
-};
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => (
+  <SWRConfig
+    value={{
+      refreshInterval: 0,
+      revalidateOnFocus: false,
+      errorRetryCount: 0,
+      onErrorRetry: () => {},
+    }}
+  >
+    <InnerAuthProvider initialUser={initialUser}>
+      {children}
+    </InnerAuthProvider>
+  </SWRConfig>
+);
 
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
-  const { data: userFromSWR, error, isLoading } = useSWR<AuthUser | null>(
+  const { data: userFromSWR, error, isLoading } = useSWR<AuthUserType | null>(
     '/api/auth/me',
     fetchUser,
     { fallbackData: initialUser }
   );
 
-  const [user, setUser] = useState<AuthUser | null>(initialUser ?? null);
+  const [user, setUser] = useState<AuthUserType | null>(initialUser ?? null);
 
   useEffect(() => {
     if (userFromSWR !== undefined && userFromSWR !== user) {
@@ -70,17 +72,16 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser 
     signIn: async () => ({ ok: true }),
     signOut: async () => {},
     getToken: async () => null,
-    // setUser provided above
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 // Hook for usage inside components
-export const useAuth = (): AuthContextType => {
+export const useAuthContext = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 };

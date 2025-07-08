@@ -2,7 +2,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import { adminAuth, AuthUser, mapDecodedToAuthUser, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
+import { adminAuth, mapDecodedToAuthUser } from '@authentication/server';
+import { AuthUserType, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
 
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
@@ -17,7 +18,7 @@ function getSessionCookie(req: NextApiRequest): string | null {
 /**
  * Verifies a Firebase session cookie and returns the authenticated user.
  */
-export async function verifyToken(req: NextApiRequest): Promise<AuthUser> {
+export async function verifyToken(req: NextApiRequest): Promise<AuthUserType> {
   const sessionCookie = getSessionCookie(req);
   if (!sessionCookie) {
     // Unauthenticated (no cookie) — don’t log this as an error
@@ -59,7 +60,7 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
       maxAge: SESSION_EXPIRES_IN_MS / 1000,
     }));
 
-    const user = mapDecodedToAuthUser(decoded, 'firebase');
+    const user: AuthUserType = mapDecodedToAuthUser(decoded, 'firebase');
     res.status(200).json({ user });
   } catch (err) {
     console.error('[Firebase] Sign-in error:', err);

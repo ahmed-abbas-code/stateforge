@@ -1,7 +1,7 @@
 // src/state/server/utils/axiosClient.ts
 
-import { auditLogoutEvent } from '@authentication/shared';
-import { AuthStrategy, BaseAxiosClient } from '@shared/index';
+import { auditLogoutEvent } from '@authentication/server';
+import { AuthStrategyValue, BaseAxiosClient } from '@shared';
 import { getServerEnvVar, getServerFrameworkConfig } from '@shared/utils/server';
 import type { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
@@ -115,7 +115,7 @@ export const createServerAxiosApp = (auth: ServerAuthOptions): AxiosInstance => 
 
   client.interceptors.request.use((config) => {
     config.authConfig = {
-      strategy: auth.type as AuthStrategy,
+      strategy: auth.type as AuthStrategyValue,
       overrideToken: auth.type === 'jwt' ? auth.token : undefined,
       userId: 'userId' in auth ? auth.userId : undefined,
     };

@@ -1,5 +1,6 @@
+// src/index.ts
+
 export * from './shared';
-export * from './state';
 export * from './state/client';
 export * from './state/server';
 export * from './state/shared';

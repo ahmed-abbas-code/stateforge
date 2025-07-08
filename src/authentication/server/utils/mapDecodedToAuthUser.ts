@@ -1,8 +1,8 @@
-// src/authentication/shared/utils/mapDecodedToAuthUser.ts
+// src/authentication/server/utils/mapDecodedToAuthUser.ts
 
-import { AuthProvider, AuthUser } from '@authentication/shared';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { JwtPayload } from 'jsonwebtoken';
+import { AuthProviderType, AuthUserType } from '@authentication/shared';
 
 type DecodedTokenLike = Partial<DecodedIdToken> & JwtPayload;
 
@@ -23,8 +23,8 @@ function isDecodedIdToken(token: unknown): token is DecodedIdToken {
  */
 export function mapDecodedToAuthUser(
   decoded: DecodedTokenLike,
-  provider: AuthProvider
-): AuthUser {
+  provider: AuthProviderType
+): AuthUserType {
   const uid = decoded.uid ?? decoded.sub ?? (decoded as Record<string, unknown>).id;
   const email = decoded.email ?? '';
 

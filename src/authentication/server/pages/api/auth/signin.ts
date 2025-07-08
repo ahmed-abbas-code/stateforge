@@ -1,8 +1,7 @@
 // src/authentication/server/pages/api/auth/signin.ts
 
-
-import { AuthStrategy } from '@authentication/server/auth-strategy';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { AuthStrategyProvider } from '@authentication/server';
  
 /**
  * POST /api/auth/signin
@@ -18,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await AuthStrategy.signIn(req, res);
+    await AuthStrategyProvider.signIn(req, res);
     // If the strategy completes the response (e.g., Auth0 redirect), do not respond again
     if (!res.writableEnded) {
       res.status(200).json({ ok: true });

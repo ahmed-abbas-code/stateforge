@@ -1,4 +1,4 @@
-// src/authentication/shared/middleware/firebase-admin.ts
+// src/authentication/server/middleware/firebase-admin.ts
 
 if (typeof window !== 'undefined') {
   throw new Error('firebase-admin should not be imported in client-side code');

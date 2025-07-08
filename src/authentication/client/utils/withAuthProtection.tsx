@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import type { ComponentType, JSX } from 'react';
-import { useAuth } from 'src/authentication/client/useAuth';
+
+import { useAuth } from '@authentication/client';
 
 interface Router {
   replace: (path: string) => void;

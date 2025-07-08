@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { serialize } from 'cookie';
-import { adminAuth } from '@authentication/shared';
+import { adminAuth } from '@authentication/server';
 
 
 const SESSION_COOKIE_NAME = 'session';

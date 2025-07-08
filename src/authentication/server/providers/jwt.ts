@@ -2,14 +2,15 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
+import type { JwtPayload } from 'jsonwebtoken';
+
 import jwt from 'jsonwebtoken';
 import {
-  AuthUser,
-  mapDecodedToAuthUser,
+  AuthUserType,
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
 } from '@authentication/shared';
-import type { JwtPayload } from 'jsonwebtoken';
+import { mapDecodedToAuthUser } from '@authentication/server';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
@@ -49,7 +50,7 @@ function getSessionCookie(req: NextApiRequest): string | null {
 /**
  * Verifies a JWT token from the session cookie and returns an AuthUser.
  */
-export async function verifyToken(req: NextApiRequest): Promise<AuthUser> {
+export async function verifyToken(req: NextApiRequest): Promise<AuthUserType> {
   const token = getSessionCookie(req);
   if (!token) throw new Error('No session cookie found');
 

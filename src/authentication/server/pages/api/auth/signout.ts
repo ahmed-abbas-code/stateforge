@@ -1,8 +1,7 @@
 // src/authentication/server/pages/api/auth/signout.ts
 
-
-import { AuthStrategy } from '@authentication/server/auth-strategy';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { AuthStrategyProvider } from '@authentication/server';
 
 /**
  * POST /api/auth/signout
@@ -18,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await AuthStrategy.signOut(req, res);
+    await AuthStrategyProvider.signOut(req, res);
     // Avoid double response write in case of Auth0 redirect
     if (!res.writableEnded) {
       res.status(200).json({ ok: true });

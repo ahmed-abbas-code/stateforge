@@ -32,7 +32,6 @@
       "@state/client/*": ["src/state/client/*"],
       "@state/server": ["src/state/server"],
       "@state/server/*": ["src/state/server/*"],
-      "@state": ["src/state/index.ts"],
       "@shared": ["src/shared"],
       "@shared/*": ["src/shared/*"]
     }
@@ -41,7 +40,6 @@
     "src/**/*",
     "src/index.ts",
     "src/shared/index.ts",
-    "src/state/index.ts",
     "src/authentication/client/index.ts",
     "src/authentication/server/index.ts",
     "src/authentication/shared/index.ts",

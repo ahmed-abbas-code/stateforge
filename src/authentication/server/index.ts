@@ -22,3 +22,9 @@ export { default as authMeHandler } from './pages/api/auth/me';
 export { default as authSessionHandler } from './pages/api/auth/session';
 export { default as authSigninHandler } from './pages/api/auth/signin';
 export { default as authSignoutHandler } from './pages/api/auth/signout';
+
+export * from './AuthStrategyProvider';
+
+export * from './middleware/index';
+export * from './utils/mapDecodedToAuthUser';
+

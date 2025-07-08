@@ -1,4 +1,4 @@
-// src/authentication/shared/middleware/withSSOGuard.ts
+// src/authentication/server/middleware/withSSOGuard.ts
 
 import type { NextApiHandler } from 'next';
 

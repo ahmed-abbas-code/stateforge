@@ -1,4 +1,4 @@
-// src/authentication/shared/types/validation/authSchema.ts
+// src/authentication/shared/validation/authSchema.ts
 import { z } from 'zod';
 
 export const authProviderEnum = z.enum(['firebase', 'auth0', 'jwt']);
@@ -11,5 +11,5 @@ export const authUserSchema = z.object({
   providerId: z.string().min(1),
 });
 
-export type AuthProvider = z.infer<typeof authProviderEnum>;
-export type AuthUser = z.infer<typeof authUserSchema>;
+export type AuthProviderType = z.infer<typeof authProviderEnum>;
+export type AuthUserType = z.infer<typeof authUserSchema>;

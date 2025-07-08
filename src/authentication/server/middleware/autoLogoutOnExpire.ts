@@ -1,6 +1,6 @@
-// src/authentication/shared/middleware/autoLogout.ts
+// src/authentication/server/middleware/autoLogoutOnExpire.ts
 
-import { adminAuth } from "@authentication/shared/middleware";
+import { adminAuth } from "@authentication/server/middleware";
 import { getServerFrameworkConfig } from "@shared/utils/server";
 
 
