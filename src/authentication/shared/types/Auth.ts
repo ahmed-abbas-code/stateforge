@@ -1,7 +1,7 @@
 // src/authentication/shared/types/Auth.ts
 
 import type { NextApiRequest } from 'next';
-import type { Auth } from 'firebase-admin/auth';
+import type { Auth } from 'firebase/auth';
 import { AuthUser } from '@authentication/shared';
 
 export interface AuthContextType {
