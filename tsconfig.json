@@ -3,7 +3,11 @@
     "target": "ES2021",
     "module": "ESNext",
     "moduleResolution": "node",
-    "lib": ["dom", "dom.iterable", "ESNext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ESNext"
+    ],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
@@ -17,7 +21,9 @@
     "noEmitOnError": true,
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "baseUrl": ".",
     "paths": {
       "@authentication/shared": ["src/authentication/shared"],
@@ -47,5 +53,8 @@
     "src/state/server/index.ts",
     "src/state/shared/index.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
