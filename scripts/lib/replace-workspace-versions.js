@@ -8,7 +8,7 @@
  * @param {Console | { log: Function }} logger - Optional logger, defaults to console
  * @returns {boolean} - True if any replacements were made
  */
-export function replaceWorkspaceVersions(pkg, logger = console) {
+function replaceWorkspaceVersions(pkg, logger = console) {
   let replaced = false;
 
   const replaceIn = (sectionName, deps) => {
@@ -36,3 +36,6 @@ export function replaceWorkspaceVersions(pkg, logger = console) {
 
   return replaced;
 }
+
+// ✅ Export as CommonJS
+module.exports = { replaceWorkspaceVersions };
