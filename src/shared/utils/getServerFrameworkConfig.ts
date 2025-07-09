@@ -2,10 +2,10 @@
 
 import { envSchema, EnvVars } from '../types/validation/envSchema.js';
 
-let cached: EnvVars & { isDryRun: boolean } | null = null;
+let cached: EnvVars | null = null;
 let initialized = false;
 
-export function getServerFrameworkConfig(): EnvVars & { isDryRun: boolean } {
+export function getServerFrameworkConfig(): EnvVars {
   if (typeof window !== 'undefined') {
     const errorMsg = `[getServerFrameworkConfig] Attempted to run on the client. This must only be used in server-side code.`;
     console.error(errorMsg);
@@ -28,12 +28,6 @@ export function getServerFrameworkConfig(): EnvVars & { isDryRun: boolean } {
     throw new Error('Invalid server-side environment config');
   }
 
-  cached = {
-    ...parsed.data,
-    isDryRun:
-      parsed.data.NEXT_PUBLIC_ENV === 'dryrun' ||
-      parsed.data.NEXT_PUBLIC_AUTH_STRATEGY === 'dryrun',
-  };
-
+  cached = parsed.data;
   return cached;
 }

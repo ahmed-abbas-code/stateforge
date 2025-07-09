@@ -3,16 +3,10 @@
 import type { RedisClientType } from 'redis';
 import { getServerFrameworkConfig } from '@shared/utils/server';
 
-
 export let redis: RedisClientType | undefined;
 
 export async function getRedisClient(): Promise<RedisClientType | undefined> {
-  const { isDryRun, REDIS_URL } = getServerFrameworkConfig();
-
-  if (isDryRun) {
-    console.log('[StateForge] Dry run mode — skipping Redis initialization');
-    return undefined;
-  }
+  const { REDIS_URL } = getServerFrameworkConfig();
 
   if (!REDIS_URL) {
     console.log('[StateForge] REDIS_URL not set — Redis will not be used');

@@ -8,8 +8,8 @@ import { z } from 'zod';
  */
 export const envPublicSchema = z.object({
   // General
-  NEXT_PUBLIC_ENV: z.enum(['development', 'staging', 'production', 'dryrun']),
-  NEXT_PUBLIC_AUTH_STRATEGY: z.enum(['firebase', 'auth0', 'dryrun']),
+  NEXT_PUBLIC_ENV: z.enum(['development', 'staging', 'production']),
+  NEXT_PUBLIC_AUTH_STRATEGY: z.enum(['firebase', 'firebase-sso', 'auth0']),
 
   // Firebase (client)
   NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1).optional(),

@@ -1,10 +1,6 @@
 // src/authentication/server/middleware/autoLogoutOnExpire.ts
 
-import { adminAuth } from "@authentication/server/middleware";
-import { getServerFrameworkConfig } from "@shared/utils/server";
-
-
-const { isDryRun } = getServerFrameworkConfig();
+import { adminAuth } from '@authentication/server/middleware';
 
 /**
  * Validates the Firebase ID token.
@@ -12,16 +8,7 @@ const { isDryRun } = getServerFrameworkConfig();
  */
 export async function autoLogoutOnExpire(token: string) {
   try {
-    if (isDryRun) {
-      console.log('[DryRunMode] Skipping token verification');
-      return {
-        uid: 'dummy-uid',
-        email: 'dummy@local.dev',
-        dummy: true,
-      };
-    }
-
-    // ✅ In real mode: verify token and check revocation
+    // ✅ Verify token and check revocation
     const decoded = await adminAuth.verifyIdToken(token, true);
     return decoded;
   } catch (err) {
