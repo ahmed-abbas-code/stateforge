@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: {
@@ -12,8 +12,9 @@ export default defineConfig({
     'state-shared': 'src/state/shared/index.ts',
   },
   outDir: 'dist',
-  format: ['cjs'],
-  dts: true, // Let tsup infer declarations from entry points
+  format: ['cjs', 'esm'],                   
+  outExtension: ({ format }) => ({ js: format === 'esm' ? '.mjs' : '.js' }), 
+  dts: true,
   sourcemap: true,
   target: 'es2021',
   platform: 'node',
@@ -21,5 +22,5 @@ export default defineConfig({
   splitting: false,
   minify: false,
   external: ['next'],
-  tsconfig: 'tsconfig.json'
-});
+  tsconfig: 'tsconfig.json',
+})

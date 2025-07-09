@@ -7,81 +7,66 @@
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
   "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "state": [
-        "./dist/state.d.ts"
-      ],
-      "state/client": [
-        "./dist/state-client.d.ts"
-      ],
-      "state/server": [
-        "./dist/state-server.d.ts"
-      ],
-      "state/shared": [
-        "./dist/state-shared.d.ts"
-      ],
-      "authentication/client": [
-        "./dist/authentication-client.d.ts"
-      ],
-      "authentication/server": [
-        "./dist/authentication-server.d.ts"
-      ],
-      "authentication/shared": [
-        "./dist/authentication-shared.d.ts"
-      ],
-      "shared": [
-        "./dist/shared.d.ts"
-      ]
+      "state/client": ["./dist/state-client.d.ts"],
+      "state/server": ["./dist/state-server.d.ts"],
+      "state/shared": ["./dist/state-shared.d.ts"],
+      "authentication/client": ["./dist/authentication-client.d.ts"],
+      "authentication/server": ["./dist/authentication-server.d.ts"],
+      "authentication/shared": ["./dist/authentication-shared.d.ts"],
+      "shared": ["./dist/shared.d.ts"]
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./state": {
-      "types": "./dist/state.d.ts",
-      "require": "./dist/state.js",
-      "default": "./dist/state.js"
-    },
     "./state/client": {
       "types": "./dist/state-client.d.ts",
+      "import": "./dist/state-client.mjs",
       "require": "./dist/state-client.js",
       "default": "./dist/state-client.js"
     },
     "./state/server": {
       "types": "./dist/state-server.d.ts",
+      "import": "./dist/state-server.mjs",
       "require": "./dist/state-server.js",
       "default": "./dist/state-server.js"
     },
     "./state/shared": {
       "types": "./dist/state-shared.d.ts",
+      "import": "./dist/state-shared.mjs",
       "require": "./dist/state-shared.js",
       "default": "./dist/state-shared.js"
     },
     "./authentication/client": {
       "types": "./dist/authentication-client.d.ts",
+      "import": "./dist/authentication-client.mjs",
       "require": "./dist/authentication-client.js",
       "default": "./dist/authentication-client.js"
     },
     "./authentication/server": {
       "types": "./dist/authentication-server.d.ts",
+      "import": "./dist/authentication-server.mjs",
       "require": "./dist/authentication-server.js",
       "default": "./dist/authentication-server.js"
     },
     "./authentication/shared": {
       "types": "./dist/authentication-shared.d.ts",
+      "import": "./dist/authentication-shared.mjs",
       "require": "./dist/authentication-shared.js",
       "default": "./dist/authentication-shared.js"
     },
     "./shared": {
       "types": "./dist/shared.d.ts",
+      "import": "./dist/shared.mjs",
       "require": "./dist/shared.js",
       "default": "./dist/shared.js"
     }
