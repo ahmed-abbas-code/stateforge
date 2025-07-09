@@ -13,38 +13,47 @@
   "exports": {
     ".": {
       "require": "./dist/index.js",
+      "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./state": {
       "require": "./dist/state.js",
+      "default": "./dist/state.js",
       "types": "./dist/state.d.ts"
     },
     "./state/client": {
       "require": "./dist/state-client.js",
+      "default": "./dist/state-client.js",
       "types": "./dist/state-client.d.ts"
     },
     "./state/server": {
       "require": "./dist/state-server.js",
+      "default": "./dist/state-server.js",
       "types": "./dist/state-server.d.ts"
     },
     "./state/shared": {
       "require": "./dist/state-shared.js",
+      "default": "./dist/state-shared.js",
       "types": "./dist/state-shared.d.ts"
     },
     "./authentication/client": {
       "require": "./dist/authentication-client.js",
+      "default": "./dist/authentication-client.js",
       "types": "./dist/authentication-client.d.ts"
     },
     "./authentication/server": {
       "require": "./dist/authentication-server.js",
+      "default": "./dist/authentication-server.js",
       "types": "./dist/authentication-server.d.ts"
     },
     "./authentication/shared": {
       "require": "./dist/authentication-shared.js",
+      "default": "./dist/authentication-shared.js",
       "types": "./dist/authentication-shared.d.ts"
     },
     "./shared": {
       "require": "./dist/shared.js",
+      "default": "./dist/shared.js",
       "types": "./dist/shared.d.ts"
     }
   },
