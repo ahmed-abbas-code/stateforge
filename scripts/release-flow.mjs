@@ -4,10 +4,10 @@
 
 import { execSync } from 'child_process';
 
-// ✅ Import CommonJS log-utils correctly
-const { log, error, success } = await import('./lib/log-utils.js');
+// ✅ Dynamically import CommonJS log-utils.js
+const { log, error, success } = await import(new URL('./lib/log-utils.js', import.meta.url));
 
-// Get version type argument
+// Parse release type
 const type = process.argv[2];
 
 if (!['patch', 'minor', 'major'].includes(type)) {
@@ -18,9 +18,8 @@ if (!['patch', 'minor', 'major'].includes(type)) {
 try {
   log(`🚀 Starting release flow: ${type}`);
 
-  // ✅ Ensure correct relative path resolution for release.mjs
-  const releasePath = new URL('./release.mjs', import.meta.url).pathname;
-  execSync(`node ${releasePath} ${type}`, { stdio: 'inherit' });
+  const releaseScript = new URL('./release.mjs', import.meta.url).pathname;
+  execSync(`node ${releaseScript} ${type}`, { stdio: 'inherit' });
 
   success(`Release flow (${type}) completed.`);
 } catch (err) {

@@ -7,19 +7,21 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ✅ Load CommonJS log utils
-const { log, error, success } = await import('./lib/log-utils.js');
-
-// ✅ Load CommonJS replaceWorkspaceVersions helper
-const { replaceWorkspaceVersions } = await import('./lib/replace-workspace-versions.js');
-
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ✅ Dynamically import CommonJS log utils
+const logUtilsPath = new URL('./lib/log-utils.js', import.meta.url);
+const { log, error, success } = await import(logUtilsPath);
+
+// ✅ Dynamically import CommonJS workspace version replacer
+const replacePath = new URL('./lib/replace-workspace-versions.js', import.meta.url);
+const { replaceWorkspaceVersions } = await import(replacePath);
+
 // ✅ Step 1: Load .env and set up .npmrc
-const bootstrapPath = path.resolve(__dirname, './bootstrap-npmrc.js');
-await import(`file://${bootstrapPath}`);
+const bootstrapPath = new URL('./bootstrap-npmrc.js', import.meta.url);
+await import(bootstrapPath);
 
 const versionType = process.argv[2];
 
