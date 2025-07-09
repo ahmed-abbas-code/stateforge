@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2021",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "lib": ["dom", "dom.iterable", "ESNext"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

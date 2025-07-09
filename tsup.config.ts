@@ -12,7 +12,7 @@ export default defineConfig({
     'state-shared': 'src/state/shared/index.ts',
   },
   outDir: 'dist',
-  format: ['esm'],
+  format: ['cjs'],
   dts: true, // Let tsup infer declarations from entry points
   sourcemap: true,
   target: 'es2021',
