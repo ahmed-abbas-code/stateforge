@@ -8,12 +8,12 @@ import axios, {
 } from 'axios';
 import axiosRetry from 'axios-retry';
 
-export type AuthStrategyValue = 'apiKey' | 'jwt' | 'idToken' | 'none';
+export type AuthStrategyValue = 'apiKey' | 'jwt' | 'idToken' | 'firebase-sso' | 'none';
 
 export interface AuthConfig {
   strategy?: AuthStrategyValue;
   overrideToken?: string;
-  userId?: string; 
+  userId?: string;
 }
 
 export abstract class BaseAxiosClient {
@@ -38,7 +38,6 @@ export abstract class BaseAxiosClient {
           headers['Authorization'] || headers['authorization'];
 
         if (existingAuth) {
-          // Ensure JSON headers are present
           headers['Content-Type'] = headers['Content-Type'] || 'application/json';
           headers['Accept'] = headers['Accept'] || 'application/json';
           return config;
@@ -64,7 +63,8 @@ export abstract class BaseAxiosClient {
               break;
             }
 
-            case 'idToken': {
+            case 'idToken':
+            case 'firebase-sso': {
               const token = await this.getIdToken();
               if (!token) throw new Error('[AxiosClient] Missing Firebase ID token');
               headers['Authorization'] = `Bearer ${token}`;
