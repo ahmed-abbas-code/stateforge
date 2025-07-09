@@ -7,18 +7,19 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const { log, error, success } = await import('./lib/log-utils.js').then(m => m.default || m);
+// ✅ Load CommonJS log utils
+const { log, error, success } = await import('./lib/log-utils.js');
 
-// ✅ Import CommonJS module safely in ESM
-import pkg from './lib/replace-workspace-versions.js';
-const { replaceWorkspaceVersions } = pkg;
+// ✅ Load CommonJS replaceWorkspaceVersions helper
+const { replaceWorkspaceVersions } = await import('./lib/replace-workspace-versions.js');
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Step 1: Ensure GITHUB_TOKEN and .npmrc are configured
-await import(path.resolve(__dirname, './bootstrap-npmrc.js'));
+// ✅ Step 1: Load .env and set up .npmrc
+const bootstrapPath = path.resolve(__dirname, './bootstrap-npmrc.js');
+await import(`file://${bootstrapPath}`);
 
 const versionType = process.argv[2];
 
@@ -37,7 +38,7 @@ if (!fs.existsSync(pkgPath)) {
 
 const pkgJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
-// Step 2: Replace any "workspace:*" versions
+// ✅ Step 2: Replace workspace:* versions
 const replaced = replaceWorkspaceVersions(pkgJson, console);
 if (replaced) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + '\n');

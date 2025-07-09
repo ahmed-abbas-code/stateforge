@@ -3,8 +3,11 @@
 // scripts/release-flow.mjs
 
 import { execSync } from 'child_process';
-const { log, error, success } = await import('./lib/log-utils.js').then(m => m.default || m);
 
+// ✅ Import CommonJS log-utils correctly
+const { log, error, success } = await import('./lib/log-utils.js');
+
+// Get version type argument
 const type = process.argv[2];
 
 if (!['patch', 'minor', 'major'].includes(type)) {
@@ -14,10 +17,11 @@ if (!['patch', 'minor', 'major'].includes(type)) {
 
 try {
   log(`🚀 Starting release flow: ${type}`);
-  // ✅ Ensure script is explicitly resolved relative to this file
-  execSync(`node ${new URL('./release.mjs', import.meta.url).pathname} ${type}`, {
-    stdio: 'inherit'
-  });
+
+  // ✅ Ensure correct relative path resolution for release.mjs
+  const releasePath = new URL('./release.mjs', import.meta.url).pathname;
+  execSync(`node ${releasePath} ${type}`, { stdio: 'inherit' });
+
   success(`Release flow (${type}) completed.`);
 } catch (err) {
   error(`Release flow failed: ${err?.message || err}`);
