@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { log, error, success } from './lib/log-utils.js';
+const { log, error, success } = await import('./lib/log-utils.js').then(m => m.default || m);
 
 // ✅ Import CommonJS module safely in ESM
 import pkg from './lib/replace-workspace-versions.js';

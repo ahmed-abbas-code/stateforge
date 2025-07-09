@@ -3,7 +3,7 @@
 // scripts/release-flow.mjs
 
 import { execSync } from 'child_process';
-import { log, success, error } from './lib/log-utils.js';
+const { log, error, success } = await import('./lib/log-utils.js').then(m => m.default || m);
 
 const type = process.argv[2];
 
