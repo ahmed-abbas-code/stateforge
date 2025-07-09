@@ -16,6 +16,7 @@ export {
   signIn as signInWithJwt,
   signOut as signOutFromJwt,
   verifyToken as verifyJwtToken,
+  jwtSessionCookieName,
 } from './providers/jwt';
 
 export { default as authMeHandler } from './pages/api/auth/me';
@@ -27,4 +28,5 @@ export * from './AuthStrategyProvider';
 
 export * from './middleware/index';
 export * from './utils/mapDecodedToAuthUser';
+export * from './utils/createBackendProxyRoute';
 

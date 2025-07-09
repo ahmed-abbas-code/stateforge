@@ -3,13 +3,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
 import type { JwtPayload } from 'jsonwebtoken';
-
 import jwt from 'jsonwebtoken';
-import {
-  AuthUserType,
-  SESSION_COOKIE_NAME,
-  sessionCookieOptions,
-} from '@authentication/shared';
+
+import { AuthUserType, sessionCookieOptions } from '@authentication/shared';
 import { mapDecodedToAuthUser } from '@authentication/server';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
@@ -21,6 +17,8 @@ if (!rawSecret || typeof rawSecret !== 'string') {
 const ENCRYPTION_SECRET_KEY: string = rawSecret;
 
 const { verify } = jwt;
+
+export const jwtSessionCookieName = 'sf_backend_session';
 
 /**
  * Type guard to validate JwtPayload shape.
@@ -44,25 +42,27 @@ function normalizeJwtPayload(payload: JwtPayload): JwtPayload & { aud?: string }
  */
 function getSessionCookie(req: NextApiRequest): string | null {
   const cookies = parse(req.headers.cookie || '');
-  return cookies[SESSION_COOKIE_NAME] || null;
+  return cookies[jwtSessionCookieName] || null;
 }
 
 /**
- * Verifies a JWT token from the session cookie and returns an AuthUser.
+ * Verifies a JWT token from the session cookie and returns an AuthUser and raw token.
  */
-export async function verifyToken(req: NextApiRequest): Promise<AuthUserType> {
-  const token = getSessionCookie(req);
-  if (!token) throw new Error('No session cookie found');
+export async function verifyToken(req: NextApiRequest): Promise<AuthUserType & { rawToken: string }> {
+  const rawToken = getSessionCookie(req);
+  if (!rawToken) throw new Error('No session cookie found');
 
   try {
-    const decoded = verify(token, ENCRYPTION_SECRET_KEY);
+    const decoded = verify(rawToken, ENCRYPTION_SECRET_KEY);
 
     if (!isJwtPayload(decoded)) {
       throw new Error('Invalid JWT payload structure');
     }
 
     const normalized = normalizeJwtPayload(decoded);
-    return mapDecodedToAuthUser(normalized, 'jwt');
+    const user = mapDecodedToAuthUser(normalized, 'jwt');
+
+    return { ...user, rawToken };
   } catch (err) {
     console.error('[JWT] Token verification failed:', err);
     throw new Error('Invalid or expired JWT session');
@@ -88,9 +88,9 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
       throw new Error('Invalid JWT payload structure');
     }
 
-    normalizeJwtPayload(decoded); // Optional: validated but unused
+    normalizeJwtPayload(decoded); // Optional validation only
 
-    res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, token, {
+    res.setHeader('Set-Cookie', serialize(jwtSessionCookieName, token, {
       ...sessionCookieOptions,
       maxAge: SESSION_EXPIRES_IN_SEC,
     }));
@@ -107,7 +107,7 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
  */
 export async function signOut(_req: NextApiRequest, res: NextApiResponse): Promise<void> {
   try {
-    res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, '', {
+    res.setHeader('Set-Cookie', serialize(jwtSessionCookieName, '', {
       ...sessionCookieOptions,
       expires: new Date(0),
     }));

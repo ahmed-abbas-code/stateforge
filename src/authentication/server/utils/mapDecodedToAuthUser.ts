@@ -19,17 +19,24 @@ function isDecodedIdToken(token: unknown): token is DecodedIdToken {
 }
 
 /**
- * Accepts either a Firebase DecodedIdToken or a generic JwtPayload.
+ * Accepts a Firebase DecodedIdToken or generic JwtPayload
+ * and normalizes it into an AuthUserType for SF.
  */
 export function mapDecodedToAuthUser(
   decoded: DecodedTokenLike,
   provider: AuthProviderType
 ): AuthUserType {
-  const uid = decoded.uid ?? decoded.sub ?? (decoded as Record<string, unknown>).id;
+  const uid =
+    decoded.uid ??
+    decoded.sub ??
+    (decoded as Record<string, unknown>).id;
+
   const email = decoded.email ?? '';
 
   if (!uid || !email) {
-    throw new Error(`[mapDecodedToAuthUser] Missing required fields: uid=${uid}, email=${email}`);
+    throw new Error(
+      `[mapDecodedToAuthUser] Missing required fields: uid=${uid}, email=${email}`
+    );
   }
 
   const rawName =
@@ -52,4 +59,3 @@ export function mapDecodedToAuthUser(
     providerId,
   };
 }
-

@@ -1,6 +1,7 @@
 // src/authentication/shared/validation/authSchema.ts
 import { z } from 'zod';
 
+// ✅ Added 'backend' as a valid provider
 export const authProviderEnum = z.enum(['firebase', 'auth0', 'jwt']);
 
 export const authUserSchema = z.object({
