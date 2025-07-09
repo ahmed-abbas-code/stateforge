@@ -7,54 +7,58 @@
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "state": ["./dist/state.d.ts"],
+      "state/client": ["./dist/state-client.d.ts"],
+      "state/server": ["./dist/state-server.d.ts"],
+      "state/shared": ["./dist/state-shared.d.ts"],
+      "authentication/client": ["./dist/authentication-client.d.ts"],
+      "authentication/server": ["./dist/authentication-server.d.ts"],
+      "authentication/shared": ["./dist/authentication-shared.d.ts"],
+      "shared": ["./dist/shared.d.ts"]
+    }
+  },
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
       "require": "./dist/index.js",
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     },
     "./state": {
       "require": "./dist/state.js",
-      "default": "./dist/state.js",
-      "types": "./dist/state.d.ts"
+      "default": "./dist/state.js"
     },
     "./state/client": {
       "require": "./dist/state-client.js",
-      "default": "./dist/state-client.js",
-      "types": "./dist/state-client.d.ts"
+      "default": "./dist/state-client.js"
     },
     "./state/server": {
       "require": "./dist/state-server.js",
-      "default": "./dist/state-server.js",
-      "types": "./dist/state-server.d.ts"
+      "default": "./dist/state-server.js"
     },
     "./state/shared": {
       "require": "./dist/state-shared.js",
-      "default": "./dist/state-shared.js",
-      "types": "./dist/state-shared.d.ts"
+      "default": "./dist/state-shared.js"
     },
     "./authentication/client": {
       "require": "./dist/authentication-client.js",
-      "default": "./dist/authentication-client.js",
-      "types": "./dist/authentication-client.d.ts"
+      "default": "./dist/authentication-client.js"
     },
     "./authentication/server": {
       "require": "./dist/authentication-server.js",
-      "default": "./dist/authentication-server.js",
-      "types": "./dist/authentication-server.d.ts"
+      "default": "./dist/authentication-server.js"
     },
     "./authentication/shared": {
       "require": "./dist/authentication-shared.js",
-      "default": "./dist/authentication-shared.js",
-      "types": "./dist/authentication-shared.d.ts"
+      "default": "./dist/authentication-shared.js"
     },
     "./shared": {
       "require": "./dist/shared.js",
-      "default": "./dist/shared.js",
-      "types": "./dist/shared.d.ts"
+      "default": "./dist/shared.js"
     }
   },
   "repository": {
