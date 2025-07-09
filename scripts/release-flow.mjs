@@ -14,7 +14,10 @@ if (!['patch', 'minor', 'major'].includes(type)) {
 
 try {
   log(`🚀 Starting release flow: ${type}`);
-  execSync(`node scripts/release.mjs ${type}`, { stdio: 'inherit' });
+  // ✅ Ensure script is explicitly resolved relative to this file
+  execSync(`node ${new URL('./release.mjs', import.meta.url).pathname} ${type}`, {
+    stdio: 'inherit'
+  });
   success(`Release flow (${type}) completed.`);
 } catch (err) {
   error(`Release flow failed: ${err?.message || err}`);

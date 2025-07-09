@@ -8,7 +8,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { log, error, success } from './lib/log-utils.mjs';
-import { replaceWorkspaceVersions } from './lib/replace-workspace-versions.js';
+
+// ✅ Import CommonJS module safely in ESM
+import pkg from './lib/replace-workspace-versions.js';
+const { replaceWorkspaceVersions } = pkg;
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -32,12 +35,12 @@ if (!fs.existsSync(pkgPath)) {
   process.exit(1);
 }
 
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const pkgJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
 // Step 2: Replace any "workspace:*" versions
-const replaced = replaceWorkspaceVersions(pkg, console);
+const replaced = replaceWorkspaceVersions(pkgJson, console);
 if (replaced) {
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  fs.writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + '\n');
   log('📦 Updated package.json with pinned workspace versions.');
 }
 
