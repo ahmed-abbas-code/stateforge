@@ -2,15 +2,10 @@
 
 // scripts/bootstrap-npmrc.js
 
-import fs from 'fs';
-import path from 'path';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { log, error, success } from './lib/log-utils.mjs';
-
-// Resolve current script location
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+const { log, error, success } = require('./lib/log-utils.mjs');
 
 // Load .env if GITHUB_TOKEN is not already set
 if (!process.env.GITHUB_TOKEN) {
@@ -44,7 +39,6 @@ const authLine = `//${registry}/:_authToken=${process.env.GITHUB_TOKEN}`;
 let content = '';
 if (fs.existsSync(npmrcPath)) {
   content = fs.readFileSync(npmrcPath, 'utf-8');
-  // Remove any previous token lines for GitHub registry
   content = content.replace(/\/\/.*npm\.pkg\.github\.com\/:_authToken=.*\n?/g, '');
 }
 
