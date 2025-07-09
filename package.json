@@ -1,13 +1,15 @@
 {
   "name": "@stateforge-framework/framework",
-  "version": "1.0.42",
+  "version": "1.0.43",
   "private": false,
   "type": "commonjs",
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
   "author": "Ahmed Abbas <ahmedabbas.external@gmail.com>",
   "license": "MIT",
   "main": "./dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "require": "./dist/index.js",
