@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 
-const fetcher = (path: string, init?: Parameters<typeof fetch>[1]) =>
+export const fetcher = (path: string, init?: Parameters<typeof fetch>[1]) =>
   fetch(path, {
     ...init,
     credentials: 'include',
