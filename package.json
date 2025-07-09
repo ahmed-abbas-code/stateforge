@@ -1,6 +1,6 @@
 {
   "name": "@stateforge-framework/framework",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "private": false,
   "type": "commonjs",
   "description": "Secure, pluggable framework for authentication, app state, navigation state, and persistence across client and server.",
@@ -10,14 +10,30 @@
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "state": ["./dist/state.d.ts"],
-      "state/client": ["./dist/state-client.d.ts"],
-      "state/server": ["./dist/state-server.d.ts"],
-      "state/shared": ["./dist/state-shared.d.ts"],
-      "authentication/client": ["./dist/authentication-client.d.ts"],
-      "authentication/server": ["./dist/authentication-server.d.ts"],
-      "authentication/shared": ["./dist/authentication-shared.d.ts"],
-      "shared": ["./dist/shared.d.ts"]
+      "state": [
+        "./dist/state.d.ts"
+      ],
+      "state/client": [
+        "./dist/state-client.d.ts"
+      ],
+      "state/server": [
+        "./dist/state-server.d.ts"
+      ],
+      "state/shared": [
+        "./dist/state-shared.d.ts"
+      ],
+      "authentication/client": [
+        "./dist/authentication-client.d.ts"
+      ],
+      "authentication/server": [
+        "./dist/authentication-server.d.ts"
+      ],
+      "authentication/shared": [
+        "./dist/authentication-shared.d.ts"
+      ],
+      "shared": [
+        "./dist/shared.d.ts"
+      ]
     }
   },
   "files": [
