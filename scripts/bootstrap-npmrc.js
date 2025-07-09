@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const { log, error, success } = require('./lib/log-utils.mjs');
+const { log, error, success } = require('./lib/log-utils.js');
 
 // Load .env if GITHUB_TOKEN is not already set
 if (!process.env.GITHUB_TOKEN) {
