@@ -28,6 +28,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     serialize = (body => JSON.stringify(body) as RequestBodyPayload),
     onSuccess,
     onError,
+    invalidateKeys = [], // NEW: optional list of SWR cache keys to revalidate
   } = options;
 
   const key: MutationKey = [path, method];
@@ -61,8 +62,14 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     TBody
   > = {
     onSuccess: async (data, k, cfg) => {
-      // default: revalidate GET cache
+      // Always revalidate the GET version of this path
       await revalidateCache([path, 'GET']);
+
+      // NEW: Also revalidate any additional keys provided
+      if (invalidateKeys.length > 0) {
+        await Promise.all(invalidateKeys.map(key => revalidateCache(key)));
+      }
+
       onSuccess?.(data as TRes);
       cfg.onSuccess?.(data, k, cfg);
     },

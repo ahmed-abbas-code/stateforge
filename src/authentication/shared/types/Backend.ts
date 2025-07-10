@@ -54,6 +54,8 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
    * Default behavior: JSON.stringify(body).
    */
   serialize?: (body: TBody) => RequestBodyPayload;
+  /** SWR cache keys to revalidate on success (e.g. ['/clients', '/projects']) */
+  invalidateKeys?: string[];
   /** Called after a successful mutation with the returned data */
   onSuccess?: (data: TRes) => void;
   /** Called after a failed mutation with the error thrown */
