@@ -1,4 +1,5 @@
 // src/authentication/client/hooks/useBackendMutation.ts
+
 import useSWRMutation, {
   SWRMutationConfiguration,
 } from 'swr/mutation';
@@ -14,12 +15,11 @@ import type {
 /** Convenience alias for SWR’s key tuple */
 type MutationKey = readonly [string, string]; // [path, method]
 
-/**
- * Centralized mutation hook for backend calls with auth & tenant headers.
- * Matches UseBackendMutationOptions / UseBackendMutationResult shape.
- */
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
-  options: UseBackendMutationOptions<TBody, TRes>
+  options: UseBackendMutationOptions<TBody, TRes> & {
+    /** Optional list of SWR keys to invalidate (defaults to [path, 'GET']) */
+    invalidate?: MutationKey[];
+  }
 ): UseBackendMutationResult<TBody, TRes> {
   const {
     path,
@@ -28,7 +28,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     serialize = (body => JSON.stringify(body) as RequestBodyPayload),
     onSuccess,
     onError,
-    invalidateKeys = [], // NEW: optional list of SWR cache keys to revalidate
+    invalidate,
   } = options;
 
   const key: MutationKey = [path, method];
@@ -54,24 +54,20 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     return fetcher(path, init) as Promise<TRes>;
   };
 
-  /** SWR config (handle onSuccess/onError) */
+  /** SWR config with revalidation */
   const swrCfg: SWRMutationConfiguration<
     TRes,
     Error,
     MutationKey,
     TBody
   > = {
-    onSuccess: async (data, k, cfg) => {
-      // Always revalidate the GET version of this path
-      await revalidateCache([path, 'GET']);
-
-      // NEW: Also revalidate any additional keys provided
-      if (invalidateKeys.length > 0) {
-        await Promise.all(invalidateKeys.map(key => revalidateCache(key)));
+    onSuccess: async (data, _k, cfg) => {
+      const keysToInvalidate: MutationKey[] = invalidate ?? [[path, 'GET']];
+      for (const key of keysToInvalidate) {
+        await revalidateCache(key);
       }
-
       onSuccess?.(data as TRes);
-      cfg.onSuccess?.(data, k, cfg);
+      cfg.onSuccess?.(data, _k, cfg);
     },
     onError: (err, k, cfg) => {
       onError?.(err as Error);
