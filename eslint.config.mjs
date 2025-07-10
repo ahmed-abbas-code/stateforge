@@ -1,5 +1,3 @@
-// eslint.config.mjs
-
 import js from '@eslint/js';
 import parser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
@@ -53,19 +51,10 @@ export default [
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
       },
-      globals: {
-        fetch: 'readonly',
-        window: 'readonly',
-        localStorage: 'readonly', 
-        sessionStorage: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        RequestInit: 'readonly',
+      // Enable browser globals (FormData, Blob, URLSearchParams, etc.)
+      env: {
+        browser: true,
+        es2021: true,
       },
     },
     plugins: {
