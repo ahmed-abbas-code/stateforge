@@ -18,15 +18,18 @@ export function useBackend<T>(options: UseBackendOptions): UseBackendResult<T> {
     path,
     refreshInterval,
     enabled = true,
+    headers,
   } = options;
 
-  const swr = useSWR<T>(enabled ? path : null, () => fetcher(path), {
-    refreshInterval,
-  });
+  const swr = useSWR<T>(
+    enabled ? path : null,
+    () => fetcher(path, headers ? { headers } : undefined),
+    { refreshInterval }
+  );
 
   return {
     data: swr.data ?? null,
-    isLoading: !swr.error && !swr.data,
+    isLoading: enabled && !swr.data && !swr.error,
     error: swr.error ?? null,
     mutate: swr.mutate,
   };
