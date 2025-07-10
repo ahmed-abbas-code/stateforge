@@ -46,7 +46,7 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
   /** API endpoint path, may include placeholders like {id} */
   path: string;
   /** HTTP method to use for the mutation (default: POST) */
-  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Additional headers to include in the request */
   headers?: Record<string, string>;
   /**
