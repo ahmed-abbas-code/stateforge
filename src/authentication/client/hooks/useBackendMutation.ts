@@ -13,7 +13,7 @@ import type {
 } from '@authentication/shared';
 
 /** Convenience alias for SWR’s key tuple */
-type MutationKey = readonly [string, string]; // [path, method]
+export type MutationKey = readonly [string, string]; // [path, method]
 
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
