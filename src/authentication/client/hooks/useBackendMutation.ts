@@ -1,12 +1,37 @@
 // src/authentication/client/hooks/useBackendMutation.ts
-import useSWRMutation from 'swr/mutation';
+
+import useSWRMutation, {
+  SWRMutationConfiguration,
+} from 'swr/mutation';
 import { mutate as revalidateCache } from 'swr';
 import { fetcher } from './useBackend';
+import { getAuthToken, getTenantId } from '../utils/auth';
 
 type HttpMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-interface MutationOptions<Data, Err> {
-  revalidate?: boolean | string[];
+/**
+ * MutationOptions extends SWR’s mutation config for our
+ * [path,method] key, but omits its built-in `revalidate`
+ * so we can define our own `revalidateKeys`.
+ */
+export interface MutationOptions<
+  Data,
+  Err,
+  Body = unknown
+> extends Omit<
+    SWRMutationConfiguration<
+      Data,
+      Err,
+      readonly [string, HttpMethod],
+      Body
+    >,
+    'revalidate'
+  > {
+  /**
+   * If `true`, revalidate the GET cache at [path, 'GET'].
+   * If an array, revalidate each specified cache key.
+   */
+  revalidateKeys?: boolean | readonly (string | readonly unknown[])[];
   onSuccess?: (data: Data) => void | Promise<void>;
   onError?: (err: Err) => void;
 }
@@ -18,10 +43,14 @@ export function useBackendMutation<
 >(
   path: string,
   method: HttpMethod,
-  opts: MutationOptions<Data, Err> = {}
-) {
+  opts: MutationOptions<Data, Err, Body> = {}
+): {
+  run: (arg?: Body) => Promise<Data>;
+  loading: boolean;
+  error: Err | undefined;
+} {
   const {
-    revalidate: revalidateOpt = true,
+    revalidateKeys = true,
     onSuccess,
     onError,
     ...swrCfg
@@ -33,47 +62,55 @@ export function useBackendMutation<
     _key: typeof key,
     { arg }: { arg: Body }
   ): Promise<Data> => {
+    const token = getAuthToken();
+    const tenant = getTenantId();
     const init: RequestInit = {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(tenant && { 'X-Tenant-Id': tenant }),
+      },
       body: arg === undefined ? undefined : JSON.stringify(arg),
     };
     return fetcher(path, init) as Promise<Data>;
   };
 
+  const swrMutationConfig: SWRMutationConfiguration<
+    Data,
+    Err,
+    typeof key,
+    Body
+  > = {
+    ...swrCfg,
+    onSuccess: async (data, _k, cfg) => {
+      if (revalidateKeys === true) {
+        await revalidateCache([path, 'GET']);
+      } else if (Array.isArray(revalidateKeys)) {
+        await Promise.all(
+          revalidateKeys.map(k => revalidateCache(k))
+        );
+      }
+      await onSuccess?.(data);
+      await cfg.onSuccess?.(data, _k, cfg);
+    },
+    onError: (err, _k, cfg) => {
+      onError?.(err);
+      cfg.onError?.(err, _k, cfg);
+    },
+  };
+
   const { trigger, isMutating: loading, error } =
-    useSWRMutation<Data, Err, typeof key, Body>(key, mutationFetcher, {
-      ...swrCfg,
-      onSuccess: async (data, k, cfg) => {
-        if (revalidateOpt === true) {
-          revalidateCache((cacheKey: unknown) =>
-            typeof cacheKey === 'string' && cacheKey.startsWith(path)
-          );
-        } else if (Array.isArray(revalidateOpt)) {
-          await Promise.all(revalidateOpt.map(k2 => revalidateCache(k2)));
-        }
-        await onSuccess?.(data);
-        cfg?.onSuccess?.(data, k, cfg);
-      },
-      onError: (err, k, cfg) => {
-        onError?.(err);
-        cfg?.onError?.(err, k, cfg);
-      },
-    });
+    useSWRMutation<Data, Err, typeof key, Body>(
+      key,
+      mutationFetcher,
+      swrMutationConfig
+    );
 
-  // unify SWR’s union-trigger into one callable signature
-  const triggerFn = trigger as unknown as (arg?: Body) => Promise<Data>;
-
-  /* eslint-disable no-redeclare */
-  // Overload #1: no-arg version for Body = undefined
-  function run(): Promise<Data>;
-  // Overload #2: single-arg version for Body ≠ undefined
-  function run(arg: Body): Promise<Data>;
-  // Implementation
-  function run(arg?: Body): Promise<Data> {
-    return triggerFn(arg as Body);
-  }
-  /* eslint-enable no-redeclare */
+  const run = (arg?: Body): Promise<Data> => {
+    return (trigger as unknown as (arg?: Body) => Promise<Data>)(arg);
+  };
 
   return { run, loading, error };
 }
