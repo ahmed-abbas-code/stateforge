@@ -15,8 +15,8 @@ type HttpMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
  * so we can define our own `revalidateKeys`.
  */
 export interface MutationOptions<
-  Data,
-  Err,
+  Data = unknown,
+  Err = unknown,
   Body = unknown
 > extends Omit<
     SWRMutationConfiguration<
@@ -27,7 +27,7 @@ export interface MutationOptions<
     >,
     'revalidate'
   > {
-  /**
+  /** 
    * If `true`, revalidate the GET cache at [path, 'GET'].
    * If an array, revalidate each specified cache key.
    */
@@ -36,6 +36,9 @@ export interface MutationOptions<
   onError?: (err: Err) => void;
 }
 
+/**
+ * Centralized mutation hook for backend calls with auth, tenant, and cache invalidation.
+ */
 export function useBackendMutation<
   Body = unknown,
   Data = unknown,
@@ -45,17 +48,11 @@ export function useBackendMutation<
   method: HttpMethod,
   opts: MutationOptions<Data, Err, Body> = {}
 ): {
-  run: (arg?: Body) => Promise<Data>;
+  run: (body?: Body) => Promise<Data>;
   loading: boolean;
-  error: Err | undefined;
+  error?: Err;
 } {
-  const {
-    revalidateKeys = true,
-    onSuccess,
-    onError,
-    ...swrCfg
-  } = opts;
-
+  const { revalidateKeys = true, onSuccess, onError, ...swrCfg } = opts;
   const key = [path, method] as const;
 
   const mutationFetcher = async (
@@ -77,27 +74,20 @@ export function useBackendMutation<
     return fetcher(path, init) as Promise<Data>;
   };
 
-  const swrMutationConfig: SWRMutationConfiguration<
-    Data,
-    Err,
-    typeof key,
-    Body
-  > = {
+  const swrConfig: SWRMutationConfiguration<Data, Err, typeof key, Body> = {
     ...swrCfg,
-    onSuccess: async (data, _k, cfg) => {
+    onSuccess: async (data, k, cfg) => {
       if (revalidateKeys === true) {
         await revalidateCache([path, 'GET']);
       } else if (Array.isArray(revalidateKeys)) {
-        await Promise.all(
-          revalidateKeys.map(k => revalidateCache(k))
-        );
+        await Promise.all(revalidateKeys.map(k2 => revalidateCache(k2)));
       }
       await onSuccess?.(data);
-      await cfg.onSuccess?.(data, _k, cfg);
+      await cfg.onSuccess?.(data, k, cfg);
     },
-    onError: (err, _k, cfg) => {
+    onError: (err, k, cfg) => {
       onError?.(err);
-      cfg.onError?.(err, _k, cfg);
+      cfg.onError?.(err, k, cfg);
     },
   };
 
@@ -105,12 +95,11 @@ export function useBackendMutation<
     useSWRMutation<Data, Err, typeof key, Body>(
       key,
       mutationFetcher,
-      swrMutationConfig
+      swrConfig
     );
 
-  const run = (arg?: Body): Promise<Data> => {
-    return (trigger as unknown as (arg?: Body) => Promise<Data>)(arg);
-  };
+  // Expose trigger directly as `run` with correct typing
+  const run = trigger as (body?: Body) => Promise<Data>;
 
   return { run, loading, error };
 }
