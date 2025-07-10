@@ -1,13 +1,15 @@
 // src/authentication/client/hooks/useBackendMutation.ts
-
 import useSWRMutation, {
   SWRMutationConfiguration,
 } from 'swr/mutation';
 import { mutate as revalidateCache } from 'swr';
-import { fetcher } from '@authentication/client';
+import { fetcher } from './useBackend';
 import { getAuthToken, getTenantId } from '../utils/auth';
-
-import { RequestBodyPayload, UseBackendMutationOptions, UseBackendMutationResult } from '@authentication/shared';
+import type {
+  RequestBodyPayload,
+  UseBackendMutationOptions,
+  UseBackendMutationResult,
+} from '@authentication/shared';
 
 /** Convenience alias for SWR’s key tuple */
 type MutationKey = readonly [string, string]; // [path, method]
@@ -23,7 +25,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     path,
     method = 'POST',
     headers = {},
-    serialize = JSON.stringify as (body: TBody) => RequestBodyPayload,
+    serialize = (body => JSON.stringify(body) as RequestBodyPayload),
     onSuccess,
     onError,
   } = options;
@@ -37,7 +39,6 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   ): Promise<TRes> => {
     const token = getAuthToken();
     const tenant = getTenantId();
-
     const init: RequestInit = {
       method,
       credentials: 'include',
@@ -49,11 +50,10 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
       },
       body: arg === undefined ? undefined : serialize(arg),
     };
-
     return fetcher(path, init) as Promise<TRes>;
   };
 
-  /** SWR config (no revalidateKeys concept now; handle in onSuccess) */
+  /** SWR config (handle onSuccess/onError) */
   const swrCfg: SWRMutationConfiguration<
     TRes,
     Error,
@@ -61,9 +61,9 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     TBody
   > = {
     onSuccess: async (data, k, cfg) => {
-      // Default behavior: revalidate the corresponding GET cache
+      // default: revalidate GET cache
       await revalidateCache([path, 'GET']);
-      await onSuccess?.(data as TRes);
+      onSuccess?.(data as TRes);
       cfg.onSuccess?.(data, k, cfg);
     },
     onError: (err, k, cfg) => {
@@ -82,7 +82,6 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     swrCfg
   );
 
-  // Conform to UseBackendMutationResult
   return {
     mutate: trigger as (args: TBody) => Promise<TRes>,
     isLoading,
