@@ -29,4 +29,5 @@ export * from './AuthStrategyProvider';
 export * from './middleware/index';
 export * from './utils/mapDecodedToAuthUser';
 export * from './utils/createBackendProxyRoute';
+export * from './utils/backend-client';
 
