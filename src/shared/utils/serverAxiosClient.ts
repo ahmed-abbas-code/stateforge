@@ -12,6 +12,8 @@ const {
 } = getServerFrameworkConfig();
 
 const API_KEY = getServerEnvVar('BACKEND_API_KEY');
+const recentRequests = new Map<string, number>();
+const DEDUP_MS = 5000; // 5 seconds
 
 export class ServerAxiosClient extends BaseAxiosClient {
   protected getApiKey(): string | null {
@@ -34,9 +36,21 @@ export class ServerAxiosClient extends BaseAxiosClient {
     const client = this.createClient(baseURL);
 
     client.interceptors.request.use((config) => {
+      const method = config.method?.toUpperCase() ?? 'GET';
       const fullUrl = config.baseURL
         ? `${config.baseURL}${config.url ?? ''}`
         : config.url ?? '';
+
+      const key = `${method}:${fullUrl}`;
+      const now = Date.now();
+      const last = recentRequests.get(key);
+
+      if (method === 'GET' && last && now - last < DEDUP_MS) {
+        // Skip duplicate GET request logging
+        return config;
+      }
+
+      recentRequests.set(key, now);
       console.log(`[axiosClient] ▶️ ${label} Request: ${fullUrl}`);
       return config;
     });
@@ -47,11 +61,8 @@ export class ServerAxiosClient extends BaseAxiosClient {
         const status = err.response?.status;
 
         if (status === 401 || status === 403) {
-          // Log or audit unauthorized access attempt
           const userId = err.config?.authConfig?.userId;
-          if (userId) {
-            auditLogoutEvent(userId);
-          }
+          if (userId) auditLogoutEvent(userId);
           console.warn(`[axiosClient] 🔒 Unauthorized (${status}) — access blocked.`);
         }
 
@@ -73,17 +84,16 @@ export class ServerAxiosClient extends BaseAxiosClient {
 
 const instance = new ServerAxiosClient();
 
-// Default Axios clients (unauthenticated or preconfigured)
 export const axiosApp = instance.createClientWithInterceptors(
   BACKEND_APP_API_BASE_URL,
   'axiosApp'
 );
+
 export const axiosAuth = instance.createClientWithInterceptors(
   BACKEND_AUTH_API_BASE_URL,
   'axiosAuth'
 );
 
-// Explicit JWT-based authenticated client
 export const createAuthenticatedAxiosApp = (token: string): AxiosInstance => {
   const client = instance.createClientWithInterceptors(
     BACKEND_APP_API_BASE_URL,
@@ -99,14 +109,12 @@ export const createAuthenticatedAxiosApp = (token: string): AxiosInstance => {
   return client;
 };
 
-// Strategy-based server-side client (API key or JWT)
 type ServerAuthOptions =
   | { type: 'jwt'; token: string; userId?: string }
   | { type: 'apiKey' };
 
 export const createServerAxiosApp = (auth: ServerAuthOptions): AxiosInstance => {
-  const label =
-    auth.type === 'jwt' ? 'axiosApp (jwt)' : 'axiosApp (apiKey)';
+  const label = auth.type === 'jwt' ? 'axiosApp (jwt)' : 'axiosApp (apiKey)';
 
   const client = instance.createClientWithInterceptors(
     BACKEND_APP_API_BASE_URL,
