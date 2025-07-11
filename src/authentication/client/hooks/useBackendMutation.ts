@@ -12,14 +12,13 @@ import type {
   UseBackendMutationResult,
 } from '@authentication/shared';
 
+/** Convenience alias for SWR’s key tuple */
 export type MutationKey = readonly [string, string]; // [path, method]
 
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
-    /** Optional list of SWR keys to invalidate */
+    /** Optional list of SWR keys to invalidate (defaults to [path, 'GET']) */
     invalidate?: MutationKey[];
-    /** Whether to include Authorization token (default: true) */
-    auth?: boolean;
   }
 ): UseBackendMutationResult<TBody, TRes> {
   const {
@@ -30,7 +29,6 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onSuccess,
     onError,
     invalidate,
-    auth = true, // ✅ default to true
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
@@ -41,7 +39,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     _key: MutationKey,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = auth !== false ? await getToken?.() : null; // ✅ skip token if disabled
+    const token = await getToken?.();
     const tenant = getTenantId();
 
     const init: RequestInit = {
@@ -70,18 +68,27 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   };
 
   /* ------------------- SWR config ------------------------- */
-  const swrCfg: SWRMutationConfiguration<TRes, Error, MutationKey, TBody> = {
+  const swrCfg: SWRMutationConfiguration<
+    TRes,
+    Error,
+    MutationKey,
+    TBody
+  > = {
     onSuccess: async (data, _k, cfg) => {
       const keysToInvalidate: MutationKey[] = invalidate ?? [[path, 'GET']];
       for (const key of keysToInvalidate) {
         await revalidateCache(key);
       }
-      onSuccess?.(data as TRes);
-      cfg.onSuccess?.(data, _k, cfg);
+
+      // Prevent infinite recursion if user-supplied onSuccess is also cfg.onSuccess
+      if (onSuccess && onSuccess !== cfg.onSuccess) {
+        await onSuccess(data as TRes);
+      }
     },
     onError: (err, k, cfg) => {
-      onError?.(err as Error);
-      cfg.onError?.(err, k, cfg);
+      if (onError && onError !== cfg.onError) {
+        onError(err as Error);
+      }
     },
   };
 
