@@ -1,11 +1,10 @@
 // src/authentication/client/hooks/useBackendMutation.ts
-
-import useSWRMutation, {
-  SWRMutationConfiguration,
-} from 'swr/mutation';
+import useSWRMutation, { SWRMutationConfiguration } from 'swr/mutation';
 import { mutate as revalidateCache } from 'swr';
-import { fetcher } from './useBackend';
-import { getAuthToken, getTenantId } from '../utils/auth';
+
+import { getTenantId } from '../utils/auth';          // token util removed
+import { useAuthContext } from '@authentication/client';
+
 import type {
   RequestBodyPayload,
   UseBackendMutationOptions,
@@ -25,21 +24,23 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     path,
     method = 'POST',
     headers = {},
-    serialize = (body => JSON.stringify(body) as RequestBodyPayload),
+    serialize = (body) => JSON.stringify(body) as RequestBodyPayload,
     onSuccess,
     onError,
     invalidate,
   } = options;
 
+  const { handleResponse, getToken } = useAuthContext();   // ← central helpers
   const key: MutationKey = [path, method];
 
-  /** Internal SWR fetcher */
+  /* ------------------- internal fetcher ------------------- */
   const mutationFetcher = async (
     _key: MutationKey,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = getAuthToken();
+    const token = await getToken?.();                      // <— unified token
     const tenant = getTenantId();
+
     const init: RequestInit = {
       method,
       credentials: 'include',
@@ -51,10 +52,23 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
       },
       body: arg === undefined ? undefined : serialize(arg),
     };
-    return fetcher(path, init) as Promise<TRes>;
+
+    const res = await fetch(path, init);
+    const handled = handleResponse ? await handleResponse(res) : res;
+
+    /* 204 / 205 → no body to parse */
+    if (handled.status === 204 || handled.status === 205) {
+      if (!handled.ok) throw new Error('Request failed.');
+      // cast so caller’s generic TRes fits
+      return undefined as unknown as TRes;
+    }
+
+    const json = await handled.json();
+    if (!handled.ok) throw json;
+    return json;
   };
 
-  /** SWR config with revalidation */
+  /* ------------------- SWR config ------------------------- */
   const swrCfg: SWRMutationConfiguration<
     TRes,
     Error,

@@ -1,31 +1,39 @@
 // src/authentication/client/hooks/useBackend.ts
-
 import useSWR from 'swr';
-import { UseBackendOptions, UseBackendResult } from '@authentication/shared/types/Backend';
+import {
+  UseBackendOptions,
+  UseBackendResult,
+} from '@authentication/shared/types/Backend';
+import { useAuthContext } from '../components/AuthProvider';
 
-export const fetcher = (path: string, init?: Parameters<typeof fetch>[1]) =>
-  fetch(path, {
-    ...init,
-    credentials: 'include',
-  }).then(async res => {
-    const json = await res.json();
-    if (!res.ok) throw json;
-    return json;
-  });
+export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> => {
+  const { path, refreshInterval, enabled = true, headers } = options;
+  const { handleResponse } = useAuthContext();
 
-export function useBackend<T>(options: UseBackendOptions): UseBackendResult<T> {
-  const {
-    path,
-    refreshInterval,
-    enabled = true,
-    headers,
-  } = options;
+  /* ---------------------------------- */
+  /* fetcher                            */
+  /* ---------------------------------- */
+  const fetcher = async () => {
+    const res = await fetch(path, { credentials: 'include', headers });
 
-  const swr = useSWR<T>(
-    enabled ? path : null,
-    () => fetcher(path, headers ? { headers } : undefined),
-    { refreshInterval }
-  );
+    // global 401 / sign-out handling
+    const handled = handleResponse ? await handleResponse(res) : res;
+
+    // 🆕  No-Content guard
+    if (handled.status === 204 || handled.status === 205) {
+      if (!handled.ok) throw null;         // 4xx/5xx edge-case with no body
+      return null as unknown as T;         // return null data for 204/205
+    }
+
+    const json = await handled.json();
+    if (!handled.ok) throw json;
+    return json as T;
+  };
+
+  /* ---------------------------------- */
+  /* swr hook                           */
+  /* ---------------------------------- */
+  const swr = useSWR<T>(enabled ? path : null, fetcher, { refreshInterval });
 
   return {
     data: swr.data ?? null,
@@ -33,4 +41,4 @@ export function useBackend<T>(options: UseBackendOptions): UseBackendResult<T> {
     error: swr.error ?? null,
     mutate: swr.mutate,
   };
-}
+};

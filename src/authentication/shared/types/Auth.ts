@@ -1,7 +1,8 @@
 // src/authentication/shared/types/Auth.ts
+
 import type { NextApiRequest } from 'next';
 import type { Auth } from 'firebase/auth';
-import { AuthUserType } from '@authentication/shared/types'
+import { AuthUserType } from '@authentication/shared/types';
 
 export interface AuthContextType {
   user: AuthUserType | null;
@@ -23,6 +24,9 @@ export interface AuthContextType {
 
   // For proactive refresh (client SDKs only)
   refreshToken?: () => Promise<string | null>;
+
+  // ✅ Added for centralized 401 handling
+  handleResponse?: (res: Response) => Promise<Response>;
 }
 
 export interface AuthApiRequest extends NextApiRequest {

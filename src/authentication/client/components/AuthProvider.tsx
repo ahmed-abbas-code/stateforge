@@ -1,20 +1,29 @@
 // src/authentication/client/components/AuthProvider.tsx
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+import { useRouter } from 'next/router';
+import useSWR, { mutate, SWRConfig } from 'swr';
+import { toast } from 'react-toastify';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import useSWR from 'swr';
-import { SWRConfig } from 'swr';
+import {
+  AuthContextType,
+  AuthUserType,
+} from '@authentication/shared';
 
-import { AuthContextType, AuthUserType } from '@authentication/shared';
+/* -------------------------------------------------- */
+/* helpers                                            */
+/* -------------------------------------------------- */
 
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Fetcher for /api/auth/me with 401 suppression
+// GET /api/auth/me  – swallow 401, log others
 const fetchUser = async (): Promise<AuthUserType | null> => {
   const res = await fetch('/api/auth/me', {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
 
   if (!res.ok) {
@@ -25,21 +34,30 @@ const fetchUser = async (): Promise<AuthUserType | null> => {
   }
 
   const { user } = await res.json();
-  return (user as AuthUserType) || null;
+  return (user as AuthUserType) ?? null;
 };
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/* -------------------------------------------------- */
+/* provider                                           */
+/* -------------------------------------------------- */
 
 interface AuthProviderProps {
   children: React.ReactNode;
   initialUser?: AuthUserType;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => (
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  initialUser,
+}) => (
   <SWRConfig
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
       errorRetryCount: 0,
-      onErrorRetry: () => {},
+      onErrorRetry: () => { }, // no auto-retries for auth fetches
     }}
   >
     <InnerAuthProvider initialUser={initialUser}>
@@ -48,40 +66,106 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
-  const { data: userFromSWR, error, isLoading } = useSWR<AuthUserType | null>(
-    '/api/auth/me',
-    fetchUser,
-    { fallbackData: initialUser }
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  initialUser,
+}) => {
+  const router = useRouter();
+
+  /* -------- swr: who-am-I ---------------------------------- */
+  const {
+    data: swrUser,
+    error,
+    isLoading,
+  } = useSWR<AuthUserType | null>('/api/auth/me', fetchUser, {
+    fallbackData: initialUser,
+  });
+
+  /* -------- local state ------------------------------------ */
+  const [user, setUser] = useState<AuthUserType | null>(
+    initialUser ?? null,
   );
 
-  const [user, setUser] = useState<AuthUserType | null>(initialUser ?? null);
-
   useEffect(() => {
-    if (userFromSWR !== undefined && userFromSWR !== user) {
-      setUser(userFromSWR);
+    if (swrUser !== undefined && swrUser !== user) {
+      setUser(swrUser);
     }
-  }, [userFromSWR]);
+  }, [swrUser, user]);
 
+  /* -------- token helpers ---------------------------------- */
+  const getToken = useCallback(async (): Promise<string | null> => {
+    // example: read HttpOnly cookie via backend or localStorage token
+    const res = await fetch('/api/auth/token', {
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    const { token } = await res.json();
+    return token ?? null;
+  }, []);
+
+  /* -------- sign-in / sign-out ----------------------------- */
+  const signIn = useCallback(async () => {
+    // implement your preferred auth flow here
+    router.push('/signIn');
+    return { ok: true };
+  }, [router]);
+
+  const signOut = useCallback(async () => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => { });
+
+    setUser(null);
+
+    // ⬅️ Clear SWR cache for the auth endpoint
+    mutate('/api/auth/me', null, false);
+
+    router.push('/signIn');
+  }, [router]);
+
+
+  /* -------- global 401 interceptor ------------------------- */
+  const handleResponse = useCallback(
+    async (res: Response): Promise<Response> => {
+      if (res.status === 401) {
+        toast.info('Session expired. Please sign in again.');
+        await signOut();
+        throw new Error('Unauthorized');
+      }
+      return res;
+    },
+    [signOut],
+  );
+
+  /* -------- context value ---------------------------------- */
   const contextValue: AuthContextType = {
     user,
     setUser,
     isAuthenticated: !!user,
     isLoading,
     error: error ?? null,
-    signIn: async () => ({ ok: true }),
-    signOut: async () => {},
-    getToken: async () => null,
+    signIn,
+    signOut,
+    getToken,
+    handleResponse,
   };
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Hook for usage inside components
+/* -------------------------------------------------- */
+/* hook                                              */
+/* -------------------------------------------------- */
+
 export const useAuthContext = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
     throw new Error('useAuthContext must be used within an AuthProvider');
   }
-  return context;
+  return ctx;
 };
