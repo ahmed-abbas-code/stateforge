@@ -14,9 +14,10 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
     refreshInterval,
     enabled = true,
     headers = {},
-    auth = true, // ✅ disable token if needed
-    dedupingInterval = 10_000, // ✅ prevent repeat calls for 10s
-    revalidateOnFocus = false, // ✅ don't re-fetch on tab switch
+    auth = true,
+    dedupingInterval = 10_000,
+    revalidateOnFocus = false,
+    revalidateOnMount = true, 
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
@@ -54,6 +55,7 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
       refreshInterval,
       dedupingInterval,
       revalidateOnFocus,
+      revalidateOnMount,
     }
   );
 

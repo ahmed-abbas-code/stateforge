@@ -1,3 +1,5 @@
+// src/authentication/shared/types/Backend.ts
+
 /**
  * Possible request body payload types
  */
@@ -28,6 +30,8 @@ export interface UseBackendOptions {
   dedupingInterval?: number;
   /** Whether to revalidate on window focus (default: true) */
   revalidateOnFocus?: boolean;
+  /** Whether to revalidate on initial mount (default: true) */
+  revalidateOnMount?: boolean;
 }
 
 /**
