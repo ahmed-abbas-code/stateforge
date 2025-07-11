@@ -1,28 +1,43 @@
 // src/authentication/client/hooks/useBackend.ts
+
 import useSWR from 'swr';
 import {
   UseBackendOptions,
   UseBackendResult,
 } from '@authentication/shared/types/Backend';
 import { useAuthContext } from '../components/AuthProvider';
+import { getTenantId } from '../utils/auth';
 
 export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> => {
-  const { path, refreshInterval, enabled = true, headers } = options;
-  const { handleResponse } = useAuthContext();
+  const {
+    path,
+    refreshInterval,
+    enabled = true,
+    headers = {},
+    auth = true, // ✅ new option
+  } = options;
 
-  /* ---------------------------------- */
-  /* fetcher                            */
-  /* ---------------------------------- */
+  const { handleResponse, getToken } = useAuthContext();
+
   const fetcher = async () => {
-    const res = await fetch(path, { credentials: 'include', headers });
+    const token = auth !== false ? await getToken?.() : null;
+    const tenant = getTenantId();
 
-    // global 401 / sign-out handling
+    const res = await fetch(path, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(tenant && { 'X-Tenant-Id': tenant }),
+      },
+    });
+
     const handled = handleResponse ? await handleResponse(res) : res;
 
-    // 🆕  No-Content guard
     if (handled.status === 204 || handled.status === 205) {
-      if (!handled.ok) throw null;         // 4xx/5xx edge-case with no body
-      return null as unknown as T;         // return null data for 204/205
+      if (!handled.ok) throw null;
+      return null as unknown as T;
     }
 
     const json = await handled.json();
@@ -30,9 +45,6 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
     return json as T;
   };
 
-  /* ---------------------------------- */
-  /* swr hook                           */
-  /* ---------------------------------- */
   const swr = useSWR<T>(enabled ? path : null, fetcher, { refreshInterval });
 
   return {

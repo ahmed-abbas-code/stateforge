@@ -1,5 +1,3 @@
-// src/authentication/shared/types/Backend.ts
-
 /**
  * Possible request body payload types
  */
@@ -19,6 +17,8 @@ export interface UseBackendOptions {
   refreshInterval?: number;
   /** Disable automatic fetching if false */
   enabled?: boolean;
+  /** Whether to include Authorization token (default: true) */
+  auth?: boolean; // ✅ Added
 }
 
 /**
@@ -60,6 +60,8 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
   onSuccess?: (data: TRes) => void;
   /** Called after a failed mutation with the error thrown */
   onError?: (error: Error) => void;
+  /** Whether to include Authorization token (default: true) */
+  auth?: boolean; // ✅ Added
 }
 
 /**
