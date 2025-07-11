@@ -14,7 +14,9 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
     refreshInterval,
     enabled = true,
     headers = {},
-    auth = true, // ✅ new option
+    auth = true, // ✅ disable token if needed
+    dedupingInterval = 10_000, // ✅ prevent repeat calls for 10s
+    revalidateOnFocus = false, // ✅ don't re-fetch on tab switch
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
@@ -45,7 +47,15 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
     return json as T;
   };
 
-  const swr = useSWR<T>(enabled ? path : null, fetcher, { refreshInterval });
+  const swr = useSWR<T>(
+    enabled ? path : null,
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval,
+      revalidateOnFocus,
+    }
+  );
 
   return {
     data: swr.data ?? null,

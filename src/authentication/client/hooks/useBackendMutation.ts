@@ -16,8 +16,10 @@ export type MutationKey = readonly [string, string]; // [path, method]
 
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
+    /** Optional list of SWR keys to invalidate */
     invalidate?: MutationKey[];
-    auth?: boolean; // ✅ new optional flag
+    /** Whether to include Authorization token (default: true) */
+    auth?: boolean;
   }
 ): UseBackendMutationResult<TBody, TRes> {
   const {
@@ -34,11 +36,12 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   const { handleResponse, getToken } = useAuthContext();
   const key: MutationKey = [path, method];
 
+  /* ------------------- internal fetcher ------------------- */
   const mutationFetcher = async (
     _key: MutationKey,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = auth !== false ? await getToken?.() : null; // ✅ skip if auth is false
+    const token = auth !== false ? await getToken?.() : null; // ✅ skip token if disabled
     const tenant = getTenantId();
 
     const init: RequestInit = {
@@ -66,6 +69,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     return json;
   };
 
+  /* ------------------- SWR config ------------------------- */
   const swrCfg: SWRMutationConfiguration<TRes, Error, MutationKey, TBody> = {
     onSuccess: async (data, _k, cfg) => {
       const keysToInvalidate: MutationKey[] = invalidate ?? [[path, 'GET']];

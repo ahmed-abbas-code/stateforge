@@ -1,7 +1,12 @@
 /**
  * Possible request body payload types
  */
-export type RequestBodyPayload = string | FormData | Blob | ArrayBuffer | URLSearchParams;
+export type RequestBodyPayload =
+  | string
+  | FormData
+  | Blob
+  | ArrayBuffer
+  | URLSearchParams;
 
 /**
  * Options for query hooks
@@ -18,7 +23,11 @@ export interface UseBackendOptions {
   /** Disable automatic fetching if false */
   enabled?: boolean;
   /** Whether to include Authorization token (default: true) */
-  auth?: boolean; // ✅ Added
+  auth?: boolean;
+  /** SWR deduping window (default: 2000ms) */
+  dedupingInterval?: number;
+  /** Whether to revalidate on window focus (default: true) */
+  revalidateOnFocus?: boolean;
 }
 
 /**
@@ -61,7 +70,7 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
   /** Called after a failed mutation with the error thrown */
   onError?: (error: Error) => void;
   /** Whether to include Authorization token (default: true) */
-  auth?: boolean; // ✅ Added
+  auth?: boolean;
 }
 
 /**
