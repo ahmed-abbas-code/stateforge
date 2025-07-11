@@ -1,8 +1,9 @@
 // src/authentication/client/hooks/useBackendMutation.ts
+
 import useSWRMutation, { SWRMutationConfiguration } from 'swr/mutation';
 import { mutate as revalidateCache } from 'swr';
 
-import { getTenantId } from '../utils/auth';          // token util removed
+import { getTenantId } from '../utils/auth';
 import { useAuthContext } from '@authentication/client';
 
 import type {
@@ -11,13 +12,12 @@ import type {
   UseBackendMutationResult,
 } from '@authentication/shared';
 
-/** Convenience alias for SWR’s key tuple */
 export type MutationKey = readonly [string, string]; // [path, method]
 
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
-    /** Optional list of SWR keys to invalidate (defaults to [path, 'GET']) */
     invalidate?: MutationKey[];
+    auth?: boolean; // ✅ new optional flag
   }
 ): UseBackendMutationResult<TBody, TRes> {
   const {
@@ -28,17 +28,17 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onSuccess,
     onError,
     invalidate,
+    auth = true, // ✅ default to true
   } = options;
 
-  const { handleResponse, getToken } = useAuthContext();   // ← central helpers
+  const { handleResponse, getToken } = useAuthContext();
   const key: MutationKey = [path, method];
 
-  /* ------------------- internal fetcher ------------------- */
   const mutationFetcher = async (
     _key: MutationKey,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = await getToken?.();                      // <— unified token
+    const token = auth !== false ? await getToken?.() : null; // ✅ skip if auth is false
     const tenant = getTenantId();
 
     const init: RequestInit = {
@@ -56,10 +56,8 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     const res = await fetch(path, init);
     const handled = handleResponse ? await handleResponse(res) : res;
 
-    /* 204 / 205 → no body to parse */
     if (handled.status === 204 || handled.status === 205) {
       if (!handled.ok) throw new Error('Request failed.');
-      // cast so caller’s generic TRes fits
       return undefined as unknown as TRes;
     }
 
@@ -68,13 +66,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     return json;
   };
 
-  /* ------------------- SWR config ------------------------- */
-  const swrCfg: SWRMutationConfiguration<
-    TRes,
-    Error,
-    MutationKey,
-    TBody
-  > = {
+  const swrCfg: SWRMutationConfiguration<TRes, Error, MutationKey, TBody> = {
     onSuccess: async (data, _k, cfg) => {
       const keysToInvalidate: MutationKey[] = invalidate ?? [[path, 'GET']];
       for (const key of keysToInvalidate) {
