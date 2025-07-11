@@ -8,20 +8,21 @@ import { useAuth } from '@authentication/client';
 
 interface Props {
   children: ReactNode;
+  redirectTo: string; // 👈 required
 }
 
-export function AuthProtection({ children }: Props) {
+export function AuthProtection({ children, redirectTo }: Props) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/signIn');
+      router.replace(redirectTo);
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, redirectTo]);
 
   if (isLoading || !isAuthenticated) {
-    return <p>Checking authentication…</p>; // 🧼 neutral SF fallback
+    return <p>Checking authentication…</p>;
   }
 
   return <>{children}</>;
