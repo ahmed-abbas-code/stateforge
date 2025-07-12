@@ -12,12 +12,10 @@ import type {
   UseBackendMutationResult,
 } from '@authentication/shared';
 
-/** Convenience alias for SWR’s key tuple */
-export type MutationKey = readonly [string, string]; // [path, method]
+export type MutationKey = readonly [string, string];
 
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
-    /** Optional list of SWR keys to invalidate (defaults to [path, 'GET']) */
     invalidate?: MutationKey[];
   }
 ): UseBackendMutationResult<TBody, TRes> {
@@ -29,17 +27,17 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onSuccess,
     onError,
     invalidate,
+    auth = true, // default to true if not specified
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
   const key: MutationKey = [path, method];
 
-  /* ------------------- internal fetcher ------------------- */
   const mutationFetcher = async (
     _key: MutationKey,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = await getToken?.();
+    const token = auth === false ? null : await getToken?.();
     const tenant = getTenantId();
 
     const init: RequestInit = {
@@ -67,7 +65,6 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     return json;
   };
 
-  /* ------------------- SWR config ------------------------- */
   const swrCfg: SWRMutationConfiguration<
     TRes,
     Error,
@@ -79,13 +76,11 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
       for (const key of keysToInvalidate) {
         await revalidateCache(key);
       }
-
-      // Prevent infinite recursion if user-supplied onSuccess is also cfg.onSuccess
       if (onSuccess && onSuccess !== cfg.onSuccess) {
         await onSuccess(data as TRes);
       }
     },
-    onError: (err, k, cfg) => {
+    onError: (err, _k, cfg) => {
       if (onError && onError !== cfg.onError) {
         onError(err as Error);
       }
