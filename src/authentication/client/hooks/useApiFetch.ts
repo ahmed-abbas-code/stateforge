@@ -1,7 +1,7 @@
 import { useAuthContext } from '@authentication/client';
 
 type ExtendedRequestInit = RequestInit & {
-  raw?: boolean; // ✅ allows returning the raw Response
+  raw?: boolean; // ✅ optional flag to return raw Response
 };
 
 /**
@@ -22,10 +22,10 @@ export function useApiFetch() {
 
   const { handleResponse } = auth;
 
-  return async <T = unknown>(
+  return async function fetchWithHandling<T = unknown>(
     input: RequestInfo,
     init?: ExtendedRequestInit
-  ): Promise<T | Response> => {
+  ): Promise<T | Response> {
     const res = await fetch(input, {
       ...init,
       credentials: 'include',
@@ -33,17 +33,24 @@ export function useApiFetch() {
 
     await handleResponse(res);
 
-    if (init?.raw) return res; // ✅ bypass parsing, return raw Response
+    // ✅ 1. allow returning raw response directly
+    if (init?.raw) return res;
 
+    // ✅ 2. handle no-content responses
     if (res.status === 204 || res.status === 205) {
       return undefined as T;
     }
 
+    // ✅ 3. parse JSON or fallback to plain text
     try {
-      return await res.json();
-    } catch {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return await res.json();
+      }
       const text = await res.text();
       return text as unknown as T;
+    } catch {
+      return undefined as T;
     }
   };
 }
