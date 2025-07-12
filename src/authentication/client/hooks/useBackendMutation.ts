@@ -12,11 +12,9 @@ import type {
   UseBackendMutationResult,
 } from '@authentication/shared';
 
-export type MutationKey = readonly [string, string];
-
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
   options: UseBackendMutationOptions<TBody, TRes> & {
-    invalidate?: MutationKey[];
+    invalidate?: string[];
   }
 ): UseBackendMutationResult<TBody, TRes> {
   const {
@@ -27,14 +25,14 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onSuccess,
     onError,
     invalidate,
-    auth = true, // default to true if not specified
+    auth = true,
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
-  const key: MutationKey = [path, method];
+  const key = path; // ✅ string-only key
 
   const mutationFetcher = async (
-    _key: MutationKey,
+    _key: string,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
     const token = auth === false ? null : await getToken?.();
@@ -65,14 +63,9 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     return json;
   };
 
-  const swrCfg: SWRMutationConfiguration<
-    TRes,
-    Error,
-    MutationKey,
-    TBody
-  > = {
+  const swrCfg: SWRMutationConfiguration<TRes, Error, string, TBody> = {
     onSuccess: async (data, _k, cfg) => {
-      const keysToInvalidate: MutationKey[] = invalidate ?? [[path, 'GET']];
+      const keysToInvalidate: string[] = invalidate ?? [path];
       for (const key of keysToInvalidate) {
         await revalidateCache(key);
       }
@@ -91,11 +84,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     trigger,
     isMutating: isLoading,
     error,
-  } = useSWRMutation<TRes, Error, MutationKey, TBody>(
-    key,
-    mutationFetcher,
-    swrCfg
-  );
+  } = useSWRMutation<TRes, Error, string, TBody>(key, mutationFetcher, swrCfg);
 
   return {
     mutate: trigger as (args: TBody) => Promise<TRes>,
