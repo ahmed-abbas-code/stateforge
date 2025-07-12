@@ -41,5 +41,23 @@ export function createBackendClient(baseURL = '') {
       if (!res.ok) throw new Error(json?.error || 'Request failed');
       return { data: json as T };
     },
+
+    /**
+     * Fetches a binary blob (e.g. DOCX, image) without JSON parsing.
+     */
+    async getBlob(path: string, init?: RequestInit): Promise<Blob> {
+      const res = await fetch(`${baseURL}${path}`, {
+        ...init,
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        // try to surface any error message
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || `Request failed (${res.status})`);
+      }
+
+      return res.blob();
+    },
   };
 }

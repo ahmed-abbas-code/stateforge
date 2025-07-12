@@ -2,6 +2,7 @@ export * from './hooks/useAuth';
 export * from './hooks/useSignIn';
 export * from './hooks/useApiFetch';
 export * from './hooks/useSignOut';
+export * from './hooks/useBlobFetch';
 export * from './hooks/useBackend';
 export * from './hooks/useBackendMutation';
 export * from './utils/withAuthProtection';
