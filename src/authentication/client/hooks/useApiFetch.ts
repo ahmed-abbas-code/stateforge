@@ -1,12 +1,15 @@
-// src/authentication/client/hooks/useApiFetch.ts
-
 import { useAuthContext } from '@authentication/client';
+
+type ExtendedRequestInit = RequestInit & {
+  raw?: boolean; // ✅ allows returning the raw Response
+};
 
 /**
  * A shared fetch wrapper that:
  * - includes credentials (cookies)
  * - runs global 401 interception via handleResponse
  * - parses JSON automatically (or returns undefined for 204)
+ * - optionally returns raw Response when `raw: true` is set
  */
 export function useApiFetch() {
   const auth = useAuthContext();
@@ -21,8 +24,8 @@ export function useApiFetch() {
 
   return async <T = unknown>(
     input: RequestInfo,
-    init?: RequestInit
-  ): Promise<T> => {
+    init?: ExtendedRequestInit
+  ): Promise<T | Response> => {
     const res = await fetch(input, {
       ...init,
       credentials: 'include',
@@ -30,7 +33,8 @@ export function useApiFetch() {
 
     await handleResponse(res);
 
-    // Handle no-content responses
+    if (init?.raw) return res; // ✅ bypass parsing, return raw Response
+
     if (res.status === 204 || res.status === 205) {
       return undefined as T;
     }
