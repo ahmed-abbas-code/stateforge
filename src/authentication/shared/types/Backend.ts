@@ -75,6 +75,12 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
   onError?: (error: Error) => void;
   /** Whether to include Authorization token (default: true) */
   auth?: boolean;
+
+  /** Optimistic update applied to cached data before mutation fires */
+  optimisticUpdate?: (previousData?: TRes) => TRes;
+
+  /** Whether to roll back the optimistic update on error (default: true if optimisticUpdate is provided) */
+  rollbackOnError?: boolean;
 }
 
 /**

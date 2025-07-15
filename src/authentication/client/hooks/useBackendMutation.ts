@@ -26,10 +26,12 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onError,
     invalidate,
     auth = true,
+    optimisticUpdate,
+    rollbackOnError,
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
-  const key = path; // ✅ string-only key
+  const key = path;
 
   const mutationFetcher = async (
     _key: string,
@@ -64,6 +66,10 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   };
 
   const swrCfg: SWRMutationConfiguration<TRes, Error, string, TBody> = {
+    // ✅ Optimistic update and rollback
+    optimisticData: optimisticUpdate,
+    rollbackOnError: rollbackOnError ?? !!optimisticUpdate,
+
     onSuccess: async (data, _k, cfg) => {
       const keysToInvalidate: string[] = invalidate ?? [path];
       for (const key of keysToInvalidate) {
@@ -73,6 +79,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
         await onSuccess(data as TRes);
       }
     },
+
     onError: (err, _k, cfg) => {
       if (onError && onError !== cfg.onError) {
         onError(err as Error);
