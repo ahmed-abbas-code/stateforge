@@ -12,10 +12,15 @@ import type {
   UseBackendMutationResult,
 } from '@authentication/shared';
 
+// ✅ Extended version of UseBackendMutationOptions to include all props
+type ExtendedMutationOptions<TBody, TRes> = UseBackendMutationOptions<TBody, TRes> & {
+  invalidate?: string[];
+  optimisticUpdate?: (previousData?: TRes) => TRes;
+  rollbackOnError?: boolean;
+};
+
 export function useBackendMutation<TBody = unknown, TRes = unknown>(
-  options: UseBackendMutationOptions<TBody, TRes> & {
-    invalidate?: string[];
-  }
+  options: ExtendedMutationOptions<TBody, TRes>
 ): UseBackendMutationResult<TBody, TRes> {
   const {
     path,
@@ -66,7 +71,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   };
 
   const swrCfg: SWRMutationConfiguration<TRes, Error, string, TBody> = {
-    // ✅ Optimistic update and rollback
+    // ✅ support optimistic update and rollback on error
     optimisticData: optimisticUpdate,
     rollbackOnError: rollbackOnError ?? !!optimisticUpdate,
 
