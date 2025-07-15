@@ -8,9 +8,9 @@
 
 | Package                  | Description                                                                 |
 |--------------------------|-----------------------------------------------------------------------------|
-| [`@sf/authentication`]   | Authentication across client/server with strategy support (JWT, Firebase). |
-| [`@state/core`]          | Cross-environment state management for UI, forms, and persistence.          |
-| [`@sf/shared`]           | Common utilities: Axios clients, config loading, middleware, validation.    |
+| [`@sf/authentication`](./src/authentication/)   | Authentication across client/server with strategy support (JWT, Firebase). |
+| [`@sf/state`](./src/state/)          | Cross-environment state management for UI, forms, and persistence.          |
+| [`@sf/shared`](./src/shared/)           | Common utilities: Axios clients, config loading, middleware, validation.    |
 
 ---
 
