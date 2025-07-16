@@ -25,7 +25,7 @@ export function useNavigationPersistedState<T>({
   useSessionStorage = true,
   clearOnLeave = false,
   router,
-}: NavigationPersistOptions<T>): readonly [T, (val: T) => void] {
+}: NavigationPersistOptions<T>): readonly [T, (val: T) => void, () => void] {
   const storageKey = `stateforge:nav:${key}`;
   const storage =
     typeof window !== 'undefined' && useSessionStorage
@@ -75,5 +75,14 @@ export function useNavigationPersistedState<T>({
     };
   }, [clearOnLeave, router, storageKey, storage]);
 
-  return [value, setValue] as const;
+  // Clear manually via returned function
+  const clear = () => {
+    try {
+      storage?.removeItem(storageKey);
+    } catch (err) {
+      console.warn('[stateforge] Failed to clear navigation state:', err);
+    }
+  };
+
+  return [value, setValue, clear] as const;
 }
