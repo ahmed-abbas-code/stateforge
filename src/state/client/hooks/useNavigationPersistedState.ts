@@ -27,12 +27,14 @@ export function useNavigationPersistedState<T>({
   useSessionStorage = true,
   clearOnLeave = false,
   router,
-}: NavigationPersistOptions<T>): readonly [T, (val: T | ((prev: T) => T)) => void, () => void] {
+}: NavigationPersistOptions<T>): readonly [
+  T,
+  (val: T | ((prev: T) => T)) => void,
+  () => void
+] {
   const storageKey = `stateforge:nav:${key}`
   const storage =
-    typeof window !== 'undefined' && useSessionStorage
-      ? sessionStorage
-      : undefined
+    typeof window !== 'undefined' && useSessionStorage ? sessionStorage : undefined
 
   const [value, setInternalValue] = useState<T>(() => {
     if (typeof window === 'undefined' || !storage) {
@@ -50,13 +52,12 @@ export function useNavigationPersistedState<T>({
 
   // Wrapped setter to support function-style updates
   const setValue = (valOrUpdater: T | ((prev: T) => T)) => {
-    setInternalValue(prev => {
-      const nextValue =
-        typeof valOrUpdater === 'function'
-          ? (valOrUpdater as (prev: T) => T)(prev)
-          : valOrUpdater
-      return nextValue
-    })
+    const nextValue =
+      typeof valOrUpdater === 'function'
+        ? (valOrUpdater as (prev: T) => T)(value)
+        : valOrUpdater
+
+    setInternalValue(nextValue)
   }
 
   // Persist state to sessionStorage
@@ -68,7 +69,7 @@ export function useNavigationPersistedState<T>({
     } catch (err) {
       console.warn('[stateforge] Failed to persist navigation state:', err)
     }
-  }, [value]) // ✅ FIXED: only depend on the value itself
+  }, [value]) // ✅ FIXED: removed JSON.stringify(value)
 
   // Cleanup on route change if enabled
   useEffect(() => {
