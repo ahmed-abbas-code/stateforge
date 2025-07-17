@@ -211,6 +211,14 @@ For more design guidance for consuming apps, refer to [this](./docs/architecture
 
 ---
 
+## Packaging as npm
+
+```bash
+pnpm clean && pnpm build && git add . && git commit -m "Refactored to split auth and state" && git push origin main && pnpm release:patch
+```
+
+---
+
 ## 📜 License
 
 MIT License. Free for personal and commercial use.

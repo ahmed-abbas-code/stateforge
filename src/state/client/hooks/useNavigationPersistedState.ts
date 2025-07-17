@@ -1,21 +1,21 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
 interface Router {
   events: {
-    on(event: 'routeChangeStart', handler: () => void): void;
-    off(event: 'routeChangeStart', handler: () => void): void;
-  };
+    on(event: 'routeChangeStart', handler: () => void): void
+    off(event: 'routeChangeStart', handler: () => void): void
+  }
 }
 
 interface NavigationPersistOptions<T> {
-  key: string;
-  defaultValue: T;
-  initialState?: T;
-  useSessionStorage?: boolean;
-  clearOnLeave?: boolean;
-  router?: Router;
+  key: string
+  defaultValue: T
+  initialState?: T
+  useSessionStorage?: boolean
+  clearOnLeave?: boolean
+  router?: Router
 }
 
 export function useNavigationPersistedState<T>({
@@ -25,64 +25,72 @@ export function useNavigationPersistedState<T>({
   useSessionStorage = true,
   clearOnLeave = false,
   router,
-}: NavigationPersistOptions<T>): readonly [T, (val: T) => void, () => void] {
-  const storageKey = `stateforge:nav:${key}`;
+}: NavigationPersistOptions<T>): readonly [T, (val: T | ((prev: T) => T)) => void, () => void] {
+  const storageKey = `stateforge:nav:${key}`
   const storage =
     typeof window !== 'undefined' && useSessionStorage
       ? sessionStorage
-      : undefined;
+      : undefined
 
-  const [value, setValue] = useState<T>(() => {
+  const [value, setInternalValue] = useState<T>(() => {
     if (typeof window === 'undefined' || !storage) {
-      return initialState ?? defaultValue;
+      return initialState ?? defaultValue
     }
 
     try {
-      const raw = storage.getItem(storageKey);
-      return raw ? (JSON.parse(raw) as T) : (initialState ?? defaultValue);
+      const raw = storage.getItem(storageKey)
+      return raw ? (JSON.parse(raw) as T) : (initialState ?? defaultValue)
     } catch (err) {
-      console.warn('[stateforge] Failed to parse navigation state:', err);
-      return initialState ?? defaultValue;
+      console.warn('[stateforge] Failed to parse navigation state:', err)
+      return initialState ?? defaultValue
     }
-  });
+  })
+
+  // Wrapped setter to support function-style updates
+  const setValue = (valOrUpdater: T | ((prev: T) => T)) => {
+    const nextValue = typeof valOrUpdater === 'function'
+      ? (valOrUpdater as (prev: T) => T)(value)
+      : valOrUpdater
+
+    setInternalValue(nextValue)
+  }
 
   // Persist state to sessionStorage
   useEffect(() => {
-    if (typeof window === 'undefined' || !storage) return;
+    if (typeof window === 'undefined' || !storage) return
 
     try {
-      storage.setItem(storageKey, JSON.stringify(value));
+      storage.setItem(storageKey, JSON.stringify(value))
     } catch (err) {
-      console.warn('[stateforge] Failed to persist navigation state:', err);
+      console.warn('[stateforge] Failed to persist navigation state:', err)
     }
-  }, [value, storageKey, storage]);
+  }, [JSON.stringify(value)]) // force sync on content change
 
   // Cleanup on route change if enabled
   useEffect(() => {
-    if (typeof window === 'undefined' || !storage || !clearOnLeave || !router) return;
+    if (typeof window === 'undefined' || !storage || !clearOnLeave || !router) return
 
     const cleanup = () => {
       try {
-        storage.removeItem(storageKey);
+        storage.removeItem(storageKey)
       } catch (err) {
-        console.warn('[stateforge] Failed to clear navigation state:', err);
+        console.warn('[stateforge] Failed to clear navigation state:', err)
       }
-    };
+    }
 
-    router.events.on('routeChangeStart', cleanup);
+    router.events.on('routeChangeStart', cleanup)
     return () => {
-      router.events.off('routeChangeStart', cleanup);
-    };
-  }, [clearOnLeave, router, storageKey, storage]);
+      router.events.off('routeChangeStart', cleanup)
+    }
+  }, [clearOnLeave, router, storageKey, storage])
 
-  // Clear manually via returned function
   const clear = () => {
     try {
-      storage?.removeItem(storageKey);
+      storage?.removeItem(storageKey)
     } catch (err) {
-      console.warn('[stateforge] Failed to clear navigation state:', err);
+      console.warn('[stateforge] Failed to clear navigation state:', err)
     }
-  };
+  }
 
-  return [value, setValue, clear] as const;
+  return [value, setValue, clear] as const
 }
