@@ -1,3 +1,5 @@
+// src/state/client/hooks/useNavigationPersistedState.ts
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -48,11 +50,13 @@ export function useNavigationPersistedState<T>({
 
   // Wrapped setter to support function-style updates
   const setValue = (valOrUpdater: T | ((prev: T) => T)) => {
-    const nextValue = typeof valOrUpdater === 'function'
-      ? (valOrUpdater as (prev: T) => T)(value)
-      : valOrUpdater
-
-    setInternalValue(nextValue)
+    setInternalValue(prev => {
+      const nextValue =
+        typeof valOrUpdater === 'function'
+          ? (valOrUpdater as (prev: T) => T)(prev)
+          : valOrUpdater
+      return nextValue
+    })
   }
 
   // Persist state to sessionStorage
@@ -64,7 +68,7 @@ export function useNavigationPersistedState<T>({
     } catch (err) {
       console.warn('[stateforge] Failed to persist navigation state:', err)
     }
-  }, [JSON.stringify(value)]) // force sync on content change
+  }, [value]) // ✅ FIXED: only depend on the value itself
 
   // Cleanup on route change if enabled
   useEffect(() => {
