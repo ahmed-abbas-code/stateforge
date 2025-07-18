@@ -3,7 +3,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
 import { adminAuth, mapDecodedToAuthUser } from '@authentication/server';
-import { AuthUserType, SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
+import { AuthUserType, SF_USER_SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
 
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
@@ -12,7 +12,7 @@ const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
  */
 function getSessionCookie(req: NextApiRequest): string | null {
   const cookies = parse(req.headers.cookie || '');
-  return cookies[SESSION_COOKIE_NAME] || null;
+  return cookies[SF_USER_SESSION_COOKIE_NAME] || null;
 }
 
 /**
@@ -55,7 +55,7 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
       expiresIn: SESSION_EXPIRES_IN_MS,
     });
 
-    res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, sessionCookie, {
+    res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, sessionCookie, {
       ...sessionCookieOptions,
       maxAge: SESSION_EXPIRES_IN_MS / 1000,
     }));
@@ -73,7 +73,7 @@ export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise
  */
 export async function signOut(_req: NextApiRequest, res: NextApiResponse): Promise<void> {
   try {
-    res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, '', {
+    res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, '', {
       ...sessionCookieOptions,
       expires: new Date(0),
     }));

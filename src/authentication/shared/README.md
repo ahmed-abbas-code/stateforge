@@ -30,15 +30,15 @@ These shared modules provide strong typing, configuration, and validation for se
 Exports shared session cookie name and safe cookie settings for authentication/session flows.
 
 **Features:**  
-- `SESSION_COOKIE_NAME`: default session cookie name (e.g. `'session'`)
+- `SF_USER_SESSION_COOKIE_NAME`: default session cookie name (e.g. `'session'`)
 - `sessionCookieOptions`: best-practice settings for HTTP-only, secure, same-site cookies
 
 **Usage:**
 
 ```ts
-import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@sf/cookieOptions';
+import { SF_USER_SESSION_COOKIE_NAME, sessionCookieOptions } from '@sf/cookieOptions';
 
-res.setHeader('Set-Cookie', serialize(SESSION_COOKIE_NAME, value, sessionCookieOptions));
+res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, value, sessionCookieOptions));
 ```
 
 ---

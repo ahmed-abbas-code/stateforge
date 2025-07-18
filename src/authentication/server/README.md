@@ -332,7 +332,7 @@ Firebase-based authentication provider—issues, verifies, and clears secure Fir
 **Features:**  
 - Uses Firebase Admin SDK and shared configs
 - Exports `verifyToken`, `signIn`, `signOut`
-- Session cookies via `SESSION_COOKIE_NAME`
+- Session cookies via `SF_USER_SESSION_COOKIE_NAME`
 - Normalizes user info to `AuthUserType`
 
 **Usage:**

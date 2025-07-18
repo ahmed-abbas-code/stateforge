@@ -1,6 +1,7 @@
 // packages/authentication/shared/constants/cookieOptions.ts
 
-export const SESSION_COOKIE_NAME = 'session';
+export const SF_USER_SESSION_COOKIE_NAME = 'user-session';
+export const SF_BACKEND_SESSION_COOKIE_NAME = 'backend-session';
 
 export const sessionCookieOptions = {
   httpOnly: true,

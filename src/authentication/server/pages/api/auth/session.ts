@@ -3,9 +3,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { serialize } from 'cookie';
 import { adminAuth } from '@authentication/server';
+import { SF_USER_SESSION_COOKIE_NAME } from '@authentication/shared';
 
 
-const SESSION_COOKIE_NAME = 'session';
 const EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Set HTTP-only session cookie
-    const cookie = serialize(SESSION_COOKIE_NAME, sessionCookie, {
+    const cookie = serialize(SF_USER_SESSION_COOKIE_NAME, sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: EXPIRES_IN_MS / 1000,
