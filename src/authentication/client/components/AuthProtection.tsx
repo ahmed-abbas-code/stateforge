@@ -8,10 +8,11 @@ import { useAuth } from '@authentication/client';
 
 interface Props {
   children: ReactNode;
-  redirectTo: string; // 👈 required
+  redirectTo: string;
+  loadingFallback?: () => ReactNode; // 👈 optional fallback renderer
 }
 
-export function AuthProtection({ children, redirectTo }: Props) {
+export function AuthProtection({ children, redirectTo, loadingFallback }: Props) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -22,7 +23,7 @@ export function AuthProtection({ children, redirectTo }: Props) {
   }, [isLoading, isAuthenticated, router, redirectTo]);
 
   if (isLoading || !isAuthenticated) {
-    return <p>Checking authentication…</p>;
+    return <>{loadingFallback?.() ?? <p>Checking authentication…</p>}</>;
   }
 
   return <>{children}</>;
