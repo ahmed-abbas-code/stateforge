@@ -1,5 +1,4 @@
 // src/authentication/client/components/AuthProvider.tsx
-
 'use client';
 
 import React, {
@@ -12,11 +11,9 @@ import React, {
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
+import isEqual from 'lodash/isEqual';                     // ★ deep-compare
 
-import type {
-  Session,
-  AuthClientContext,
-} from '@authentication/shared';
+import type { Session, AuthClientContext } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
 
@@ -52,6 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
+      dedupingInterval: 2000,            // ★ stop refetch-on-every-render
       errorRetryCount: 0,
       onErrorRetry: () => {},
     }}
@@ -78,8 +76,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const [sessions, setSessions] = useState<Record<string, Session>>(initialSessions);
 
+  // ★ Only update when the session *content* changes
   useEffect(() => {
-    if (swrSessions && swrSessions !== sessions) {
+    if (swrSessions && !isEqual(swrSessions, sessions)) {
       setSessions(swrSessions);
     }
   }, [swrSessions, sessions]);
@@ -109,6 +108,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           headers: { 'Content-Type': 'application/json' },
         });
       } catch (_) {}
+
       setSessions({});
       mutate(SESSION_API_ENDPOINT, {}, false);
       router.push('/');
