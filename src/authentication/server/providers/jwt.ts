@@ -196,7 +196,7 @@ export function createAuthProvider(
   return provider;
 }
 
-// 🔹 Default instance with default algorithm
+// 🔹 Default instance (uses HS256)
 const jwtProvider = createAuthProvider('default');
 
 // ✅ Named exports
