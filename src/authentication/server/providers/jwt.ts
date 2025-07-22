@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload, type Algorithm } from 'jsonwebtoken';
 
 import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
 import type {
@@ -14,7 +14,7 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
-function decodeJwt(token: string): jwt.JwtPayload | null {
+function decodeJwt(token: string): JwtPayload | null {
   try {
     const decoded = jwt.decode(token);
     return typeof decoded === 'object' && decoded !== null ? decoded : null;
@@ -40,10 +40,9 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
   };
 }
 
-// ✅ Accept optional second param for compatibility (even if unused)
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: string[]
+  _algorithms?: Algorithm[]
 ): AuthProviderInstance {
   const type = 'jwt';
 
