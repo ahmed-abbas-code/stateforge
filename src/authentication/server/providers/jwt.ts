@@ -52,13 +52,20 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 export function createAuthProvider(instanceId: string): AuthProviderInstance {
   const type = 'jwt';
 
-  return {
+  const provider: AuthProviderInstance = {
     id: instanceId,
     type,
 
-    async signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+    async signIn(
+      req: NextApiRequest,
+      res: NextApiResponse,
+      context?: { token: string; type?: string }
+    ): Promise<void> {
       try {
-        const { token } = req.body;
+        const token =
+          context?.token ||
+          req.body?.token ||
+          req.body?.access_token;
 
         if (!token || typeof token !== 'string') {
           res.status(400).json({ error: 'Missing or invalid token in request body' });
@@ -70,12 +77,14 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           throw new Error('Invalid JWT payload structure');
         }
 
-        normalizeJwtPayload(decoded); // enrich if needed
+        const normalized = normalizeJwtPayload(decoded);
+        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
 
-        const context: AuthContext = { req, res, existingSessions: {} };
-        const cookieOpts = typeof jwtProvider.cookieOptions === 'function'
-          ? jwtProvider.cookieOptions(context)
-          : jwtProvider.cookieOptions;
+        const authContext: AuthContext = { req, res, existingSessions: {} };
+        const cookieOpts =
+          typeof provider.cookieOptions === 'function'
+            ? provider.cookieOptions(authContext)
+            : provider.cookieOptions;
 
         res.setHeader(
           'Set-Cookie',
@@ -86,7 +95,16 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           )
         );
 
-        res.status(200).json({ ok: true });
+        const session: Session = {
+          userId: normalized.sub!,
+          email: normalized.email,
+          token,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+        };
+
+        res.status(200).json({ user: session });
       } catch (err) {
         console.error(`[${instanceId}] Sign-in failed:`, err);
         res.status(401).json({ error: 'Authentication failed' });
@@ -123,10 +141,11 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     },
 
     async signOut(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-      const context: AuthContext = { req, res, existingSessions: {} };
-      const cookieOpts = typeof jwtProvider.cookieOptions === 'function'
-        ? jwtProvider.cookieOptions(context)
-        : jwtProvider.cookieOptions;
+      const authContext: AuthContext = { req, res, existingSessions: {} };
+      const cookieOpts =
+        typeof provider.cookieOptions === 'function'
+          ? provider.cookieOptions(authContext)
+          : provider.cookieOptions;
 
       res.setHeader(
         'Set-Cookie',
@@ -170,6 +189,8 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_SEC),
   };
+
+  return provider;
 }
 
 // 🔹 Default provider instance (for single-provider use)

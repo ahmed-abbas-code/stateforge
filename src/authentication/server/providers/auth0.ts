@@ -36,30 +36,33 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     type,
 
     /**
-     * Not yet implemented — typically handled client-side via redirect
+     * Placeholder — must support the context pattern to align with SF
      */
-    async signIn(_req: NextApiRequest, _res: NextApiResponse): Promise<void> {
+    async signIn(
+      _req: NextApiRequest,
+      _res: NextApiResponse,
+      _context?: { token: string; type?: string }
+    ): Promise<void> {
       throw new Error(`[${instanceId}] signIn not implemented`);
     },
 
-    /**
-     * Verifies the Auth0 ID token (if provided via cookie/session).
-     */
-    async verifyToken(_req: NextApiRequest, _res: NextApiResponse): Promise<Session | null> {
+    async verifyToken(
+      _req: NextApiRequest,
+      _res: NextApiResponse
+    ): Promise<Session | null> {
       throw new Error(`[${instanceId}] verifyToken not implemented`);
     },
 
-    /**
-     * Signs the user out by clearing the Auth0 session (if applicable).
-     */
-    async signOut(_req: NextApiRequest, _res: NextApiResponse): Promise<void> {
+    async signOut(
+      _req: NextApiRequest,
+      _res: NextApiResponse
+    ): Promise<void> {
       throw new Error(`[${instanceId}] signOut not implemented`);
     },
 
-    /**
-     * Refreshes the Auth0 session (e.g., via silent auth or refresh token).
-     */
-    async refreshToken(_context: AuthContext): Promise<Session | null> {
+    async refreshToken(
+      _context: AuthContext
+    ): Promise<Session | null> {
       throw new Error(`[${instanceId}] refreshToken not implemented`);
     },
 

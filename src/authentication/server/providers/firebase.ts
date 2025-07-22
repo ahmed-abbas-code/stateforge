@@ -33,12 +33,20 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 export function createAuthProvider(instanceId: string): AuthProviderInstance {
   const type = 'firebase';
 
-  return {
+  const provider: AuthProviderInstance = {
     id: instanceId,
     type,
 
-    async signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-      const { idToken } = req.body;
+    async signIn(
+      req: NextApiRequest,
+      res: NextApiResponse,
+      context?: { token: string; type?: string }
+    ): Promise<void> {
+      const idToken =
+        context?.token ||
+        req.body?.token ||
+        req.body?.idToken ||
+        req.body?.id_token;
 
       if (!idToken || typeof idToken !== 'string') {
         res.status(400).json({ error: 'Missing or invalid idToken in request body' });
@@ -51,10 +59,11 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           expiresIn: SESSION_EXPIRES_IN_MS,
         });
 
-        const context: AuthContext = { req, res, existingSessions: {} };
-        const cookieOpts = typeof firebaseProvider.cookieOptions === 'function'
-          ? firebaseProvider.cookieOptions(context)
-          : firebaseProvider.cookieOptions;
+        const contextObject: AuthContext = { req, res, existingSessions: {} };
+        const cookieOpts =
+          typeof provider.cookieOptions === 'function'
+            ? provider.cookieOptions(contextObject)
+            : provider.cookieOptions;
 
         res.setHeader(
           'Set-Cookie',
@@ -110,10 +119,11 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     },
 
     async signOut(req: NextApiRequest, res: NextApiResponse) {
-      const context: AuthContext = { req, res, existingSessions: {} };
-      const cookieOpts = typeof firebaseProvider.cookieOptions === 'function'
-        ? firebaseProvider.cookieOptions(context)
-        : firebaseProvider.cookieOptions;
+      const contextObject: AuthContext = { req, res, existingSessions: {} };
+      const cookieOpts =
+        typeof provider.cookieOptions === 'function'
+          ? provider.cookieOptions(contextObject)
+          : provider.cookieOptions;
 
       res.setHeader(
         'Set-Cookie',
@@ -123,6 +133,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           { ...cookieOpts, maxAge: -1 }
         )
       );
+
       res.status(200).json({ ok: true });
     },
 
@@ -153,6 +164,8 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_MS / 1000),
   };
+
+  return provider;
 }
 
 // 🔹 Default instance for convenience
