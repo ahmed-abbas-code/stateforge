@@ -46,7 +46,7 @@ export async function getAllSessions(
 }
 
 /**
- * Explicitly refresh sessions using provider-level refreshToken hooks.
+ * Refresh all sessions using optional provider-level refreshToken hooks.
  */
 export async function refreshSessions(
   req: NextApiRequest,
@@ -79,7 +79,7 @@ export async function refreshSessions(
 }
 
 /**
- * Alias for backward compatibility.
+ * Backward compatibility alias.
  */
 export const getSession = getAllSessions;
 
@@ -99,14 +99,13 @@ export async function getPrimarySession(
     if (sessions[id]) return sessions[id];
   }
 
-  const fallback = Object.values(sessions)[0];
-  return fallback ?? null;
+  return Object.values(sessions)[0] ?? null;
 }
 
 /**
  * Get a specific session by provider instance ID.
  */
-export function getSessionForInstance(
+export function getSessionById(
   sessions: SessionMap,
   id: string
 ): Session | undefined {
@@ -116,7 +115,7 @@ export function getSessionForInstance(
 /**
  * Check if a specific provider instance has an active session.
  */
-export function hasSessionForInstance(
+export function hasSessionById(
   sessions: SessionMap,
   id: string
 ): boolean {
@@ -124,7 +123,7 @@ export function hasSessionForInstance(
 }
 
 /**
- * Get all sessions for a given provider type (e.g. 'jwt').
+ * Get all sessions for a specific provider type (e.g. 'jwt').
  */
 export function getSessionsByType(
   sessions: SessionMap,

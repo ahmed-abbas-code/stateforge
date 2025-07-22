@@ -12,12 +12,12 @@ import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 
 import type {
-  AuthUserType,
+  Session,
   AuthClientContext,
 } from '@authentication/shared';
 
-const fetchUser = async (): Promise<AuthUserType | null> => {
-  const res = await fetch('/api/auth/me', {
+const fetchSessions = async (): Promise<Record<string, Session>> => {
+  const res = await fetch('/api/auth/sessions', {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -26,25 +26,23 @@ const fetchUser = async (): Promise<AuthUserType | null> => {
     if (res.status !== 401) {
       console.error(`Auth fetch failed: ${res.status} ${res.statusText}`);
     }
-    return null;
+    return {};
   }
 
-  const { user } = await res.json();
-  return user ?? null;
+  const { sessions } = await res.json();
+  return sessions ?? {};
 };
 
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
-  initialUser?: AuthUserType;
-  redirectTo: string;
+  initialSessions?: Record<string, Session>;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
-  initialUser,
-  redirectTo,
+  initialSessions = {},
 }) => (
   <SWRConfig
     value={{
@@ -54,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       onErrorRetry: () => {},
     }}
   >
-    <InnerAuthProvider initialUser={initialUser} redirectTo={redirectTo}>
+    <InnerAuthProvider initialSessions={initialSessions}>
       {children}
     </InnerAuthProvider>
   </SWRConfig>
@@ -62,79 +60,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   children,
-  initialUser,
-  redirectTo,
+  initialSessions = {},
 }) => {
   const router = useRouter();
 
   const {
-    data: swrUser,
+    data: swrSessions,
     error,
     isLoading,
-  } = useSWR<AuthUserType | null>('/api/auth/me', fetchUser, {
-    fallbackData: initialUser,
+  } = useSWR<Record<string, Session>>('/api/auth/sessions', fetchSessions, {
+    fallbackData: initialSessions,
   });
 
-  const [user, setUser] = useState<AuthUserType | null>(initialUser ?? null);
+  const [sessions, setSessions] = useState<Record<string, Session>>(initialSessions);
 
   useEffect(() => {
-    if (swrUser !== undefined && swrUser !== user) {
-      setUser(swrUser);
+    if (swrSessions && swrSessions !== sessions) {
+      setSessions(swrSessions);
     }
-  }, [swrUser, user]);
+  }, [swrSessions, sessions]);
 
-  const getToken = useCallback(async (): Promise<string | null> => {
-    const res = await fetch('/api/auth/token', { credentials: 'include' });
-    if (!res.ok) return null;
-    const { token } = await res.json();
-    return token ?? null;
-  }, []);
-
-  const signIn = useCallback(async () => {
-    router.push(redirectTo);
-    return { ok: true };
-  }, [router, redirectTo]);
-
-  const signOut = useCallback(async () => {
-    try {
-      await fetch('/api/auth/signout', {
-        method: 'POST',
+  const getToken = useCallback(
+    async (providerId?: string): Promise<string | null> => {
+      // If not specified, pick the first providerId available
+      const pid = providerId ?? Object.keys(sessions)[0];
+      if (!pid) return null;
+      const res = await fetch(`/api/auth/token?provider=${pid}`, {
         credentials: 'include',
       });
-    } catch (_) {}
-
-    setUser(null);
-    mutate('/api/auth/me', null, false);
-    router.push(redirectTo);
-  }, [router, redirectTo]);
-
-  const refreshToken = useCallback(async (): Promise<string | null> => {
-    try {
-      const res = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!res.ok) {
-        throw new Error(`Refresh failed: ${res.status}`);
-      }
-
-      const { user: refreshedUser, token } = await res.json();
-
-      if (refreshedUser) {
-        setUser(refreshedUser);
-        mutate('/api/auth/me', refreshedUser, false);
-      }
-
+      if (!res.ok) return null;
+      const { token } = await res.json();
       return token ?? null;
-    } catch (err) {
-      console.error('Failed to refresh session', err);
-      toast.info('Session expired. Please sign in again.');
-      await signOut();
-      return null;
-    }
-  }, [signOut]);
+    },
+    [sessions]
+  );
+
+  const signOut = useCallback(
+    async (providerIds?: string[]) => {
+      try {
+        await fetch('/api/auth/signout', {
+          method: 'POST',
+          credentials: 'include',
+          body: providerIds ? JSON.stringify({ providerIds }) : undefined,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (_) {}
+      setSessions({});
+      mutate('/api/auth/sessions', {}, false);
+      router.push('/');
+    },
+    [router]
+  );
 
   const handleResponse = useCallback(
     async (res: Response): Promise<Response> => {
@@ -148,35 +124,19 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [signOut]
   );
 
-  // 🔁 Auto-refresh before session expiration
-  useEffect(() => {
-    if (!user?.expiresAt || !refreshToken) return;
-
-    const now = Date.now();
-    const refreshIn = user.expiresAt - now - 60_000; // Refresh 1 minute before expiry
-
-    if (refreshIn <= 0) {
-      refreshToken();
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      refreshToken();
-    }, refreshIn);
-
-    return () => clearTimeout(timeoutId);
-  }, [user?.expiresAt, refreshToken]);
-
   const contextValue: AuthClientContext = {
-    user,
-    setUser,
-    isAuthenticated: !!user,
+    sessions,
+    setSessions,
+    isAuthenticated: Object.keys(sessions).length > 0,
     isLoading,
     error: error ?? null,
-    signIn,
+    signIn: async () => {
+      router.push('/account/signin');
+      return { ok: true };
+    },
     signOut,
     getToken,
-    refreshToken,
+    refreshToken: undefined,
     handleResponse,
     auth: undefined,
     handleRedirectCallback: undefined,

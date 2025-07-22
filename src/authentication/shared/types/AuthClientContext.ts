@@ -2,21 +2,21 @@
 
 import type { NextApiRequest } from 'next';
 import type { Auth } from 'firebase/auth';
-import type { AuthUserType } from './validation/authSchema';
+import { Session } from '@authentication/shared/types/AuthProvider';
 
 /**
  * Client-side context for authentication state, tokens, and session actions.
  */
 export interface AuthClientContext {
   /**
-   * Current user object (composite or provider-specific).
+   * Map of provider IDs to authenticated sessions.
    */
-  user: AuthUserType | null;
+  sessions: Record<string, Session>;
 
   /**
-   * Set the current user manually (e.g., SSR hydration or auth override).
+   * Set the full session map manually (e.g., during hydration).
    */
-  setUser?: (user: AuthUserType | null) => void;
+  setSessions: (sessions: Record<string, Session>) => void;
 
   /**
    * Firebase client SDK instance (optional; used if Firebase is a provider).
@@ -24,50 +24,49 @@ export interface AuthClientContext {
   auth?: Auth;
 
   /**
-   * Optional sign-in method (e.g. for Firebase or other interactive flows).
+   * Optional sign-in method (interactive or silent).
    */
-  signIn?: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signIn?: (providerId?: string) => Promise<{ ok: boolean; error?: string }>;
 
   /**
    * Signs out of one or more provider instances.
-   * If `providerIds` is not specified, signs out of all.
+   * If no `providerIds` provided, signs out of all.
    */
   signOut: (providerIds?: string[]) => Promise<void>;
 
   /**
    * Get an access token (or JWT) for a specific provider.
-   * If `providerId` is omitted, returns the default token (if applicable).
+   * If `providerId` is omitted, returns token for the default provider (if any).
    */
   getToken: (providerId?: string) => Promise<string | null>;
 
   /**
-   * True while the auth context is loading (e.g. on mount or during hydration).
+   * True while authentication context is initializing or fetching.
    */
   isLoading: boolean;
 
   /**
-   * Captures any authentication error encountered on the client.
+   * Captures any authentication-related errors.
    */
   error?: Error | null;
 
   /**
-   * True if a valid session exists for any provider.
+   * True if any valid session is present.
    */
   isAuthenticated: boolean;
 
   /**
-   * Optional handler for redirect-based sign-in flows (e.g., Auth0).
+   * Optional handler for redirect-based auth flows (e.g., Auth0).
    */
   handleRedirectCallback?: () => Promise<void>;
 
   /**
-   * Explicitly refresh the user's session or token(s).
-   * Can be triggered by UI or silently by auto-refresh logic.
+   * Manually trigger refresh of all or specific provider sessions.
    */
-  refreshToken?: () => Promise<string | null>;
+  refreshToken?: (providerId?: string) => Promise<string | null>;
 
   /**
-   * Wraps a fetch response to handle common auth errors (e.g., token expiry).
+   * Wraps fetch responses to handle 401s, token refresh, etc.
    */
   handleResponse?: (res: Response) => Promise<Response>;
 }
@@ -76,5 +75,5 @@ export interface AuthClientContext {
  * Extended API request that includes authenticated user context (SSR/server-side use).
  */
 export interface AuthApiRequest extends NextApiRequest {
-  user: AuthUserType;
+  user: unknown; // Consider replacing with `Session` or `AuthUserType` depending on your SSR model
 }

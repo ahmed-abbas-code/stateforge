@@ -9,7 +9,7 @@ type MeResponse = {
 };
 
 // SWR fetcher function with 401 suppression
-const fetchUser = async (): Promise<MeResponse> => {
+const fetchSessions = async (): Promise<MeResponse> => {
   const res = await fetch('/api/auth/me', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -27,34 +27,52 @@ const fetchUser = async (): Promise<MeResponse> => {
 };
 
 /**
- * Client-side hook to access authenticated user state
+ * Client-side hook to access authenticated sessions state
  */
 export const useAuth = (): Omit<
   AuthClientContext,
-  'signIn' | 'signOut' | 'getToken' | 'setUser'
+  'signIn' | 'signOut' | 'getToken'
 > & {
   user: AuthUserType | null;
   sessions: Record<string, Session>;
+  setSessions: (sessions: Record<string, Session>) => void;
   revalidate: () => void;
   status: 'loading' | 'authenticated' | 'unauthenticated';
 } => {
-  const { data, error, isLoading, mutate } = useSWR<MeResponse>('/api/auth/me', fetchUser, {
+  const { data, error, isLoading, mutate } = useSWR<MeResponse>('/api/auth/me', fetchSessions, {
     refreshInterval: 0,
     revalidateOnFocus: false,
     errorRetryCount: 0,
     onErrorRetry: () => {},
   });
 
-  const isAuthenticated = !!data?.user;
+  // Fallback to empty sessions if none
+  const sessions = data?.sessions ?? {};
+  // Derive user (for backward compat) as the first session's user, or null
+  const user =
+    data?.user ??
+    Object.values(sessions)[0]?.user ??
+    null;
+
+  const isAuthenticated = Object.keys(sessions).length > 0;
   const status = isLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
 
+  // Supply a setter for sessions that always provides both keys for MeResponse
+  const setSessions = (nextSessions: Record<string, Session>) => {
+    mutate(
+      { user: data?.user ?? null, sessions: nextSessions },
+      false
+    );
+  };
+
   return {
-    user: data?.user ?? null,
-    sessions: data?.sessions ?? {},
+    user,
+    sessions,
     isAuthenticated,
     isLoading,
     error: error ?? null,
     status,
+    setSessions,
     revalidate: () => mutate(),
   };
 };
