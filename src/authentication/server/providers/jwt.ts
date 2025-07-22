@@ -40,7 +40,11 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
   };
 }
 
-export function createAuthProvider(instanceId: string): AuthProviderInstance {
+// ✅ Accept optional second param for compatibility (even if unused)
+export function createAuthProvider(
+  instanceId: string,
+  _algorithms?: string[]
+): AuthProviderInstance {
   const type = 'jwt';
 
   const provider: AuthProviderInstance = {
