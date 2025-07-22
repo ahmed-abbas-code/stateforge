@@ -75,9 +75,14 @@ export interface AuthProviderInstance {
   type: AuthProviderType;
 
   /**
-   * Sign in a user and set session cookie(s)
+   * Sign in a user and set session cookie(s).
+   * The optional context may include a token and token type ('idToken', 'accessToken', etc.)
    */
-  signIn: (req: NextApiRequest, res: NextApiResponse) => Promise<void>;
+  signIn: (
+    req: NextApiRequest,
+    res: NextApiResponse,
+    context?: { token: string; type?: string }
+  ) => Promise<void>;
 
   /**
    * Verify token from cookie or request context.
