@@ -11,9 +11,9 @@ import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 
-import {
-  AuthContextType,
+import type {
   AuthUserType,
+  AuthClientContext,
 } from '@authentication/shared';
 
 const fetchUser = async (): Promise<AuthUserType | null> => {
@@ -30,15 +30,15 @@ const fetchUser = async (): Promise<AuthUserType | null> => {
   }
 
   const { user } = await res.json();
-  return (user as AuthUserType) ?? null;
+  return user ?? null;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
   initialUser?: AuthUserType;
-  redirectTo: string; // 👈 required param
+  redirectTo: string;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
@@ -84,9 +84,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   }, [swrUser, user]);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    const res = await fetch('/api/auth/token', {
-      credentials: 'include',
-    });
+    const res = await fetch('/api/auth/token', { credentials: 'include' });
     if (!res.ok) return null;
     const { token } = await res.json();
     return token ?? null;
@@ -98,15 +96,45 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   }, [router, redirectTo]);
 
   const signOut = useCallback(async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    }).catch(() => {});
+    try {
+      await fetch('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (_) {}
 
     setUser(null);
     mutate('/api/auth/me', null, false);
     router.push(redirectTo);
   }, [router, redirectTo]);
+
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Refresh failed: ${res.status}`);
+      }
+
+      const { user: refreshedUser, token } = await res.json();
+
+      if (refreshedUser) {
+        setUser(refreshedUser);
+        mutate('/api/auth/me', refreshedUser, false);
+      }
+
+      return token ?? null;
+    } catch (err) {
+      console.error('Failed to refresh session', err);
+      toast.info('Session expired. Please sign in again.');
+      await signOut();
+      return null;
+    }
+  }, [signOut]);
 
   const handleResponse = useCallback(
     async (res: Response): Promise<Response> => {
@@ -120,7 +148,26 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [signOut]
   );
 
-  const contextValue: AuthContextType = {
+  // 🔁 Auto-refresh before session expiration
+  useEffect(() => {
+    if (!user?.expiresAt || !refreshToken) return;
+
+    const now = Date.now();
+    const refreshIn = user.expiresAt - now - 60_000; // Refresh 1 minute before expiry
+
+    if (refreshIn <= 0) {
+      refreshToken();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      refreshToken();
+    }, refreshIn);
+
+    return () => clearTimeout(timeoutId);
+  }, [user?.expiresAt, refreshToken]);
+
+  const contextValue: AuthClientContext = {
     user,
     setUser,
     isAuthenticated: !!user,
@@ -129,7 +176,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     signIn,
     signOut,
     getToken,
+    refreshToken,
     handleResponse,
+    auth: undefined,
+    handleRedirectCallback: undefined,
   };
 
   return (
@@ -139,7 +189,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   );
 };
 
-export const useAuthContext = (): AuthContextType => {
+export const useAuthContext = (): AuthClientContext => {
   const ctx = useContext(AuthContext);
   if (!ctx) {
     throw new Error('useAuthContext must be used within an AuthProvider');

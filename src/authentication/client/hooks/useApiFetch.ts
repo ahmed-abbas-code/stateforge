@@ -1,54 +1,67 @@
+// src/authentication/client/hooks/useApiFetch.ts
+
 import { useAuthContext } from '@authentication/client';
 
-type ExtendedRequestInit = RequestInit & {
-  raw?: boolean; // ✅ optional flag to return raw Response
-};
+type ResponseType = 'json' | 'blob' | 'text';
+
+interface ExtendedRequestInit extends RequestInit {
+  raw?: boolean;
+  responseType?: ResponseType;
+}
 
 /**
- * A shared fetch wrapper that:
- * - includes credentials (cookies)
- * - runs global 401 interception via handleResponse
- * - parses JSON automatically (or returns undefined for 204)
- * - optionally returns raw Response when `raw: true` is set
+ * Unified fetch hook that:
+ * - Uses credentials
+ * - Handles 401/interceptors via AuthContext
+ * - Supports `responseType`: 'json' (default), 'blob', or 'text'
+ * - Optionally returns raw Response with `raw: true`
  */
 export function useApiFetch() {
   const auth = useAuthContext();
 
   if (!auth?.handleResponse) {
-    throw new Error(
-      'useApiFetch must be used within an AuthProvider that defines handleResponse'
-    );
+    throw new Error('useApiFetch must be used within an AuthProvider that defines handleResponse');
   }
 
   const { handleResponse } = auth;
 
   return async function fetchWithHandling<T = unknown>(
     input: RequestInfo,
-    init?: ExtendedRequestInit
+    init: ExtendedRequestInit = {}
   ): Promise<T | Response> {
+    const { raw, responseType = 'json', ...fetchInit } = init;
+
     const res = await fetch(input, {
-      ...init,
+      ...fetchInit,
       credentials: 'include',
     });
 
     await handleResponse(res);
 
-    // ✅ 1. allow returning raw response directly
-    if (init?.raw) return res;
+    if (raw) return res;
 
-    // ✅ 2. handle no-content responses
+    // 204/205: No content
     if (res.status === 204 || res.status === 205) {
       return undefined as T;
     }
 
-    // ✅ 3. parse JSON or fallback to plain text
+    // Blob response
+    if (responseType === 'blob') {
+      return await res.blob() as T;
+    }
+
+    // Text response
+    if (responseType === 'text') {
+      return await res.text() as T;
+    }
+
+    // Default: JSON
     try {
       const contentType = res.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
         return await res.json();
       }
-      const text = await res.text();
-      return text as unknown as T;
+      return await res.text() as unknown as T;
     } catch {
       return undefined as T;
     }

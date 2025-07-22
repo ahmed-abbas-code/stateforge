@@ -1,4 +1,3 @@
-
 # StateForge - Authentication - Shared
 
 Core shared types, interfaces, constants, and schemas for StateForge authentication and backend modules.
@@ -8,9 +7,11 @@ Core shared types, interfaces, constants, and schemas for StateForge authenticat
 ## Table of Contents
 - [Overview](#overview)
 - [Modules](#modules)
-  - [cookieOptions.ts](#cookieoptionsts)
+  - [getSessionCookieName.ts](#getsessioncookienamets)
+  - [sessionCookieOptions.ts](#sessioncookieoptionsts)
+  - [AuthProvider.ts](#authproviderts)
   - [Backend.ts](#backendts)
-  - [Auth.ts](#authts)
+  - [AuthClientContext.ts](#authclientcontextts)
   - [authSchema.ts](#authschemats)
 - [License](#license)
 
@@ -24,21 +25,64 @@ These shared modules provide strong typing, configuration, and validation for se
 
 ## Modules
 
-### `cookieOptions.ts`
+### `getSessionCookieName.ts`
 
 **Purpose:**  
-Exports shared session cookie name and safe cookie settings for authentication/session flows.
-
-**Features:**  
-- `SF_USER_SESSION_COOKIE_NAME`: default session cookie name (e.g. `'session'`)
-- `sessionCookieOptions`: best-practice settings for HTTP-only, secure, same-site cookies
+Generate a standardized cookie name for a given provider type and instance.
 
 **Usage:**
 
 ```ts
-import { SF_USER_SESSION_COOKIE_NAME, sessionCookieOptions } from '@sf/cookieOptions';
+import { getSessionCookieName } from '@sf/getSessionCookieName';
 
-res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, value, sessionCookieOptions));
+const cookieName = getSessionCookieName('jwt', 'billing');
+// returns "sf.jwt.billing-session"
+```
+
+---
+
+### `sessionCookieOptions.ts`
+
+**Purpose:**  
+Default secure options for session cookies in a cross-provider environment.
+
+**Features:**  
+- Strong defaults: `httpOnly`, `secure`, `sameSite`, `path`, and `maxAge`
+- Reusable across all providers
+
+**Usage:**
+
+```ts
+import { sessionCookieOptions } from '@sf/sessionCookieOptions';
+
+serialize('cookie-name', token, sessionCookieOptions);
+```
+
+---
+
+### `AuthProvider.ts`
+
+**Purpose:**  
+Defines the interface and shared types for any authentication provider instance in the system.
+
+**Features:**  
+- `AuthProviderInstance` with `signIn`, `signOut`, `verifyToken`
+- Hook support via `onVerifySuccess`
+- Per-provider cookie configuration
+
+**Usage:**
+
+```ts
+import type { AuthProviderInstance } from '@sf/AuthProvider';
+
+const firebaseProvider: AuthProviderInstance = {
+  id: 'firebase',
+  type: 'firebase',
+  signIn: async () => {},
+  signOut: async () => {},
+  verifyToken: async () => null,
+  cookieOptions: { ... }
+};
 ```
 
 ---
@@ -63,22 +107,21 @@ function useBackend<T>(options: UseBackendOptions): UseBackendResult<T> { /* ...
 
 ---
 
-### `Auth.ts`
+### `AuthClientContext.ts`
 
 **Purpose:**  
-TypeScript types/interfaces for authentication user context and strongly-typed API requests.
+Shared shape of client-side authentication context (`AuthClientContext`) for use across the app.
 
 **Features:**  
-- `AuthContextType`: describes the shape of authentication context used in React and Node
-- `AuthApiRequest`: extends NextApiRequest with a `user` property
+- Includes user, auth state, token helpers, and error handling
+- Used by the `AuthProvider` and hooks
 
 **Usage:**
 
 ```ts
-import type { AuthContextType } from '@sf/Auth';
+import type { AuthClientContext } from '@sf/AuthClientContext';
 
-const auth: AuthContextType = useAuthContext();
-if (auth.isAuthenticated) { /* ... */ }
+const context: AuthClientContext = useAuthContext();
 ```
 
 ---

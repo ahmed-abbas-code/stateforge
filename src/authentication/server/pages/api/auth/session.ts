@@ -3,10 +3,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { serialize } from 'cookie';
 import { adminAuth } from '@authentication/server';
-import { SF_USER_SESSION_COOKIE_NAME } from '@authentication/shared';
+import { getAuthProviderInstances } from '@authentication/server/utils/authRegistry';
+import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
+import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
 
-
-const EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
+const EXPIRES_IN_SECONDS = 60 * 60 * 24 * 5; // 5 days
+const EXPIRES_IN_MS = EXPIRES_IN_SECONDS * 1000;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -21,24 +23,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verify the ID token first to ensure it's valid before creating a session
-    // const decodedIdToken = await adminAuth.verifyIdToken(idToken);
-
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
       expiresIn: EXPIRES_IN_MS,
     });
 
-    // Set HTTP-only session cookie
-    const cookie = serialize(SF_USER_SESSION_COOKIE_NAME, sessionCookie, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: EXPIRES_IN_MS / 1000,
-      path: '/',
-      sameSite: 'lax',
+    const providerId = 'default'; // or whatever instance ID you use for firebase
+    const providerType = 'firebase';
+    const provider = getAuthProviderInstances()[providerId];
+
+    if (!provider) {
+      return res.status(500).json({ error: 'Auth provider not found' });
+    }
+
+    const cookieName = getSessionCookieName(providerType, providerId);
+
+    const options = getCookieOptions({
+      ...provider.cookieOptions,
+      maxAge: EXPIRES_IN_SECONDS, // override to match session cookie age
     });
 
-    res.setHeader('Set-Cookie', cookie);
+    res.setHeader('Set-Cookie', serialize(cookieName, sessionCookie, options));
     res.status(200).json({ ok: true });
+
   } catch (err) {
     console.error('[SESSION ERROR]', err);
     res.status(401).json({ error: 'Failed to create session cookie' });

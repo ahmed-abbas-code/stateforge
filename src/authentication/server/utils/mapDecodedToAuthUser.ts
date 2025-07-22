@@ -2,12 +2,12 @@
 
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { JwtPayload } from 'jsonwebtoken';
-import { AuthProviderType, AuthUserType } from '@authentication/shared';
+import type { SessionMap, AuthProviderType, AuthUserType } from '@authentication/shared';
 
 type DecodedTokenLike = Partial<DecodedIdToken> & JwtPayload;
 
 /**
- * Type guard to check if object is a Firebase DecodedIdToken.
+ * Type guard: check if a decoded token is a Firebase ID token.
  */
 function isDecodedIdToken(token: unknown): token is DecodedIdToken {
   return (
@@ -19,8 +19,7 @@ function isDecodedIdToken(token: unknown): token is DecodedIdToken {
 }
 
 /**
- * Accepts a Firebase DecodedIdToken or generic JwtPayload
- * and normalizes it into an AuthUserType for SF.
+ * Normalize a single decoded token (Firebase or JWT) into AuthUserType.
  */
 export function mapDecodedToAuthUser(
   decoded: DecodedTokenLike,
@@ -58,4 +57,27 @@ export function mapDecodedToAuthUser(
     provider,
     providerId,
   };
+}
+
+/**
+ * Helper to extract a primary AuthUserType from a SessionMap.
+ * Prioritizes Firebase > Auth0 > JWT or falls back to first session.
+ */
+export function mapDecodedToAuthUserFromSessions(
+  sessions: SessionMap,
+  preferredOrder: AuthProviderType[] = ['firebase', 'auth0', 'jwt']
+): AuthUserType {
+  for (const provider of preferredOrder) {
+    const match = Object.entries(sessions).find(
+      ([, session]) => session.provider === provider
+    );
+    if (match) {
+      return mapDecodedToAuthUser(match[1], provider);
+    }
+  }
+
+  const [id, session] = Object.entries(sessions)[0] ?? [];
+  if (!session) throw new Error('No valid session found');
+
+  return mapDecodedToAuthUser(session, session.provider ?? (id as AuthProviderType));
 }

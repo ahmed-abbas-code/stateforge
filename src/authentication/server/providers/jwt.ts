@@ -5,8 +5,13 @@ import { parse, serialize } from 'cookie';
 import type { JwtPayload } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 
-import { AuthUserType, sessionCookieOptions } from '@authentication/shared';
-import { mapDecodedToAuthUser } from '@authentication/server';
+import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
+import type {
+  AuthProviderInstance,
+  Session,
+  AuthContext,
+} from '@authentication/shared/types/AuthProvider';
+import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
@@ -14,22 +19,12 @@ const rawSecret = process.env.ENCRYPTION_SECRET_KEY;
 if (!rawSecret || typeof rawSecret !== 'string') {
   throw new Error('ENCRYPTION_SECRET_KEY environment variable is required and must be a string');
 }
-const ENCRYPTION_SECRET_KEY: string = rawSecret;
+const ENCRYPTION_SECRET_KEY = rawSecret;
 
-const { verify } = jwt;
-
-export const jwtSessionCookieName = 'sf_backend_session';
-
-/**
- * Type guard to validate JwtPayload shape.
- */
 function isJwtPayload(decoded: unknown): decoded is JwtPayload {
   return typeof decoded === 'object' && decoded !== null && 'sub' in decoded;
 }
 
-/**
- * Normalize `aud` field from array to string if needed.
- */
 function normalizeJwtPayload(payload: JwtPayload): JwtPayload & { aud?: string } {
   return {
     ...payload,
@@ -37,83 +32,151 @@ function normalizeJwtPayload(payload: JwtPayload): JwtPayload & { aud?: string }
   };
 }
 
-/**
- * Extracts the JWT session cookie from the request.
- */
-function getSessionCookie(req: NextApiRequest): string | null {
-  const cookies = parse(req.headers.cookie || '');
-  return cookies[jwtSessionCookieName] || null;
+function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
+  return (context: AuthContext) => {
+    const base = getCookieOptions({ maxAge });
+
+    return {
+      maxAge,
+      httpOnly: base.httpOnly ?? true,
+      secure: base.secure ?? true,
+      sameSite:
+        base.sameSite === 'lax' || base.sameSite === 'strict' || base.sameSite === 'none'
+          ? base.sameSite
+          : 'strict',
+      path: base.path ?? '/',
+    };
+  };
 }
 
-/**
- * Verifies a JWT token from the session cookie and returns an AuthUser and raw token.
- */
-export async function verifyToken(req: NextApiRequest): Promise<AuthUserType & { rawToken: string }> {
-  const rawToken = getSessionCookie(req);
-  if (!rawToken) throw new Error('No session cookie found');
+export function createAuthProvider(instanceId: string): AuthProviderInstance {
+  const type = 'jwt';
 
-  try {
-    const decoded = verify(rawToken, ENCRYPTION_SECRET_KEY);
+  return {
+    id: instanceId,
+    type,
 
-    if (!isJwtPayload(decoded)) {
-      throw new Error('Invalid JWT payload structure');
-    }
+    async signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+      try {
+        const { token } = req.body;
 
-    const normalized = normalizeJwtPayload(decoded);
-    const user = mapDecodedToAuthUser(normalized, 'jwt');
+        if (!token || typeof token !== 'string') {
+          res.status(400).json({ error: 'Missing or invalid token in request body' });
+          return;
+        }
 
-    return { ...user, rawToken };
-  } catch (err) {
-    console.error('[JWT] Token verification failed:', err);
-    throw new Error('Invalid or expired JWT session');
-  }
+        const decoded = jwt.verify(token, ENCRYPTION_SECRET_KEY);
+        if (!isJwtPayload(decoded)) {
+          throw new Error('Invalid JWT payload structure');
+        }
+
+        normalizeJwtPayload(decoded); // enrich if needed
+
+        const context: AuthContext = { req, res, existingSessions: {} };
+        const cookieOpts = typeof jwtProvider.cookieOptions === 'function'
+          ? jwtProvider.cookieOptions(context)
+          : jwtProvider.cookieOptions;
+
+        res.setHeader(
+          'Set-Cookie',
+          serialize(
+            getSessionCookieName(type, instanceId),
+            token,
+            cookieOpts
+          )
+        );
+
+        res.status(200).json({ ok: true });
+      } catch (err) {
+        console.error(`[${instanceId}] Sign-in failed:`, err);
+        res.status(401).json({ error: 'Authentication failed' });
+      }
+    },
+
+    async verifyToken(req: NextApiRequest, _res: NextApiResponse): Promise<Session | null> {
+      const cookies = parse(req.headers.cookie || '');
+      const cookieName = getSessionCookieName(type, instanceId);
+      const rawToken = cookies[cookieName];
+      if (!rawToken) return null;
+
+      try {
+        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY);
+        if (!isJwtPayload(decoded)) {
+          throw new Error('Invalid JWT payload structure');
+        }
+
+        const normalized = normalizeJwtPayload(decoded);
+        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
+
+        return {
+          userId: normalized.sub!,
+          email: normalized.email,
+          token: rawToken,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+        };
+      } catch (err) {
+        console.warn(`[${instanceId}] Token verification failed:`, err);
+        return null;
+      }
+    },
+
+    async signOut(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+      const context: AuthContext = { req, res, existingSessions: {} };
+      const cookieOpts = typeof jwtProvider.cookieOptions === 'function'
+        ? jwtProvider.cookieOptions(context)
+        : jwtProvider.cookieOptions;
+
+      res.setHeader(
+        'Set-Cookie',
+        serialize(
+          getSessionCookieName(type, instanceId),
+          '',
+          { ...cookieOpts, maxAge: -1 }
+        )
+      );
+
+      res.status(200).json({ ok: true });
+    },
+
+    async refreshToken(context: AuthContext): Promise<Session | null> {
+      const cookieName = getSessionCookieName(type, instanceId);
+      const rawToken = context.req.cookies?.[cookieName];
+      if (!rawToken) return null;
+
+      try {
+        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY);
+        if (!isJwtPayload(decoded)) {
+          throw new Error('Invalid JWT payload structure');
+        }
+
+        const normalized = normalizeJwtPayload(decoded);
+        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
+
+        return {
+          userId: normalized.sub!,
+          email: normalized.email,
+          token: rawToken,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+        };
+      } catch (err) {
+        console.warn(`[${instanceId}] Refresh token failed:`, err);
+        return null;
+      }
+    },
+
+    cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_SEC),
+  };
 }
 
-/**
- * Signs in the user by accepting a valid JWT and setting a secure session cookie.
- * Expects { token } in the request body.
- */
-export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-  try {
-    const { token } = req.body;
+// 🔹 Default provider instance (for single-provider use)
+const jwtProvider = createAuthProvider('default');
 
-    if (!token || typeof token !== 'string') {
-      res.status(400).json({ error: 'Missing or invalid token in request body' });
-      return;
-    }
-
-    const decoded = verify(token, ENCRYPTION_SECRET_KEY);
-
-    if (!isJwtPayload(decoded)) {
-      throw new Error('Invalid JWT payload structure');
-    }
-
-    normalizeJwtPayload(decoded); // Optional validation only
-
-    res.setHeader('Set-Cookie', serialize(jwtSessionCookieName, token, {
-      ...sessionCookieOptions,
-      maxAge: SESSION_EXPIRES_IN_SEC,
-    }));
-
-    res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error('[JWT] Sign-in failed:', err);
-    res.status(401).json({ error: 'Authentication failed' });
-  }
-}
-
-/**
- * Signs the user out by clearing the session cookie.
- */
-export async function signOut(_req: NextApiRequest, res: NextApiResponse): Promise<void> {
-  try {
-    res.setHeader('Set-Cookie', serialize(jwtSessionCookieName, '', {
-      ...sessionCookieOptions,
-      expires: new Date(0),
-    }));
-    res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error('[JWT] Sign-out failed:', err);
-    res.status(500).json({ error: 'Sign-out failed' });
-  }
-}
+// ✅ Named exports for convenience in index.ts
+export const signIn = jwtProvider.signIn;
+export const signOut = jwtProvider.signOut;
+export const verifyToken = jwtProvider.verifyToken;
+export const jwtSessionCookieName = getSessionCookieName('jwt', 'default');

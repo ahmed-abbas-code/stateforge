@@ -1,13 +1,11 @@
 // src/authentication/server/pages/api/auth/signin.ts
 
+import { getAuthProviderInstances } from '@authentication/server/utils/authRegistry';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AuthStrategyProvider } from '@authentication/server';
- 
+
 /**
  * POST /api/auth/signin
- * 
- * For Firebase/JWT: accepts { idToken } and sets secure session cookie.
- * For Auth0: triggers redirect via Auth0 SDK (no response body).
+ * Accepts token(s) and delegates to registered provider(s) to set session cookies.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -16,9 +14,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  const providers = getAuthProviderInstances();
+  let anySucceeded = false;
+
   try {
-    await AuthStrategyProvider.signIn(req, res);
-    // If the strategy completes the response (e.g., Auth0 redirect), do not respond again
+    for (const [id, provider] of Object.entries(providers)) {
+      // Heuristic: check for a token named for the provider
+      const tokenKey = id === 'firebase' ? 'idToken' : `${id}Token`;
+      const token = req.body?.[tokenKey];
+
+      if (typeof token === 'string' && token.length > 0) {
+        req.body.token = token; // Normalized field if needed
+        await provider.signIn(req, res);
+        anySucceeded = true;
+      }
+    }
+
+    if (!anySucceeded) {
+      return res.status(400).json({ error: 'No valid auth tokens provided' });
+    }
+
     if (!res.writableEnded) {
       res.status(200).json({ ok: true });
     }
@@ -29,4 +44,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 }
-

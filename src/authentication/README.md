@@ -1,4 +1,3 @@
-
 # 🛡️ StateForge – Authentication
 
 Secure, extensible, and production-ready authentication architecture for **Next.js** SaaS and multi-tenant applications. This package provides seamless full-stack integration of authentication state across client, server, and shared packages using modular TypeScript-first patterns.
@@ -11,15 +10,15 @@ The **StateForge Authentication Package** is composed of 3 distinct packages:
 
 | Package            | Description                                                                 |
 |--------------------|-----------------------------------------------------------------------------|
-| [`@sf/shared`]     | Common types, constants, and schemas for validation and API typing.         |
-| [`@sf/client`]     | React hooks and components for managing auth context and backend access.    |
-| [`@sf/server`]     | Server-side middleware, API routes, strategy providers, and session logic.  |
+| [`@sf/shared`](./stateforge-auth-shared-readme.md)     | Common types, constants, and schemas for validation and API typing.         |
+| [`@sf/client`](./stateforge-auth-client-readme.md)     | React hooks and components for managing auth context and backend access.    |
+| [`@sf/server`](./stateforge-auth-server-readme.md)     | Server-side middleware, API routes, strategy providers, and session logic.  |
 
 ---
 
 ## 📦 Packages
 
-### [`@sf/shared`] – [View Docs →](#stateforge---authentication---shared)
+### [`@sf/shared`](./shared/README.md)
 
 Provides:
 - Shared cookie config and session constants
@@ -34,7 +33,7 @@ import { authUserSchema, AuthUserType } from '@sf/authSchema';
 
 ---
 
-### [`@sf/client`] – [View Docs →](#stateforge---authentication---client)
+### [`@sf/client`](./client/README.md)
 
 Includes:
 - Global `<AuthProvider />` and `<AuthProtection />` components
@@ -49,7 +48,7 @@ const { user, signIn, signOut, isAuthenticated } = useAuthContext();
 
 ---
 
-### [`@sf/server`] – [View Docs →](#stateforge---authentication---server)
+### [`@sf/server`](./server/README.md)
 
 Implements:
 - Strategy-driven auth backend (JWT, Firebase, Auth0 stubs)

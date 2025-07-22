@@ -9,12 +9,30 @@ import { useAuth } from '@authentication/client';
 interface Props {
   children: ReactNode;
   redirectTo: string;
-  loadingFallback?: () => ReactNode; // 👈 optional fallback renderer
+  loadingFallback?: () => ReactNode;
+
+  /** Optionally require a session from a specific provider */
+  requireProvider?: string;
+
+  /** Or accept a custom isAuthenticated predicate */
+  isAuthenticatedFn?: (sessions: Record<string, unknown>) => boolean;
 }
 
-export function AuthProtection({ children, redirectTo, loadingFallback }: Props) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function AuthProtection({
+  children,
+  redirectTo,
+  loadingFallback,
+  requireProvider,
+  isAuthenticatedFn,
+}: Props) {
+  const { sessions, isLoading } = useAuth();
   const router = useRouter();
+
+  const isAuthenticated = (() => {
+    if (isAuthenticatedFn) return isAuthenticatedFn(sessions);
+    if (requireProvider) return !!sessions?.[requireProvider];
+    return Object.keys(sessions ?? {}).length > 0;
+  })();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

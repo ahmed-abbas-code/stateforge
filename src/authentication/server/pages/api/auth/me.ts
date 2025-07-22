@@ -1,25 +1,46 @@
 // src/authentication/server/pages/api/auth/me.ts
 
-import { AuthStrategyProvider } from '@authentication/server';
-import { AuthUserType } from '@authentication/shared';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getAllSessions, getPrimarySession } from '@authentication/server/utils/sessionUtils';
+import type { Session } from '@authentication/shared/types/AuthProvider';
+
+type MeResponse = {
+  user: Session | null;
+  sessions: Record<string, Session> | null;
+  error?: string;
+};
 
 /**
  * GET /api/auth/me
- * Returns the authenticated user from the current session.
+ * Returns the primary session and all active provider sessions.
  */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ user: AuthUserType | null; error?: string }>
+  res: NextApiResponse<MeResponse>
 ): Promise<void> {
   try {
-    const user = await AuthStrategyProvider.verifyToken(req);
-    res.status(200).json({ user });
-  } catch (err: unknown) {
-    // Only warn on unexpected failures (not the normal "no cookie" case)
-    if (!(err instanceof Error && err.message === 'No session cookie found')) {
-      console.warn('[API] /auth/me unexpected error:', err);
+    const sessions = await getAllSessions(req, res);
+
+    if (!sessions || Object.keys(sessions).length === 0) {
+      return res.status(401).json({
+        user: null,
+        sessions: null,
+        error: 'No active sessions found',
+      });
     }
-    res.status(401).json({ user: null, error: 'Invalid or expired session' });
+
+    const primarySession = await getPrimarySession(req, res);
+
+    return res.status(200).json({
+      user: primarySession ?? null,
+      sessions,
+    });
+  } catch (err) {
+    console.error('[API] /auth/me error:', err);
+    return res.status(500).json({
+      user: null,
+      sessions: null,
+      error: 'Internal server error',
+    });
   }
 }

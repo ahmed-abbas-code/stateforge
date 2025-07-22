@@ -1,13 +1,11 @@
 // src/authentication/server/pages/api/auth/signout.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AuthStrategyProvider } from '@authentication/server';
+import { getAuthProviderInstances } from '@authentication/server/utils/authRegistry';
 
 /**
  * POST /api/auth/signout
- *
- * For Firebase/JWT: clears session cookie.
- * For Auth0: performs redirect via Auth0 SDK.
+ * Clears session cookies for all registered or specified auth providers.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -16,9 +14,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  const providers = getAuthProviderInstances();
+
+  let providerIds: string[] | undefined;
+
   try {
-    await AuthStrategyProvider.signOut(req, res);
-    // Avoid double response write in case of Auth0 redirect
+    if (req.body && typeof req.body === 'object') {
+      providerIds = req.body.providerIds;
+    }
+
+    const selectedProviders = providerIds?.length
+      ? Object.values(providers).filter(p => providerIds!.includes(p.id))
+      : Object.values(providers);
+
+    for (const provider of selectedProviders) {
+      await provider.signOut(req, res);
+    }
+
     if (!res.writableEnded) {
       res.status(200).json({ ok: true });
     }
@@ -29,4 +41,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 }
-

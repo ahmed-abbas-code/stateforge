@@ -26,6 +26,8 @@ export interface UseBackendOptions {
   enabled?: boolean;
   /** Whether to include Authorization token (default: true) */
   auth?: boolean;
+  /** Optional provider instance ID to use for getToken() */
+  providerId?: string;
   /** SWR deduping window (default: 2000ms) */
   dedupingInterval?: number;
   /** Whether to revalidate on window focus (default: true) */
@@ -75,6 +77,8 @@ export interface UseBackendMutationOptions<TBody = unknown, TRes = unknown> {
   onError?: (error: Error) => void;
   /** Whether to include Authorization token (default: true) */
   auth?: boolean;
+  /** Optional provider instance ID to use for getToken() */
+  providerId?: string;
 
   /** Optimistic update applied to cached data before mutation fires */
   optimisticUpdate?: (previousData?: TRes) => TRes;

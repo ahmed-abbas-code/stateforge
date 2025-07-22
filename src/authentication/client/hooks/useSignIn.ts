@@ -4,16 +4,24 @@
  * Assumes the ID token (e.g. from Firebase) is already obtained client-side.
  */
 
+interface SignInPayload {
+  providerId: string;
+  token: string;
+  type?: 'idToken' | 'accessToken' | 'jwt'; // optional, in case backend needs to distinguish
+}
+
 export const useSignIn = () => {
-  return async (idToken: string): Promise<{ ok: boolean; error?: string }> => {
+  return async (
+    payload: SignInPayload
+  ): Promise<{ ok: boolean; error?: string }> => {
     try {
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Ensures cookie is set on the same domain
-        body: JSON.stringify({ idToken }),
+        credentials: 'include',
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {

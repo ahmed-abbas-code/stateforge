@@ -31,6 +31,7 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     onError,
     invalidate,
     auth = true,
+    providerId,
     optimisticUpdate,
     rollbackOnError,
   } = options;
@@ -42,7 +43,10 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
     _key: string,
     { arg }: { arg: TBody }
   ): Promise<TRes> => {
-    const token = auth === false ? null : await getToken?.();
+    const token = auth === false
+      ? null
+      : await getToken?.(providerId); // ✅ Use providerId if specified
+
     const tenant = getTenantId();
 
     const init: RequestInit = {
@@ -71,7 +75,6 @@ export function useBackendMutation<TBody = unknown, TRes = unknown>(
   };
 
   const swrCfg: SWRMutationConfiguration<TRes, Error, string, TBody> = {
-    // ✅ support optimistic update and rollback on error
     optimisticData: optimisticUpdate,
     rollbackOnError: rollbackOnError ?? !!optimisticUpdate,
 

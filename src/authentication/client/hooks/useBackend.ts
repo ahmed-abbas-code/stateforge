@@ -15,15 +15,19 @@ export const useBackend = <T>(options: UseBackendOptions): UseBackendResult<T> =
     enabled = true,
     headers = {},
     auth = true,
+    providerId, 
     dedupingInterval = 10_000,
     revalidateOnFocus = false,
-    revalidateOnMount = true, 
+    revalidateOnMount = true,
   } = options;
 
   const { handleResponse, getToken } = useAuthContext();
 
   const fetcher = async () => {
-    const token = auth !== false ? await getToken?.() : null;
+    const token = auth !== false && getToken
+      ? await getToken(providerId) // UPDATED
+      : null;
+
     const tenant = getTenantId();
 
     const res = await fetch(path, {

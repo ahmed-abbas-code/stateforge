@@ -1,4 +1,13 @@
 
-export * from './Auth';
+// src/authentication/shared/types/index.ts
+
+export * from './AuthClientContext';
+export * from './AuthProvider';
 export * from './Backend';
-export * from './validation/authSchema';
+
+export {
+  authProviderEnum,
+  authUserSchema,
+  type AuthUserType,
+  type AuthProviderType
+} from './validation/authSchema';

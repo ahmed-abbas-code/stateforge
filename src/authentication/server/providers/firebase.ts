@@ -2,84 +2,164 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import { adminAuth, mapDecodedToAuthUser } from '@authentication/server';
-import { AuthUserType, SF_USER_SESSION_COOKIE_NAME, sessionCookieOptions } from '@authentication/shared';
+import { adminAuth } from '@authentication/server';
+import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
+import type {
+  AuthProviderInstance,
+  Session,
+  AuthContext,
+} from '@authentication/shared/types/AuthProvider';
+import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
-/**
- * Extracts the Firebase session cookie from the request.
- */
-function getSessionCookie(req: NextApiRequest): string | null {
-  const cookies = parse(req.headers.cookie || '');
-  return cookies[SF_USER_SESSION_COOKIE_NAME] || null;
+function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
+  return (context: AuthContext) => {
+    const base = getCookieOptions({ maxAge });
+
+    return {
+      maxAge,
+      httpOnly: base.httpOnly ?? true,
+      secure: base.secure ?? true,
+      sameSite:
+        base.sameSite === 'lax' || base.sameSite === 'strict' || base.sameSite === 'none'
+          ? base.sameSite
+          : 'strict',
+      path: base.path ?? '/',
+    };
+  };
 }
 
-/**
- * Verifies a Firebase session cookie and returns the authenticated user.
- */
-export async function verifyToken(req: NextApiRequest): Promise<AuthUserType> {
-  const sessionCookie = getSessionCookie(req);
-  if (!sessionCookie) {
-    // Unauthenticated (no cookie) — don’t log this as an error
-    throw new Error('No session cookie found');
-  }
+export function createAuthProvider(instanceId: string): AuthProviderInstance {
+  const type = 'firebase';
 
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    return mapDecodedToAuthUser(decoded, 'firebase');
-  } catch (error: unknown) {
-    // Only log truly unexpected failures
-    if (error instanceof Error && error.message !== 'No session cookie found') {
-      console.error('[Firebase] Session cookie verification failed:', error);
-    }
-    throw new Error('Invalid or expired Firebase session');
-  }
+  return {
+    id: instanceId,
+    type,
+
+    async signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+      const { idToken } = req.body;
+
+      if (!idToken || typeof idToken !== 'string') {
+        res.status(400).json({ error: 'Missing or invalid idToken in request body' });
+        return;
+      }
+
+      try {
+        const decoded = await adminAuth.verifyIdToken(idToken);
+        const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+          expiresIn: SESSION_EXPIRES_IN_MS,
+        });
+
+        const context: AuthContext = { req, res, existingSessions: {} };
+        const cookieOpts = typeof firebaseProvider.cookieOptions === 'function'
+          ? firebaseProvider.cookieOptions(context)
+          : firebaseProvider.cookieOptions;
+
+        res.setHeader(
+          'Set-Cookie',
+          serialize(
+            getSessionCookieName(type, instanceId),
+            sessionCookie,
+            cookieOpts
+          )
+        );
+
+        const expiresAt = decoded.exp ? decoded.exp * 1000 : Date.now() + SESSION_EXPIRES_IN_MS;
+
+        const user: Session = {
+          userId: decoded.uid,
+          email: decoded.email,
+          token: sessionCookie,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+          displayName: decoded.name,
+        };
+
+        res.status(200).json({ user });
+      } catch (err) {
+        console.error(`[${instanceId}] Sign-in error:`, err);
+        res.status(401).json({ error: 'Authentication failed' });
+      }
+    },
+
+    async verifyToken(req: NextApiRequest, _res: NextApiResponse): Promise<Session | null> {
+      const cookies = parse(req.headers.cookie || '');
+      const cookieName = getSessionCookieName(type, instanceId);
+      const sessionCookie = cookies[cookieName];
+      if (!sessionCookie) return null;
+
+      try {
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
+
+        return {
+          userId: decoded.uid,
+          email: decoded.email,
+          token: sessionCookie,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+          displayName: decoded.name,
+        };
+      } catch (err) {
+        console.warn(`[${instanceId}] Token verification failed:`, err);
+        return null;
+      }
+    },
+
+    async signOut(req: NextApiRequest, res: NextApiResponse) {
+      const context: AuthContext = { req, res, existingSessions: {} };
+      const cookieOpts = typeof firebaseProvider.cookieOptions === 'function'
+        ? firebaseProvider.cookieOptions(context)
+        : firebaseProvider.cookieOptions;
+
+      res.setHeader(
+        'Set-Cookie',
+        serialize(
+          getSessionCookieName(type, instanceId),
+          '',
+          { ...cookieOpts, maxAge: -1 }
+        )
+      );
+      res.status(200).json({ ok: true });
+    },
+
+    async refreshToken(context: AuthContext): Promise<Session | null> {
+      const cookieName = getSessionCookieName(type, instanceId);
+      const sessionCookie = context.req.cookies?.[cookieName];
+
+      if (!sessionCookie) return null;
+
+      try {
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
+
+        return {
+          userId: decoded.uid,
+          email: decoded.email,
+          token: sessionCookie,
+          expiresAt,
+          provider: type,
+          providerId: instanceId,
+          displayName: decoded.name,
+        };
+      } catch (err) {
+        console.warn(`[${instanceId}] Refresh token failed:`, err);
+        return null;
+      }
+    },
+
+    cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_MS / 1000),
+  };
 }
 
-/**
- * Signs in the user by exchanging an ID token for a session cookie.
- * Expects { idToken } in req.body.
- */
-export async function signIn(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-  const { idToken } = req.body;
+// 🔹 Default instance for convenience
+const firebaseProvider = createAuthProvider('default');
 
-  if (!idToken || typeof idToken !== 'string') {
-    res.status(400).json({ error: 'Missing or invalid idToken in request body' });
-    return;
-  }
-
-  try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, {
-      expiresIn: SESSION_EXPIRES_IN_MS,
-    });
-
-    res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, sessionCookie, {
-      ...sessionCookieOptions,
-      maxAge: SESSION_EXPIRES_IN_MS / 1000,
-    }));
-
-    const user: AuthUserType = mapDecodedToAuthUser(decoded, 'firebase');
-    res.status(200).json({ user });
-  } catch (err) {
-    console.error('[Firebase] Sign-in error:', err);
-    res.status(401).json({ error: 'Authentication failed' });
-  }
-}
-
-/**
- * Signs out the user by clearing the session cookie.
- */
-export async function signOut(_req: NextApiRequest, res: NextApiResponse): Promise<void> {
-  try {
-    res.setHeader('Set-Cookie', serialize(SF_USER_SESSION_COOKIE_NAME, '', {
-      ...sessionCookieOptions,
-      expires: new Date(0),
-    }));
-    res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error('[Firebase] Sign-out error:', err);
-    res.status(500).json({ error: 'Sign-out failed' });
-  }
-}
+// ✅ Named exports for index.ts
+export const signIn = firebaseProvider.signIn;
+export const signOut = firebaseProvider.signOut;
+export const verifyToken = firebaseProvider.verifyToken;
+export const firebaseSessionCookieName = getSessionCookieName('firebase', 'default');

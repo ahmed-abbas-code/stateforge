@@ -1,8 +1,8 @@
 // src/authentication/shared/validation/authSchema.ts
+
 import { z } from 'zod';
 
-// ✅ Added 'backend' as a valid provider
-export const authProviderEnum = z.enum(['firebase', 'auth0', 'jwt']);
+export const authProviderEnum = z.enum(['firebase', 'auth0', 'jwt', 'composite']);
 
 export const authUserSchema = z.object({
   uid: z.string().min(1),
@@ -10,6 +10,12 @@ export const authUserSchema = z.object({
   displayName: z.string().optional(),
   provider: authProviderEnum,
   providerId: z.string().min(1),
+
+  // Optional access token (e.g., JWT, Firebase ID token)
+  token: z.string().optional(),
+
+  // Optional expiration timestamp in milliseconds (used for auto-refresh)
+  expiresAt: z.number().optional(),
 });
 
 export type AuthProviderType = z.infer<typeof authProviderEnum>;

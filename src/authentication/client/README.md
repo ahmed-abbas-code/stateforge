@@ -1,4 +1,3 @@
-
 # StateForge - Authentication - Client
 
 This package provides a set of custom React hooks and components for managing authentication, API access, and state in a Next.js (or React) application.
@@ -23,6 +22,7 @@ All hooks and components are designed for use in a modern SaaS or multi-tenant a
   - [useBackend](#usebackend)
   - [useBackendMutation](#usebackendmutation)
 - [Example Usage](#example-usage)
+  - [Usage Examples](./usage.md)
 - [License](#license)
 
 ---
@@ -252,6 +252,12 @@ const mutation = useBackendMutation({
 
 await mutation.trigger({ name: 'New Item' });
 ```
+
+---
+
+## Example Usage
+
+See [Usage Examples →](./usage.md) for real-world implementations of hooks and components.
 
 ---
 
