@@ -34,10 +34,8 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
-      /* 🔑 secure only in production so localhost works in dev */
-      secure: process.env.NODE_ENV === 'production',
-      /* 🔑 lax is preferred for frontend cookies */
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: process.env.NODE_ENV === 'production', // 🔐 secure cookies in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // 🔄 strict in prod, lax in dev
       path: base.path ?? '/',
     };
   };
@@ -49,7 +47,7 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: Algorithm[] // placeholder for future enhancement
+  _algorithms?: Algorithm[] // placeholder for future use
 ): AuthProviderInstance {
   const type = 'jwt';
 
@@ -137,6 +135,7 @@ export function createAuthProvider(
           maxAge: -1,
         })
       );
+
       res.status(200).json({ ok: true });
     },
 
