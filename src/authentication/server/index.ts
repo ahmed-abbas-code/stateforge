@@ -59,3 +59,4 @@ export * from './utils/cookieHelpers';
 export * from './utils/createBackendProxyRoute';
 export * from './utils/getServerSideAuthContext';
 export * from './utils/mapDecodedToAuthUser';
+export * from './AuthenticationChain';
