@@ -5,6 +5,7 @@
 // -------------------------
 
 export {
+  createAuthProvider as createAuth0Provider,
   signIn as signInWithAuth0,
   signOut as signOutFromAuth0,
   verifyToken as verifyAuth0Token,
@@ -12,6 +13,7 @@ export {
 } from './providers/auth0';
 
 export {
+  createAuthProvider as createFirebaseProvider,
   signIn as signInWithFirebase,
   signOut as signOutFromFirebase,
   verifyToken as verifyFirebaseToken,
@@ -19,6 +21,7 @@ export {
 } from './providers/firebase';
 
 export {
+  createAuthProvider as createJwtProvider,
   signIn as signInWithJwt,
   signOut as signOutFromJwt,
   verifyToken as verifyJwtToken,
@@ -30,6 +33,7 @@ export {
 // -------------------------
 
 export { default as authMeHandler } from './pages/api/auth/me';
+export { default as authContextHandler } from './pages/api/auth/context';
 export { default as authSessionHandler } from './pages/api/auth/session';
 export { default as authSigninHandler } from './pages/api/auth/signin';
 export { default as authSignoutHandler } from './pages/api/auth/signout';

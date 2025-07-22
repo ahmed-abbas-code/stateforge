@@ -2,9 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// 👇 Register auth providers
-import '@/lib/auth/init';
-import { getSession } from '@authentication/server/utils/sessionUtils';
+import { getSession } from '@authentication/server';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
