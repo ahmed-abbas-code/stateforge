@@ -14,17 +14,14 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
-  return (context: AuthContext) => {
+  return (_ctx: AuthContext) => {
     const base = getCookieOptions({ maxAge });
 
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
-      secure: base.secure ?? true,
-      sameSite:
-        base.sameSite === 'lax' || base.sameSite === 'strict' || base.sameSite === 'none'
-          ? base.sameSite
-          : 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: base.path ?? '/',
     };
   };
@@ -37,11 +34,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     id: instanceId,
     type,
 
-    async signIn(
-      req: NextApiRequest,
-      res: NextApiResponse,
-      context?: { token: string; type?: string }
-    ): Promise<void> {
+    async signIn(req: NextApiRequest, res: NextApiResponse, context?: { token: string; type?: string }) {
       const idToken =
         context?.token ||
         req.body?.token ||
@@ -49,8 +42,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
         req.body?.id_token;
 
       if (!idToken || typeof idToken !== 'string') {
-        res.status(400).json({ error: 'Missing or invalid idToken in request body' });
-        return;
+        return res.status(400).json({ error: 'Missing or invalid idToken in request body' });
       }
 
       try {
@@ -59,24 +51,16 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           expiresIn: SESSION_EXPIRES_IN_MS,
         });
 
-        const contextObject: AuthContext = { req, res, existingSessions: {} };
-        const cookieOpts =
-          typeof provider.cookieOptions === 'function'
-            ? provider.cookieOptions(contextObject)
-            : provider.cookieOptions;
+        const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
         res.setHeader(
           'Set-Cookie',
-          serialize(
-            getSessionCookieName(type, instanceId),
-            sessionCookie,
-            cookieOpts
-          )
+          serialize(getSessionCookieName(type, instanceId), sessionCookie, cookieOpts)
         );
 
         const expiresAt = decoded.exp ? decoded.exp * 1000 : Date.now() + SESSION_EXPIRES_IN_MS;
 
-        const user: Session = {
+        const session: Session = {
           userId: decoded.uid,
           email: decoded.email,
           token: sessionCookie,
@@ -86,14 +70,14 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           displayName: decoded.name,
         };
 
-        res.status(200).json({ user });
+        res.status(200).json({ user: session });
       } catch (err) {
         console.error(`[${instanceId}] Sign-in error:`, err);
         res.status(401).json({ error: 'Authentication failed' });
       }
     },
 
-    async verifyToken(req: NextApiRequest, _res: NextApiResponse): Promise<Session | null> {
+    async verifyToken(req: NextApiRequest): Promise<Session | null> {
       const cookies = parse(req.headers.cookie || '');
       const cookieName = getSessionCookieName(type, instanceId);
       const sessionCookie = cookies[cookieName];
@@ -119,19 +103,14 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     },
 
     async signOut(req: NextApiRequest, res: NextApiResponse) {
-      const contextObject: AuthContext = { req, res, existingSessions: {} };
-      const cookieOpts =
-        typeof provider.cookieOptions === 'function'
-          ? provider.cookieOptions(contextObject)
-          : provider.cookieOptions;
+      const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
       res.setHeader(
         'Set-Cookie',
-        serialize(
-          getSessionCookieName(type, instanceId),
-          '',
-          { ...cookieOpts, maxAge: -1 }
-        )
+        serialize(getSessionCookieName(type, instanceId), '', {
+          ...cookieOpts,
+          maxAge: -1,
+        })
       );
 
       res.status(200).json({ ok: true });
@@ -140,7 +119,6 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     async refreshToken(context: AuthContext): Promise<Session | null> {
       const cookieName = getSessionCookieName(type, instanceId);
       const sessionCookie = context.req.cookies?.[cookieName];
-
       if (!sessionCookie) return null;
 
       try {
@@ -168,10 +146,9 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
   return provider;
 }
 
-// 🔹 Default instance for convenience
+// 🔹 Default instance
 const firebaseProvider = createAuthProvider('default');
 
-// ✅ Named exports for index.ts
 export const signIn = firebaseProvider.signIn;
 export const signOut = firebaseProvider.signOut;
 export const verifyToken = firebaseProvider.verifyToken;

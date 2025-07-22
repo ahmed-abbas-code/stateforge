@@ -14,6 +14,10 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
+/* ------------------------------------------------------------------ */
+/* Helper utilities                                                   */
+/* ------------------------------------------------------------------ */
+
 function decodeJwt(token: string): JwtPayload | null {
   try {
     const decoded = jwt.decode(token);
@@ -24,25 +28,28 @@ function decodeJwt(token: string): JwtPayload | null {
 }
 
 function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
-  return (context: AuthContext) => {
+  return (_ctx: AuthContext) => {
     const base = getCookieOptions({ maxAge });
 
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
-      secure: base.secure ?? true,
-      sameSite:
-        base.sameSite === 'lax' || base.sameSite === 'strict' || base.sameSite === 'none'
-          ? base.sameSite
-          : 'strict',
+      /* 🔑 secure only in production so localhost works in dev */
+      secure: process.env.NODE_ENV === 'production',
+      /* 🔑 lax is preferred for frontend cookies */
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: base.path ?? '/',
     };
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Factory                                                            */
+/* ------------------------------------------------------------------ */
+
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: Algorithm[]
+  _algorithms?: Algorithm[] // placeholder for future enhancement
 ): AuthProviderInstance {
   const type = 'jwt';
 
@@ -50,13 +57,9 @@ export function createAuthProvider(
     id: instanceId,
     type,
 
-    async signIn(
-      req: NextApiRequest,
-      res: NextApiResponse,
-      context?: { token: string; type?: string }
-    ) {
+    async signIn(req: NextApiRequest, res: NextApiResponse, ctx?: { token: string }) {
       const token =
-        context?.token ||
+        ctx?.token ||
         req.body?.token ||
         req.body?.access_token;
 
@@ -69,21 +72,16 @@ export function createAuthProvider(
         return res.status(401).json({ error: 'Invalid JWT payload structure' });
       }
 
-      const expiresAt = payload.exp ? payload.exp * 1000 : undefined;
       const session: Session = {
         userId: payload.sub,
         email: payload.email,
         token,
-        expiresAt,
+        expiresAt: payload.exp ? payload.exp * 1000 : undefined,
         provider: type,
         providerId: instanceId,
       };
 
-      const authContext: AuthContext = { req, res, existingSessions: {} };
-      const cookieOpts =
-        typeof provider.cookieOptions === 'function'
-          ? provider.cookieOptions(authContext)
-          : provider.cookieOptions;
+      const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
       res.setHeader(
         'Set-Cookie',
@@ -93,10 +91,9 @@ export function createAuthProvider(
       res.status(200).json({ user: session });
     },
 
-    async verifyToken(req: NextApiRequest): Promise<Session | null> {
-      const cookies = parse(req.headers.cookie || '');
+    async verifyToken(req) {
       const cookieName = getSessionCookieName(type, instanceId);
-      const token = cookies[cookieName];
+      const token = parse(req.headers.cookie || '')[cookieName];
       if (!token) return null;
 
       const payload = decodeJwt(token);
@@ -112,7 +109,7 @@ export function createAuthProvider(
       };
     },
 
-    async refreshToken(ctx: AuthContext): Promise<Session | null> {
+    async refreshToken(ctx) {
       const cookieName = getSessionCookieName(type, instanceId);
       const token = ctx.req.cookies?.[cookieName];
       if (!token) return null;
@@ -131,11 +128,7 @@ export function createAuthProvider(
     },
 
     async signOut(req, res) {
-      const authContext: AuthContext = { req, res, existingSessions: {} };
-      const cookieOpts =
-        typeof provider.cookieOptions === 'function'
-          ? provider.cookieOptions(authContext)
-          : provider.cookieOptions;
+      const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
       res.setHeader(
         'Set-Cookie',
@@ -144,7 +137,6 @@ export function createAuthProvider(
           maxAge: -1,
         })
       );
-
       res.status(200).json({ ok: true });
     },
 
@@ -154,9 +146,11 @@ export function createAuthProvider(
   return provider;
 }
 
-// 🔹 Default instance
-const jwtProvider = createAuthProvider('default');
+/* ------------------------------------------------------------------ */
+/* Default instance & re-exports                                      */
+/* ------------------------------------------------------------------ */
 
+const jwtProvider = createAuthProvider('default');
 export const signIn = jwtProvider.signIn;
 export const signOut = jwtProvider.signOut;
 export const verifyToken = jwtProvider.verifyToken;
