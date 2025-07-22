@@ -15,7 +15,7 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
 /* ------------------------------------------------------------------ */
-/* Helper utilities                                                   */
+/* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
 function decodeJwt(token: string): JwtPayload | null {
@@ -34,8 +34,8 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
-      secure: process.env.NODE_ENV === 'production', // 🔐 secure cookies in production
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // 🔄 strict in prod, lax in dev
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: base.path ?? '/',
     };
   };
@@ -47,7 +47,7 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: Algorithm[] // placeholder for future use
+  _algorithms?: Algorithm[] // placeholder for future algorithm enforcement
 ): AuthProviderInstance {
   const type = 'jwt';
 
@@ -79,7 +79,11 @@ export function createAuthProvider(
         providerId: instanceId,
       };
 
-      const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
+      const cookieOpts = (provider.cookieOptions as any)({
+        req,
+        res,
+        existingSessions: {},
+      });
 
       res.setHeader(
         'Set-Cookie',
@@ -126,7 +130,11 @@ export function createAuthProvider(
     },
 
     async signOut(req, res) {
-      const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
+      const cookieOpts = (provider.cookieOptions as any)({
+        req,
+        res,
+        existingSessions: {},
+      });
 
       res.setHeader(
         'Set-Cookie',
@@ -146,10 +154,11 @@ export function createAuthProvider(
 }
 
 /* ------------------------------------------------------------------ */
-/* Default instance & re-exports                                      */
+/* Default Instance & Exports                                         */
 /* ------------------------------------------------------------------ */
 
 const jwtProvider = createAuthProvider('default');
+
 export const signIn = jwtProvider.signIn;
 export const signOut = jwtProvider.signOut;
 export const verifyToken = jwtProvider.verifyToken;
