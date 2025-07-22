@@ -1,17 +1,15 @@
 // src/authentication/client/components/AuthProvider.tsx
+
 'use client';
 
 import React, {
   createContext,
   useContext,
-  useState,
-  useEffect,
   useCallback,
 } from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
-import isEqual from 'lodash/isEqual';                     // ★ deep-compare
 
 import type { Session, AuthClientContext } from '@authentication/shared';
 
@@ -49,7 +47,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      dedupingInterval: 2000,            // ★ stop refetch-on-every-render
+      revalidateOnMount: false,     // ✅ prevent loops
+      dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
     }}
@@ -67,21 +66,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   const router = useRouter();
 
   const {
-    data: swrSessions,
+    data: sessions = initialSessions,
     error,
     isLoading,
   } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions, {
     fallbackData: initialSessions,
   });
-
-  const [sessions, setSessions] = useState<Record<string, Session>>(initialSessions);
-
-  // ★ Only update when the session *content* changes
-  useEffect(() => {
-    if (swrSessions && !isEqual(swrSessions, sessions)) {
-      setSessions(swrSessions);
-    }
-  }, [swrSessions, sessions]);
 
   const getToken = useCallback(
     async (providerId?: string): Promise<string | null> => {
@@ -109,8 +99,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         });
       } catch (_) {}
 
-      setSessions({});
-      mutate(SESSION_API_ENDPOINT, {}, false);
+      mutate(SESSION_API_ENDPOINT, {}, false); // clear without revalidate
       router.push('/');
     },
     [router]
@@ -130,7 +119,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions,
+    setSessions: () => {}, // optional: disable dynamic mutation
     isAuthenticated: Object.keys(sessions).length > 0,
     isLoading,
     error: error ?? null,
