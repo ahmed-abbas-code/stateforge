@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import type { JwtPayload } from 'jsonwebtoken';
+import type { JwtPayload, Algorithm } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 
 import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
@@ -49,7 +49,10 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
   };
 }
 
-export function createAuthProvider(instanceId: string): AuthProviderInstance {
+export function createAuthProvider(
+  instanceId: string,
+  algorithms: Algorithm[] = ['HS256']
+): AuthProviderInstance {
   const type = 'jwt';
 
   const provider: AuthProviderInstance = {
@@ -72,7 +75,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           return;
         }
 
-        const decoded = jwt.verify(token, ENCRYPTION_SECRET_KEY);
+        const decoded = jwt.verify(token, ENCRYPTION_SECRET_KEY, { algorithms });
         if (!isJwtPayload(decoded)) {
           throw new Error('Invalid JWT payload structure');
         }
@@ -118,7 +121,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       if (!rawToken) return null;
 
       try {
-        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY);
+        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY, { algorithms });
         if (!isJwtPayload(decoded)) {
           throw new Error('Invalid JWT payload structure');
         }
@@ -165,7 +168,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       if (!rawToken) return null;
 
       try {
-        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY);
+        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY, { algorithms });
         if (!isJwtPayload(decoded)) {
           throw new Error('Invalid JWT payload structure');
         }
@@ -193,10 +196,10 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
   return provider;
 }
 
-// 🔹 Default provider instance (for single-provider use)
+// 🔹 Default instance with default algorithm
 const jwtProvider = createAuthProvider('default');
 
-// ✅ Named exports for convenience in index.ts
+// ✅ Named exports
 export const signIn = jwtProvider.signIn;
 export const signOut = jwtProvider.signOut;
 export const verifyToken = jwtProvider.verifyToken;
