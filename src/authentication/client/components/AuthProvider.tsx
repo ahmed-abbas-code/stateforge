@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: false,     // ✅ prevent loops
+      revalidateOnMount: false,     // ✅ prevent infinite reloads
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
@@ -99,7 +99,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         });
       } catch (_) {}
 
-      mutate(SESSION_API_ENDPOINT, {}, false); // clear without revalidate
+      mutate(SESSION_API_ENDPOINT, {}, false); // clear session cache
       router.push('/');
     },
     [router]
@@ -119,7 +119,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // optional: disable dynamic mutation
+    setSessions: () => {}, // 🔒 No-op; avoids conflicting state updates
     isAuthenticated: Object.keys(sessions).length > 0,
     isLoading,
     error: error ?? null,
