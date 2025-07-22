@@ -1,5 +1,7 @@
 // src/authentication/client/components/AuthProvider.tsx
 
+'use client';
+
 import React, {
   createContext,
   useContext,
@@ -16,8 +18,10 @@ import type {
   AuthClientContext,
 } from '@authentication/shared';
 
+const SESSION_API_ENDPOINT = '/api/auth/context';
+
 const fetchSessions = async (): Promise<Record<string, Session>> => {
-  const res = await fetch('/api/auth/sessions', {
+  const res = await fetch(SESSION_API_ENDPOINT, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -68,7 +72,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     data: swrSessions,
     error,
     isLoading,
-  } = useSWR<Record<string, Session>>('/api/auth/sessions', fetchSessions, {
+  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions, {
     fallbackData: initialSessions,
   });
 
@@ -82,10 +86,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const getToken = useCallback(
     async (providerId?: string): Promise<string | null> => {
-      // If not specified, pick the first providerId available
       const pid = providerId ?? Object.keys(sessions)[0];
       if (!pid) return null;
-      const res = await fetch(`/api/auth/token?provider=${pid}`, {
+
+      const res = await fetch(`/api/auth/token?providerId=${pid}`, {
         credentials: 'include',
       });
       if (!res.ok) return null;
@@ -106,7 +110,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         });
       } catch (_) {}
       setSessions({});
-      mutate('/api/auth/sessions', {}, false);
+      mutate(SESSION_API_ENDPOINT, {}, false);
       router.push('/');
     },
     [router]
