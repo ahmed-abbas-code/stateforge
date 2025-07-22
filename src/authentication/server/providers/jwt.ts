@@ -2,7 +2,6 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
-import type { JwtPayload, Algorithm } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 
 import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
@@ -15,21 +14,13 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
-const rawSecret = process.env.ENCRYPTION_SECRET_KEY;
-if (!rawSecret || typeof rawSecret !== 'string') {
-  throw new Error('ENCRYPTION_SECRET_KEY environment variable is required and must be a string');
-}
-const ENCRYPTION_SECRET_KEY = rawSecret;
-
-function isJwtPayload(decoded: unknown): decoded is JwtPayload {
-  return typeof decoded === 'object' && decoded !== null && 'sub' in decoded;
-}
-
-function normalizeJwtPayload(payload: JwtPayload): JwtPayload & { aud?: string } {
-  return {
-    ...payload,
-    aud: Array.isArray(payload.aud) ? payload.aud[0] : payload.aud,
-  };
+function decodeJwt(token: string): jwt.JwtPayload | null {
+  try {
+    const decoded = jwt.decode(token);
+    return typeof decoded === 'object' && decoded !== null ? decoded : null;
+  } catch {
+    return null;
+  }
 }
 
 function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
@@ -49,10 +40,7 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
   };
 }
 
-export function createAuthProvider(
-  instanceId: string,
-  algorithms: Algorithm[] = ['HS256']
-): AuthProviderInstance {
+export function createAuthProvider(instanceId: string): AuthProviderInstance {
   const type = 'jwt';
 
   const provider: AuthProviderInstance = {
@@ -63,87 +51,31 @@ export function createAuthProvider(
       req: NextApiRequest,
       res: NextApiResponse,
       context?: { token: string; type?: string }
-    ): Promise<void> {
-      try {
-        const token =
-          context?.token ||
-          req.body?.token ||
-          req.body?.access_token;
+    ) {
+      const token =
+        context?.token ||
+        req.body?.token ||
+        req.body?.access_token;
 
-        if (!token || typeof token !== 'string') {
-          res.status(400).json({ error: 'Missing or invalid token in request body' });
-          return;
-        }
-
-        const decoded = jwt.verify(token, ENCRYPTION_SECRET_KEY, { algorithms });
-        if (!isJwtPayload(decoded)) {
-          throw new Error('Invalid JWT payload structure');
-        }
-
-        const normalized = normalizeJwtPayload(decoded);
-        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
-
-        const authContext: AuthContext = { req, res, existingSessions: {} };
-        const cookieOpts =
-          typeof provider.cookieOptions === 'function'
-            ? provider.cookieOptions(authContext)
-            : provider.cookieOptions;
-
-        res.setHeader(
-          'Set-Cookie',
-          serialize(
-            getSessionCookieName(type, instanceId),
-            token,
-            cookieOpts
-          )
-        );
-
-        const session: Session = {
-          userId: normalized.sub!,
-          email: normalized.email,
-          token,
-          expiresAt,
-          provider: type,
-          providerId: instanceId,
-        };
-
-        res.status(200).json({ user: session });
-      } catch (err) {
-        console.error(`[${instanceId}] Sign-in failed:`, err);
-        res.status(401).json({ error: 'Authentication failed' });
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: 'Missing or invalid token' });
       }
-    },
 
-    async verifyToken(req: NextApiRequest, _res: NextApiResponse): Promise<Session | null> {
-      const cookies = parse(req.headers.cookie || '');
-      const cookieName = getSessionCookieName(type, instanceId);
-      const rawToken = cookies[cookieName];
-      if (!rawToken) return null;
-
-      try {
-        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY, { algorithms });
-        if (!isJwtPayload(decoded)) {
-          throw new Error('Invalid JWT payload structure');
-        }
-
-        const normalized = normalizeJwtPayload(decoded);
-        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
-
-        return {
-          userId: normalized.sub!,
-          email: normalized.email,
-          token: rawToken,
-          expiresAt,
-          provider: type,
-          providerId: instanceId,
-        };
-      } catch (err) {
-        console.warn(`[${instanceId}] Token verification failed:`, err);
-        return null;
+      const payload = decodeJwt(token);
+      if (!payload || typeof payload.sub !== 'string') {
+        return res.status(401).json({ error: 'Invalid JWT payload structure' });
       }
-    },
 
-    async signOut(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+      const expiresAt = payload.exp ? payload.exp * 1000 : undefined;
+      const session: Session = {
+        userId: payload.sub,
+        email: payload.email,
+        token,
+        expiresAt,
+        provider: type,
+        providerId: instanceId,
+      };
+
       const authContext: AuthContext = { req, res, existingSessions: {} };
       const cookieOpts =
         typeof provider.cookieOptions === 'function'
@@ -152,42 +84,65 @@ export function createAuthProvider(
 
       res.setHeader(
         'Set-Cookie',
-        serialize(
-          getSessionCookieName(type, instanceId),
-          '',
-          { ...cookieOpts, maxAge: -1 }
-        )
+        serialize(getSessionCookieName(type, instanceId), token, cookieOpts)
+      );
+
+      res.status(200).json({ user: session });
+    },
+
+    async verifyToken(req: NextApiRequest): Promise<Session | null> {
+      const cookies = parse(req.headers.cookie || '');
+      const cookieName = getSessionCookieName(type, instanceId);
+      const token = cookies[cookieName];
+      if (!token) return null;
+
+      const payload = decodeJwt(token);
+      if (!payload || typeof payload.sub !== 'string') return null;
+
+      return {
+        userId: payload.sub,
+        email: payload.email,
+        token,
+        expiresAt: payload.exp ? payload.exp * 1000 : undefined,
+        provider: type,
+        providerId: instanceId,
+      };
+    },
+
+    async refreshToken(ctx: AuthContext): Promise<Session | null> {
+      const cookieName = getSessionCookieName(type, instanceId);
+      const token = ctx.req.cookies?.[cookieName];
+      if (!token) return null;
+
+      const payload = decodeJwt(token);
+      if (!payload || typeof payload.sub !== 'string') return null;
+
+      return {
+        userId: payload.sub,
+        email: payload.email,
+        token,
+        expiresAt: payload.exp ? payload.exp * 1000 : undefined,
+        provider: type,
+        providerId: instanceId,
+      };
+    },
+
+    async signOut(req, res) {
+      const authContext: AuthContext = { req, res, existingSessions: {} };
+      const cookieOpts =
+        typeof provider.cookieOptions === 'function'
+          ? provider.cookieOptions(authContext)
+          : provider.cookieOptions;
+
+      res.setHeader(
+        'Set-Cookie',
+        serialize(getSessionCookieName(type, instanceId), '', {
+          ...cookieOpts,
+          maxAge: -1,
+        })
       );
 
       res.status(200).json({ ok: true });
-    },
-
-    async refreshToken(context: AuthContext): Promise<Session | null> {
-      const cookieName = getSessionCookieName(type, instanceId);
-      const rawToken = context.req.cookies?.[cookieName];
-      if (!rawToken) return null;
-
-      try {
-        const decoded = jwt.verify(rawToken, ENCRYPTION_SECRET_KEY, { algorithms });
-        if (!isJwtPayload(decoded)) {
-          throw new Error('Invalid JWT payload structure');
-        }
-
-        const normalized = normalizeJwtPayload(decoded);
-        const expiresAt = normalized.exp ? normalized.exp * 1000 : undefined;
-
-        return {
-          userId: normalized.sub!,
-          email: normalized.email,
-          token: rawToken,
-          expiresAt,
-          provider: type,
-          providerId: instanceId,
-        };
-      } catch (err) {
-        console.warn(`[${instanceId}] Refresh token failed:`, err);
-        return null;
-      }
     },
 
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_SEC),
@@ -196,10 +151,9 @@ export function createAuthProvider(
   return provider;
 }
 
-// 🔹 Default instance (uses HS256)
+// 🔹 Default instance
 const jwtProvider = createAuthProvider('default');
 
-// ✅ Named exports
 export const signIn = jwtProvider.signIn;
 export const signOut = jwtProvider.signOut;
 export const verifyToken = jwtProvider.verifyToken;
