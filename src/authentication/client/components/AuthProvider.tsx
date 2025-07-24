@@ -80,7 +80,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     if (
       process.env.NODE_ENV === 'development' &&
       typeof window !== 'undefined' &&
-      (isAuthenticated || error)
+      (Object.keys(sessions).length > 0 || !!error)
     ) {
       console.log('[AuthProvider] sessions:', sessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
