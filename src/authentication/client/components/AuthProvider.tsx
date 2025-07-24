@@ -6,6 +6,7 @@ import React, {
   createContext,
   useContext,
   useCallback,
+  useEffect,
 } from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: false,     // ✅ prevent infinite reloads
+      revalidateOnMount: false, // ✅ prevent infinite reloads
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
@@ -73,10 +74,17 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     fallbackData: initialSessions,
   });
 
-  // ✅ Debug logs
-  console.log('[AuthProvider] sessions:', sessions);
-  console.log('[AuthProvider] isAuthenticated:', Object.keys(sessions).length > 0);
-  console.log('[AuthProvider] error:', error);
+  // ✅ Optional debug logs only in dev and when sessions are non-empty
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      const isAuthenticated = Object.keys(sessions).length > 0;
+      if (isAuthenticated || error) {
+        console.log('[AuthProvider] sessions:', sessions);
+        console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
+        console.log('[AuthProvider] error:', error);
+      }
+    }
+  }, [sessions, error]);
 
   const getToken = useCallback(
     async (providerId?: string): Promise<string | null> => {
@@ -124,7 +132,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // 🔒 No-op; avoids conflicting state updates
+    setSessions: () => {}, // 🔒 No-op
     isAuthenticated: Object.keys(sessions).length > 0,
     isLoading,
     error: error ?? null,
