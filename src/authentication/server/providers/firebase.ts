@@ -1,4 +1,4 @@
-// packages/authentication/server/providers/firebase.ts
+// src/authentication/server/providers/firebase.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
@@ -11,7 +11,7 @@ import type {
 } from '@authentication/shared/types/AuthProvider';
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
-const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
+const SESSION_EXPIRES_IN_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 
 function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
   return (_ctx: AuthContext) => {

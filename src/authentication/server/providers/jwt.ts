@@ -47,7 +47,7 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: Algorithm[] // placeholder for future algorithm enforcement
+  _algorithms?: Algorithm[] // future placeholder for signature verification
 ): AuthProviderInstance {
   const type = 'jwt';
 
@@ -93,7 +93,7 @@ export function createAuthProvider(
       res.status(200).json({ user: session });
     },
 
-    async verifyToken(req) {
+    async verifyToken(req: NextApiRequest): Promise<Session | null> {
       const cookieName = getSessionCookieName(type, instanceId);
       const token = parse(req.headers.cookie || '')[cookieName];
       if (!token) return null;
@@ -111,7 +111,7 @@ export function createAuthProvider(
       };
     },
 
-    async refreshToken(ctx) {
+    async refreshToken(ctx: AuthContext): Promise<Session | null> {
       const cookieName = getSessionCookieName(type, instanceId);
       const token = ctx.req.cookies?.[cookieName];
       if (!token) return null;
@@ -129,7 +129,7 @@ export function createAuthProvider(
       };
     },
 
-    async signOut(req, res) {
+    async signOut(req: NextApiRequest, res: NextApiResponse) {
       const cookieOpts = (provider.cookieOptions as any)({
         req,
         res,

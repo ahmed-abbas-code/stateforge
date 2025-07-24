@@ -14,23 +14,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const provider = providers[JWT_INSTANCE_ID];
 
   if (!provider || provider.type !== 'jwt') {
+    console.error(`[BFF] Provider '${JWT_INSTANCE_ID}' not found or not a JWT provider.`);
     return res.status(500).json({ error: 'JWT provider not configured' });
   }
 
-  const user = await provider.verifyToken(req, res);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid or missing JWT session' });
+  let user = null;
+  try {
+    user = await provider.verifyToken(req, res);
+    if (!user) {
+      console.warn('[BFF] Failed to verify JWT session.');
+      return res.status(401).json({ error: 'Invalid or missing JWT session' });
+    }
+  } catch (err) {
+    console.error('[BFF] Error verifying JWT token:', err);
+    return res.status(401).json({ error: 'Token verification failed' });
   }
 
   const cookies = parse(req.headers.cookie || '');
-  const rawToken = cookies[getSessionCookieName('jwt', JWT_INSTANCE_ID)];
-  if (!rawToken) {
+  const token = cookies[getSessionCookieName('jwt', JWT_INSTANCE_ID)];
+
+  if (!token) {
+    console.warn('[BFF] Missing JWT session token cookie.');
     return res.status(401).json({ error: 'Missing backend session token' });
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[BFF] User:', user);
+    console.log('[BFF] JWT token:', token.substring(0, 12) + '...'); // Partial token for debug
   }
 
   const backend = createServerAxiosApp({
     type: 'jwt',
-    token: rawToken,
+    token,
     userId: user.userId,
   });
 
@@ -42,9 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       baseURL: BASE,
     });
 
-    res.status(status).send(data);
+    return res.status(status).send(data);
   } catch (err) {
-    console.error('[BFF ERROR]', err);
-    res.status(502).json({ error: 'Failed to contact backend' });
+    console.error('[BFF] Failed to contact backend:', err);
+    return res.status(502).json({ error: 'Failed to contact backend' });
   }
 }

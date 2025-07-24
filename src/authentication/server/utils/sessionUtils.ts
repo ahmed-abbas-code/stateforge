@@ -22,19 +22,32 @@ export async function getAllSessions(
   const sessions: SessionMap = {};
   const providers = getAuthProviderInstances();
 
+  console.log('[getAllSessions] Raw req.cookies:', req.cookies);
+
   for (const [id, provider] of Object.entries(providers)) {
     const cookieName = getSessionCookieName(provider.type, id);
     const token = req.cookies?.[cookieName];
-    if (!token) continue;
+
+    if (!token) {
+      console.warn(`[getAllSessions] No token found for provider '${id}' (cookie: '${cookieName}')`);
+      continue;
+    }
+
+    console.log(`[getAllSessions] Found token for '${id}'`);
 
     try {
       let session = await provider.verifyToken(req, res);
+
       if (session && provider.onVerifySuccess) {
         const context: AuthContext = { req, res, existingSessions: { ...sessions } };
         session = await provider.onVerifySuccess(session, context);
       }
+
       if (session) {
         sessions[id] = session;
+        console.log(`[getAllSessions] Session verified for '${id}':`, session);
+      } else {
+        console.warn(`[getAllSessions] Session verification returned null for '${id}'`);
       }
     } catch (err) {
       console.warn(`[getAllSessions] Token verification failed for '${id}':`, err);
