@@ -74,17 +74,19 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     fallbackData: initialSessions,
   });
 
-  // ✅ Optional debug logs only in dev and when sessions are non-empty
+  const isAuthenticated = Object.keys(sessions).length > 0;
+
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      const isAuthenticated = Object.keys(sessions).length > 0;
-      if (isAuthenticated || error) {
-        console.log('[AuthProvider] sessions:', sessions);
-        console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
-        console.log('[AuthProvider] error:', error);
-      }
+    if (
+      process.env.NODE_ENV === 'development' &&
+      typeof window !== 'undefined' &&
+      (isAuthenticated || error)
+    ) {
+      console.log('[AuthProvider] sessions:', sessions);
+      console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
+      console.log('[AuthProvider] error:', error);
     }
-  }, [sessions, error]);
+  }, [sessions, error, isAuthenticated]);
 
   const getToken = useCallback(
     async (providerId?: string): Promise<string | null> => {
@@ -132,8 +134,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // 🔒 No-op
-    isAuthenticated: Object.keys(sessions).length > 0,
+    setSessions: () => {}, // 🔒 No-op; avoids conflicting state updates
+    isAuthenticated,
     isLoading,
     error: error ?? null,
     signIn: async () => {
