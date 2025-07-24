@@ -73,6 +73,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     fallbackData: initialSessions,
   });
 
+  // ✅ Debug logs
+  console.log('[AuthProvider] sessions:', sessions);
+  console.log('[AuthProvider] isAuthenticated:', Object.keys(sessions).length > 0);
+  console.log('[AuthProvider] error:', error);
+
   const getToken = useCallback(
     async (providerId?: string): Promise<string | null> => {
       const pid = providerId ?? Object.keys(sessions)[0];
