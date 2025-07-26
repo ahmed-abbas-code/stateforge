@@ -124,6 +124,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           return { ok: false, error: data?.error || 'Sign-in failed' };
         }
 
+        // ✅ force update session state
         await mutate(SESSION_API_ENDPOINT);
         return { ok: true };
       } catch (err) {
