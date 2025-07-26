@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       revalidateOnMount: false,
       dedupingInterval: 5000,
       errorRetryCount: 0,
-      onErrorRetry: () => { },
+      onErrorRetry: () => {},
     }}
   >
     <InnerAuthProvider initialSessions={initialSessions}>
@@ -119,11 +119,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         const body = await res.json();
         console.log('[signIn] response:', res.status, body);
 
-        if (!res.ok || !body.success) {
+        if (!res.ok || !body.ok) {
           return { ok: false, error: body?.error || 'Sign-in failed' };
         }
 
-        // 🛠️ force fetch with revalidate
+        // ✅ force fetch with revalidate
         await mutate(SESSION_API_ENDPOINT, undefined, { revalidate: true });
 
         return { ok: true };
@@ -135,7 +135,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     []
   );
 
-
   const signOut = useCallback(
     async (providerIds?: string[]) => {
       try {
@@ -145,7 +144,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           body: providerIds ? JSON.stringify({ providerIds }) : undefined,
           headers: { 'Content-Type': 'application/json' },
         });
-      } catch (_) { }
+      } catch (_) {}
 
       mutate(SESSION_API_ENDPOINT, {}, false);
       router.push('/');
@@ -167,7 +166,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => { },
+    setSessions: () => {},
     isAuthenticated,
     isLoading,
     error: error ?? null,
