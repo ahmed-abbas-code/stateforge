@@ -13,8 +13,8 @@ import { createAuthProvider as createJwtProvider } from '@authentication/server/
  */
 export function registerAuthProviders() {
     const instances: Record<string, AuthProviderInstance> = {
-        firebase: createFirebaseProvider('firebase'),
-        dunnixer: createJwtProvider('dunnixer'),
+        firebase: createFirebaseProvider('default'),
+        jwt: createJwtProvider('default'),
         // Add more instances here as needed
     };
 
