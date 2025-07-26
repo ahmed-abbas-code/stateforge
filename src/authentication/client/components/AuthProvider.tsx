@@ -63,17 +63,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   children,
-  initialSessions = {},
 }) => {
   const router = useRouter();
 
   const {
-    data: sessions = initialSessions,
+    data: sessions = {},
     error,
     isLoading,
-  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions, {
-    fallbackData: initialSessions,
-  });
+  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions);
 
   const isAuthenticated = useMemo(
     () => Object.keys(sessions).length > 0,
