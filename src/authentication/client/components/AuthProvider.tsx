@@ -103,6 +103,33 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [sessions]
   );
 
+  const signIn = useCallback(
+    async (idToken?: string): Promise<{ ok: boolean; error?: string }> => {
+      if (!idToken) return { ok: false, error: 'Missing ID token' };
+
+      try {
+        const res = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // ✅ allow cookie from server
+          body: JSON.stringify({ idToken }), // ✅ matches Firebase strategy
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          return { ok: false, error: data?.error || 'Sign-in failed' };
+        }
+
+        await mutate(SESSION_API_ENDPOINT); // ✅ refresh session
+        return { ok: true };
+      } catch (err) {
+        console.error('[signIn] /api/auth/signin failed:', err);
+        return { ok: false, error: 'Request failed' };
+      }
+    },
+    []
+  );
+
   const signOut = useCallback(
     async (providerIds?: string[]) => {
       try {
@@ -134,14 +161,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // 🔒 No-op; avoids conflicting state updates
+    setSessions: () => {}, // 🔒 No-op
     isAuthenticated,
     isLoading,
     error: error ?? null,
-    signIn: async () => {
-      router.push('/account/signin');
-      return { ok: true };
-    },
+    signIn,
     signOut,
     getToken,
     refreshToken: undefined,
