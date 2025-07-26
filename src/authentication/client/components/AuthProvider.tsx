@@ -7,6 +7,7 @@ import React, {
   useContext,
   useCallback,
   useEffect,
+  useMemo,
 } from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
@@ -30,7 +31,7 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const { sessions } = await res.json();
-  return sessions ?? {};
+  return { ...sessions }; // ✅ ensure new object reference
 };
 
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: false, // ✅ prevent infinite reloads
+      revalidateOnMount: false,
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
@@ -74,7 +75,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     fallbackData: initialSessions,
   });
 
-  const isAuthenticated = Object.keys(sessions).length > 0;
+  const isAuthenticated = useMemo(
+    () => Object.keys(sessions).length > 0,
+    [sessions]
+  );
 
   useEffect(() => {
     if (
@@ -111,8 +115,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         const res = await fetch('/api/auth/signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // ✅ allow cookie from server
-          body: JSON.stringify({ idToken }), // ✅ matches Firebase strategy
+          credentials: 'include',
+          body: JSON.stringify({ idToken }),
         });
 
         if (!res.ok) {
@@ -120,7 +124,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           return { ok: false, error: data?.error || 'Sign-in failed' };
         }
 
-        await mutate(SESSION_API_ENDPOINT); // ✅ refresh session
+        await mutate(SESSION_API_ENDPOINT);
         return { ok: true };
       } catch (err) {
         console.error('[signIn] /api/auth/signin failed:', err);
@@ -141,7 +145,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         });
       } catch (_) {}
 
-      mutate(SESSION_API_ENDPOINT, {}, false); // clear session cache
+      mutate(SESSION_API_ENDPOINT, {}, false);
       router.push('/');
     },
     [router]
@@ -161,7 +165,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // 🔒 No-op
+    setSessions: () => {},
     isAuthenticated,
     isLoading,
     error: error ?? null,
