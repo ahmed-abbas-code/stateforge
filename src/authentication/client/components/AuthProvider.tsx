@@ -82,7 +82,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   useEffect(() => {
     if (
-      process.env.NODE_ENV === 'development' &&
+      process.env.NEXT_PUBLIC_ENV === 'development' &&
       typeof window !== 'undefined' &&
       (Object.keys(sessions).length > 0 || !!error)
     ) {
