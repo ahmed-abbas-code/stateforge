@@ -1,5 +1,7 @@
 // src/authentication/server/providers/auth0.ts
 
+'use server';
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type {
   AuthProviderInstance,
@@ -11,22 +13,27 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
-function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
-  return (context: AuthContext) => {
+/* ────────────────────────────────────────────────────────── */
+/* Helpers                                                   */
+/* ────────────────────────────────────────────────────────── */
+
+const buildCookieOptions = (maxAge: number): AuthProviderInstance['cookieOptions'] => {
+  return () => {
     const base = getCookieOptions({ maxAge });
 
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
-      secure: base.secure ?? true,
-      sameSite:
-        base.sameSite === 'lax' || base.sameSite === 'strict' || base.sameSite === 'none'
-          ? base.sameSite
-          : 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: base.path ?? '/',
     };
   };
-}
+};
+
+/* ────────────────────────────────────────────────────────── */
+/* Factory                                                   */
+/* ────────────────────────────────────────────────────────── */
 
 export function createAuthProvider(instanceId: string): AuthProviderInstance {
   const type = 'auth0';
@@ -35,46 +42,47 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     id: instanceId,
     type,
 
-    /**
-     * Placeholder — must support the context pattern to align with SF
-     */
+    /* ---------------- SIGN-IN (TODO) ---------------- */
     async signIn(
       _req: NextApiRequest,
       _res: NextApiResponse,
-      _context?: { token: string; type?: string }
-    ): Promise<void> {
-      throw new Error(`[${instanceId}] signIn not implemented`);
+      _ctx?: { token: string; type?: string }
+    ) {
+      throw new Error(`[auth0:${instanceId}] signIn not implemented`);
     },
 
+    /* -------------- VERIFY TOKEN (TODO) ------------- */
     async verifyToken(
-      _req: NextApiRequest,
-      _res: NextApiResponse
+      _req: NextApiRequest
     ): Promise<Session | null> {
-      throw new Error(`[${instanceId}] verifyToken not implemented`);
+      throw new Error(`[auth0:${instanceId}] verifyToken not implemented`);
     },
 
+    /* -------------- SIGN-OUT (TODO) ----------------- */
     async signOut(
       _req: NextApiRequest,
       _res: NextApiResponse
-    ): Promise<void> {
-      throw new Error(`[${instanceId}] signOut not implemented`);
+    ) {
+      throw new Error(`[auth0:${instanceId}] signOut not implemented`);
     },
 
+    /* ------------ REFRESH TOKEN (TODO) -------------- */
     async refreshToken(
-      _context: AuthContext
+      _ctx: AuthContext
     ): Promise<Session | null> {
-      throw new Error(`[${instanceId}] refreshToken not implemented`);
+      throw new Error(`[auth0:${instanceId}] refreshToken not implemented`);
     },
 
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_SEC),
   };
 }
 
-// 🔹 Default instance for convenience
+/* ────────────────────────────────────────────────────────── */
+/* Default instance & named exports                          */
+/* ────────────────────────────────────────────────────────── */
 const defaultAuth0Provider = createAuthProvider('default');
 
-// ✅ Named exports for index.ts
-export const signIn = defaultAuth0Provider.signIn;
-export const signOut = defaultAuth0Provider.signOut;
-export const verifyToken = defaultAuth0Provider.verifyToken;
+export const signIn               = defaultAuth0Provider.signIn;
+export const signOut              = defaultAuth0Provider.signOut;
+export const verifyToken          = defaultAuth0Provider.verifyToken;
 export const auth0SessionCookieName = getSessionCookieName('auth0', 'default');

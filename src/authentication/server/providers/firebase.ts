@@ -1,5 +1,7 @@
 // src/authentication/server/providers/firebase.ts
 
+'use server';
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse, serialize } from 'cookie';
 import { adminAuth } from '@authentication/server';
@@ -13,10 +15,13 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 
 const SESSION_EXPIRES_IN_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 
+/* ────────────────────────────────────────────────────────── */
+/* Helpers                                                   */
+/* ────────────────────────────────────────────────────────── */
+
 function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions'] {
   return (_ctx: AuthContext) => {
     const base = getCookieOptions({ maxAge });
-
     return {
       maxAge,
       httpOnly: base.httpOnly ?? true,
@@ -27,6 +32,13 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
   };
 }
 
+/** Should we ask Firebase to check if the session cookie was revoked? */
+const CHECK_REVOKED = process.env.NODE_ENV === 'production';
+
+/* ────────────────────────────────────────────────────────── */
+/* Factory                                                   */
+/* ────────────────────────────────────────────────────────── */
+
 export function createAuthProvider(instanceId: string): AuthProviderInstance {
   const type = 'firebase';
 
@@ -34,7 +46,8 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     id: instanceId,
     type,
 
-    async signIn(req: NextApiRequest, res: NextApiResponse, context?: { token: string; type?: string }) {
+    /* -------------  SIGN-IN ------------- */
+    async signIn(req, res, context) {
       const idToken =
         context?.token ||
         req.body?.token ||
@@ -77,21 +90,23 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       }
     },
 
-    async verifyToken(req: NextApiRequest): Promise<Session | null> {
-      const cookies = parse(req.headers.cookie || '');
+    /* -------------  VERIFY TOKEN ------------- */
+    async verifyToken(req) {
       const cookieName = getSessionCookieName(type, instanceId);
-      const sessionCookie = cookies[cookieName];
+      const sessionCookie = parse(req.headers.cookie || '')[cookieName];
       if (!sessionCookie) return null;
 
       try {
-        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, CHECK_REVOKED);
+        if (!CHECK_REVOKED) {
+          console.debug(`[${instanceId}] Session verified without revocation check (dev mode).`);
+        }
 
         return {
           userId: decoded.uid,
           email: decoded.email,
           token: sessionCookie,
-          expiresAt,
+          expiresAt: decoded.exp ? decoded.exp * 1000 : undefined,
           provider: type,
           providerId: instanceId,
           displayName: decoded.name,
@@ -102,7 +117,31 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       }
     },
 
-    async signOut(req: NextApiRequest, res: NextApiResponse) {
+    /* -------------  REFRESH TOKEN ------------- */
+    async refreshToken(ctx) {
+      const cookieName = getSessionCookieName(type, instanceId);
+      const sessionCookie = ctx.req.cookies?.[cookieName];
+      if (!sessionCookie) return null;
+
+      try {
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, CHECK_REVOKED);
+        return {
+          userId: decoded.uid,
+          email: decoded.email,
+          token: sessionCookie,
+          expiresAt: decoded.exp ? decoded.exp * 1000 : undefined,
+          provider: type,
+          providerId: instanceId,
+          displayName: decoded.name,
+        };
+      } catch (err) {
+        console.warn(`[${instanceId}] Refresh token failed:`, err);
+        return null;
+      }
+    },
+
+    /* -------------  SIGN-OUT ------------- */
+    async signOut(req, res) {
       const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
       res.setHeader(
@@ -116,37 +155,15 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       res.status(200).json({ ok: true });
     },
 
-    async refreshToken(context: AuthContext): Promise<Session | null> {
-      const cookieName = getSessionCookieName(type, instanceId);
-      const sessionCookie = context.req.cookies?.[cookieName];
-      if (!sessionCookie) return null;
-
-      try {
-        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
-
-        return {
-          userId: decoded.uid,
-          email: decoded.email,
-          token: sessionCookie,
-          expiresAt,
-          provider: type,
-          providerId: instanceId,
-          displayName: decoded.name,
-        };
-      } catch (err) {
-        console.warn(`[${instanceId}] Refresh token failed:`, err);
-        return null;
-      }
-    },
-
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_MS / 1000),
   };
 
   return provider;
 }
 
-// 🔹 Default instance
+/* ────────────────────────────────────────────────────────── */
+/* Default instance export                                    */
+/* ────────────────────────────────────────────────────────── */
 const firebaseProvider = createAuthProvider('default');
 
 export const signIn = firebaseProvider.signIn;
