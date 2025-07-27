@@ -12,11 +12,11 @@ import { createAuthProvider as createJwtProvider } from '@authentication/server/
  * Call this once during app/server startup.
  */
 export function registerAuthProviders() {
-    const instances: Record<string, AuthProviderInstance> = {
-        firebase: createFirebaseProvider('default'),
-        jwt: createJwtProvider('default'),
-        // Add more instances here as needed
-    };
+  const instances: Record<string, AuthProviderInstance> = {
+    default: createFirebaseProvider('default'),
+    jwt: createJwtProvider('default'),
+    // Add more instances here as needed
+  };
 
-    registerAuthProviderInstances(instances);
+  registerAuthProviderInstances(instances);
 }
