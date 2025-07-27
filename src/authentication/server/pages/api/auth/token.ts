@@ -32,25 +32,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: `Unknown provider instance: ${instanceId}` });
   }
 
-  const providerType = provider.type || process.env.AUTH_STRATEGY || 'firebase';
-  const cookieName = getSessionCookieName(providerType, instanceId);
+  // ✅ Use the actual provider.type and provider.id (instanceId)
+  const cookieName = getSessionCookieName(provider.type, provider.id);
   const token = req.cookies?.[cookieName];
 
   if (!token) {
-    console.warn(`[token] Missing cookie '${cookieName}' for instance '${instanceId}'`);
+    console.warn(`[token] Missing cookie '${cookieName}' for instance '${provider.id}'`);
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
     const session = await provider.verifyToken(req, res);
     if (!session) {
-      console.warn(`[token] Token verification failed for instance '${instanceId}'`);
+      console.warn(`[token] Token verification failed for instance '${provider.id}'`);
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
 
     return res.status(200).json({ token });
   } catch (err) {
-    console.error(`[token] Error verifying token for '${instanceId}':`, err);
+    console.error(`[token] Error verifying token for '${provider.id}':`, err);
     return res.status(401).json({ error: 'Token verification failed' });
   }
 }
