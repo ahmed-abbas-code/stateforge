@@ -161,9 +161,9 @@ export function createAuthProvider(
 /* Default instance & exports                                */
 /* ────────────────────────────────────────────────────────── */
 
-const jwtProvider = createAuthProvider('default');
+const jwtProvider = createAuthProvider('jwt-default');
 
 export const signIn = jwtProvider.signIn;
 export const signOut = jwtProvider.signOut;
 export const verifyToken = jwtProvider.verifyToken;
-export const jwtSessionCookieName = getSessionCookieName('jwt', 'default');
+export const jwtSessionCookieName = getSessionCookieName('jwt', 'jwt-default');

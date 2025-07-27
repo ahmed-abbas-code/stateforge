@@ -11,9 +11,13 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 export function createBackendProxyRoute(opts: {
   backendBaseUrl: string;
   allowedMethods?: HttpMethod[];
-  instanceId?: string; // Optional, default to 'default'
+  instanceId?: string; // Optional, default to 'jwt-default'
 }) {
-  const { backendBaseUrl, allowedMethods, instanceId = 'default' } = opts;
+  const {
+    backendBaseUrl,
+    allowedMethods,
+    instanceId = 'jwt-default', // 🔁 updated default
+  } = opts;
 
   const jwtProvider = createAuthProvider(instanceId);
   const cookieName = getSessionCookieName('jwt', instanceId);

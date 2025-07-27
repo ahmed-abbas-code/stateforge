@@ -1,12 +1,11 @@
 // src/authentication/server/pages/api/auth/token.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-
 import { getAuthProviderInstances } from '@authentication/server/utils/authRegistry';
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
 /**
- * GET /api/auth/token?instanceId=some-instance-id
+ * GET /api/auth/token?instanceId=providerType-instanceId
  * Returns the token from the session cookie of a specific provider instance.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,7 +31,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: `Unknown provider instance: ${instanceId}` });
   }
 
-  // ✅ Use the actual provider.type and provider.id (instanceId)
   const cookieName = getSessionCookieName(provider.type, provider.id);
   const token = req.cookies?.[cookieName];
 

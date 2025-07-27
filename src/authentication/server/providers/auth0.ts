@@ -67,9 +67,9 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 /* Default instance & named exports                          */
 /* ────────────────────────────────────────────────────────── */
 
-const defaultAuth0Provider = createAuthProvider('default');
+const defaultAuth0Provider = createAuthProvider('auth0-default');
 
 export const signIn = defaultAuth0Provider.signIn;
 export const signOut = defaultAuth0Provider.signOut;
 export const verifyToken = defaultAuth0Provider.verifyToken;
-export const auth0SessionCookieName = getSessionCookieName('auth0', 'default');
+export const auth0SessionCookieName = getSessionCookieName('auth0', 'auth0-default');

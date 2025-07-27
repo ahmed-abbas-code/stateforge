@@ -105,8 +105,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
         console.warn(`[${id}] Token verification failed:`, err);
         return null;
       }
-    }
-    ,
+    },
 
     async refreshToken(ctx) {
       const cookieName = getSessionCookieName(type, id);
@@ -150,9 +149,10 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
   return provider;
 }
 
-const firebaseProvider = createAuthProvider('default');
+// ✅ Use full instance ID
+const firebaseProvider = createAuthProvider('firebase-default');
 
 export const signIn = firebaseProvider.signIn;
 export const signOut = firebaseProvider.signOut;
 export const verifyToken = firebaseProvider.verifyToken;
-export const firebaseSessionCookieName = getSessionCookieName('firebase', 'default');
+export const firebaseSessionCookieName = getSessionCookieName('firebase', 'firebase-default');
