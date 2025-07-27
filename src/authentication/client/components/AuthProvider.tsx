@@ -39,11 +39,13 @@ const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 interface AuthProviderProps {
   children: React.ReactNode;
   initialSessions?: Record<string, Session>;
+  instanceIds?: string[]; // ✅ NEW
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
   initialSessions = {},
+  instanceIds,
 }) => (
   <SWRConfig
     value={{
@@ -55,25 +57,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       onErrorRetry: () => {},
     }}
   >
-    <InnerAuthProvider initialSessions={initialSessions}>
+    <InnerAuthProvider
+      initialSessions={initialSessions}
+      instanceIds={instanceIds} // ✅ NEW
+    >
       {children}
     </InnerAuthProvider>
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  initialSessions = {},
+  instanceIds,
+}) => {
   const router = useRouter();
 
   const {
-    data: sessions = {},
+    data: sessions = initialSessions,
     error,
     isLoading,
   } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions);
 
-  const isAuthenticated = useMemo(
-    () => Object.keys(sessions).length > 0,
-    [sessions]
-  );
+  const isAuthenticated = useMemo(() => {
+    const ids = instanceIds ?? Object.keys(sessions);
+    return ids.some((id) => !!sessions[id]);
+  }, [sessions, instanceIds]);
 
   useEffect(() => {
     if (
@@ -116,7 +125,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           credentials: 'include',
           body: JSON.stringify({
             idToken,
-            instanceId, // ✅ Include instanceId in the payload
+            instanceId,
           }),
         });
 
@@ -138,12 +147,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const signOut = useCallback(
-    async (instanceIds?: string[]) => {
+    async (providerIds?: string[]) => {
       try {
         await fetch('/api/auth/signout', {
           method: 'POST',
           credentials: 'include',
-          body: instanceIds ? JSON.stringify({ providerIds: instanceIds }) : undefined,
+          body: providerIds ? JSON.stringify({ providerIds }) : undefined,
           headers: { 'Content-Type': 'application/json' },
         });
       } catch (_) {}
