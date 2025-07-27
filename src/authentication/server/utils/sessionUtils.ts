@@ -24,16 +24,16 @@ export async function getAllSessions(
 
   console.log('[getAllSessions] Raw req.cookies:', req.cookies);
 
-  for (const [id, provider] of Object.entries(providers)) {
-    const cookieName = getSessionCookieName(provider.type, id);
+  for (const [instanceId, provider] of Object.entries(providers)) {
+    const cookieName = getSessionCookieName(provider.type, instanceId);
     const token = req.cookies?.[cookieName];
 
     if (!token) {
-      console.warn(`[getAllSessions] No token found for provider '${id}' (cookie: '${cookieName}')`);
+      console.warn(`[getAllSessions] No token found for provider '${provider.type}' (cookie: '${cookieName}')`);
       continue;
     }
 
-    console.log(`[getAllSessions] Found token for '${id}'`);
+    console.log(`[getAllSessions] Found token for '${provider.type}' [${instanceId}]`);
 
     try {
       let session = await provider.verifyToken(req, res);
@@ -44,19 +44,20 @@ export async function getAllSessions(
       }
 
       if (session) {
-        sessions[id] = session;
-        console.log(`[getAllSessions] Session verified for '${id}':`, session);
+        sessions[instanceId] = session;
+        console.log(`[getAllSessions] Session verified for '${instanceId}':`, session);
       } else {
-        console.warn(`[getAllSessions] Session verification returned null for '${id}'`);
+        console.warn(`[getAllSessions] Session verification returned null for '${instanceId}'`);
       }
     } catch (err) {
-      console.warn(`[getAllSessions] Token verification failed for '${id}':`, err);
+      console.warn(`[getAllSessions] Token verification failed for '${instanceId}':`, err);
     }
   }
 
   latestSessions = sessions;
   return sessions;
 }
+
 
 /**
  * Refresh all sessions using optional provider-level refreshToken hooks.
