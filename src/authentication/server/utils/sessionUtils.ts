@@ -25,11 +25,12 @@ export async function getAllSessions(
   console.log('[getAllSessions] Raw req.cookies:', req.cookies);
 
   for (const [instanceId, provider] of Object.entries(providers)) {
-    if (provider.id !== instanceId) {
-      console.warn(`[getAllSessions] Provider ID mismatch: instanceId='${instanceId}' but provider.id='${provider.id}'`);
+    const expectedId = provider.id;
+    if (expectedId !== instanceId) {
+      console.warn(`[getAllSessions] Provider ID mismatch: instanceId='${instanceId}' but provider.id='${expectedId}'`);
     }
 
-    const cookieName = getSessionCookieName(provider.type, instanceId);
+    const cookieName = getSessionCookieName(provider.type, expectedId);
     const token = req.cookies?.[cookieName];
 
     if (!token) {
@@ -37,7 +38,7 @@ export async function getAllSessions(
       continue;
     }
 
-    console.log(`[getAllSessions] Found token for '${provider.type}' [${instanceId}]`);
+    console.log(`[getAllSessions] Found token for '${provider.type}' [${expectedId}]`);
 
     try {
       let session = await provider.verifyToken(req, res);
@@ -48,13 +49,13 @@ export async function getAllSessions(
       }
 
       if (session) {
-        sessions[instanceId] = session;
-        console.log(`[getAllSessions] Session verified for '${instanceId}':`, session);
+        sessions[expectedId] = session;
+        console.log(`[getAllSessions] Session verified for '${expectedId}':`, session);
       } else {
-        console.warn(`[getAllSessions] Session verification returned null for '${instanceId}'`);
+        console.warn(`[getAllSessions] Session verification returned null for '${expectedId}'`);
       }
     } catch (err) {
-      console.warn(`[getAllSessions] Token verification failed for '${instanceId}':`, err);
+      console.warn(`[getAllSessions] Token verification failed for '${expectedId}':`, err);
     }
   }
 
@@ -72,7 +73,7 @@ export async function refreshSessions(
   const sessions: SessionMap = {};
   const providers = getAuthProviderInstances();
 
-  for (const [id, provider] of Object.entries(providers)) {
+  for (const [instanceId, provider] of Object.entries(providers)) {
     if (!provider.refreshToken) continue;
 
     try {
@@ -84,10 +85,10 @@ export async function refreshSessions(
       }
 
       if (session) {
-        sessions[id] = session;
+        sessions[provider.id] = session;
       }
     } catch (err) {
-      console.warn(`[refreshSessions] Refresh failed for '${id}':`, err);
+      console.warn(`[refreshSessions] Refresh failed for '${provider.id}':`, err);
     }
   }
 
