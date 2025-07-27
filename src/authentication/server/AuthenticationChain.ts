@@ -28,6 +28,8 @@ export interface ChainedProviderOptions {
   onFinish?: (results: Record<string, Session>) => Promise<Session>;
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 /**
  * Creates a composite (chained) auth provider that sequentially delegates to other providers.
  */
@@ -79,11 +81,12 @@ export function createChainedProvider(
       }
     },
 
+    // ⚠️ Composite providers don't manage cookies directly, but must return safe options
     cookieOptions: {
-      maxAge: 0, // composite providers generally don't own session cookies
+      maxAge: 0,
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
       path: '/',
     }
   };

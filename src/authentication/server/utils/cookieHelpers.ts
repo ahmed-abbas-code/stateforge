@@ -8,12 +8,14 @@ function resolveCookieOptions(
   provider: AuthProviderInstance,
   context: AuthContext
 ): SerializeOptions {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const fallback: SerializeOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
+    secure: isProduction, // ✅ only secure in production
+    sameSite: isProduction ? 'strict' : 'lax', // ✅ more permissive in dev
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // default 7 days
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   };
 
   const raw = typeof provider.cookieOptions === 'function'
@@ -30,7 +32,8 @@ function resolveCookieOptions(
   return {
     ...fallback,
     ...raw,
-    sameSite, // force literal-safe value
+    secure: raw.secure ?? fallback.secure, // ✅ preserve override or fallback
+    sameSite, // ✅ always use validated value
   };
 }
 

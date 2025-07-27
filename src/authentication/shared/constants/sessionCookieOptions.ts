@@ -2,16 +2,19 @@
 
 import type { SerializeOptions } from 'cookie';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 /**
  * Default cookie options applied across all auth providers.
- * Designed for secure, strict session handling.
+ * Designed for secure, strict session handling in prod,
+ * but relaxed for local development.
  */
 export const defaultSessionCookieOptions: SerializeOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production', // allow insecure for localhost/dev
-  sameSite: 'strict',
+  secure: isProduction, // ✅ only secure in prod
+  sameSite: isProduction ? 'strict' : 'lax', // ✅ lax in dev
   path: '/',
-  maxAge: 60 * 60 * 24 * 7, // Default: 7 days in seconds
+  maxAge: 60 * 60 * 24 * 7, // 7 days
 };
 
 /**
@@ -26,3 +29,4 @@ export function getCookieOptions(
     ...overrides,
   };
 }
+
