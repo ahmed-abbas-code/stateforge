@@ -11,7 +11,7 @@ interface Props {
   redirectTo: string;
   loadingFallback?: () => ReactNode;
 
-  /** Optionally require a session from a specific provider */
+  /** Optionally require a session from a specific provider type or instance ID */
   requireProvider?: string;
 
   /** Or accept a custom isAuthenticated predicate */
@@ -30,7 +30,17 @@ export function AuthProtection({
 
   const isAuthenticated = (() => {
     if (isAuthenticatedFn) return isAuthenticatedFn(sessions);
-    if (requireProvider) return !!sessions?.[requireProvider];
+
+    if (requireProvider) {
+      // Match by provider type or instance ID
+      return (
+        sessions?.[requireProvider] !== undefined ||
+        Object.values(sessions ?? {}).some(
+          (session: any) => session.provider === requireProvider
+        )
+      );
+    }
+
     return Object.keys(sessions ?? {}).length > 0;
   })();
 

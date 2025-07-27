@@ -9,16 +9,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isAuthenticated = Object.keys(sessions).length > 0;
 
     return res.status(200).json({
-      sessions,
-      isAuthenticated,
-      error: null,
+      sessions,                // Keyed by instanceId (e.g., 'firebase', 'jwt', etc.)
+      isAuthenticated,         // Global flag based on session presence
+      error: null,             // Explicit null when no error
     });
   } catch (error: any) {
     console.error('[Context API] Failed to load sessions:', error);
+
     return res.status(500).json({
-      sessions: {},
-      isAuthenticated: false,
-      error: 'Failed to load session context',
+      sessions: {},            // Return empty map on error
+      isAuthenticated: false, // Auth is false on failure
+      error: error?.message || 'Failed to load session context',
     });
   }
 }

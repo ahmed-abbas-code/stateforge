@@ -5,29 +5,27 @@ import { getAuthProviderInstances } from '@authentication/server/utils/authRegis
 
 /**
  * POST /api/auth/signout
- * Clears session cookies for all registered or specified auth providers.
+ * Clears session cookies for all registered or specified provider **instances**.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).json({ error: 'Method Not Allowed' });
-    return;
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const providers = getAuthProviderInstances();
-
-  let providerIds: string[] | undefined;
+  let instanceIds: string[] | undefined;
 
   try {
     if (req.body && typeof req.body === 'object') {
-      providerIds = req.body.providerIds;
+      instanceIds = req.body.providerIds;
     }
 
-    const selectedProviders = providerIds?.length
-      ? Object.values(providers).filter(p => providerIds!.includes(p.id))
-      : Object.values(providers);
+    const selectedEntries = instanceIds?.length
+      ? Object.entries(providers).filter(([instanceId]) => instanceIds!.includes(instanceId))
+      : Object.entries(providers);
 
-    for (const provider of selectedProviders) {
+    for (const [instanceId, provider] of selectedEntries) {
       await provider.signOut(req, res);
     }
 

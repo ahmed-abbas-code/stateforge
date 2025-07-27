@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
  * POST /api/auth/signin
- * Accepts token(s) and delegates to registered provider(s) to set session cookies.
+ * Accepts token(s) and delegates to registered provider instance(s) to set session cookies.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -18,13 +18,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let anySucceeded = false;
 
   try {
-    for (const [id, provider] of Object.entries(providers)) {
-      // Heuristic: check for a token named for the provider
-      const tokenKey = id === 'firebase' ? 'idToken' : `${id}Token`;
-      const token = req.body?.[tokenKey];
+    for (const [instanceId, provider] of Object.entries(providers)) {
+      // Heuristic: expect token in body keyed by instance ID (e.g. "defaultToken")
+      const tokenKey = `${instanceId}Token`;
+      const token = req.body?.[tokenKey] ?? req.body?.idToken; // fallback for single-instance apps
 
       if (typeof token === 'string' && token.length > 0) {
-        req.body.token = token; // Normalized field if needed
+        req.body.token = token; // Normalized token field for provider handler
         await provider.signIn(req, res);
         anySucceeded = true;
       }

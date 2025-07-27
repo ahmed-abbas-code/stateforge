@@ -6,6 +6,7 @@ import { adminAuth } from '@authentication/server';
 import { getAuthProviderInstances } from '@authentication/server/utils/authRegistry';
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 import { getCookieOptions } from '@authentication/shared/constants/sessionCookieOptions';
+import type { AuthContext } from '@authentication/shared/types/AuthProvider';
 
 const EXPIRES_IN_SECONDS = 60 * 60 * 24 * 5; // 5 days
 const EXPIRES_IN_MS = EXPIRES_IN_SECONDS * 1000;
@@ -37,8 +38,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const cookieName = getSessionCookieName(providerType, providerId);
 
+    const context: AuthContext = { req, res, existingSessions: {} };
+    const rawOptions =
+      typeof provider.cookieOptions === 'function'
+        ? provider.cookieOptions(context)
+        : provider.cookieOptions ?? {};
+
     const options = getCookieOptions({
-      ...provider.cookieOptions,
+      ...rawOptions,
       maxAge: EXPIRES_IN_SECONDS, // override to match session cookie age
     });
 

@@ -31,7 +31,7 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const { sessions } = await res.json();
-  return { ...sessions }; // ✅ ensure new object reference
+  return { ...sessions }; // ✅ new object reference ensures SWR consistency
 };
 
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
@@ -61,9 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({
-  children,
-}) => {
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
 
   const {
@@ -80,23 +78,23 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   useEffect(() => {
     if (
       process.env.NEXT_PUBLIC_ENV === 'development' &&
-      typeof window !== 'undefined' &&
-      (Object.keys(sessions).length > 0 || !!error)
+      typeof window !== 'undefined'
     ) {
-      console.log('[AuthProvider] sessions:', sessions);
+      console.log('[AuthProvider] sessions (by instanceId):', sessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
       console.log('[AuthProvider] error:', error);
     }
   }, [sessions, error, isAuthenticated]);
 
   const getToken = useCallback(
-    async (providerId?: string): Promise<string | null> => {
-      const pid = providerId ?? Object.keys(sessions)[0];
-      if (!pid) return null;
+    async (instanceId?: string): Promise<string | null> => {
+      const id = instanceId ?? Object.keys(sessions)[0];
+      if (!id) return null;
 
-      const res = await fetch(`/api/auth/token?providerId=${pid}`, {
+      const res = await fetch(`/api/auth/token?providerId=${id}`, {
         credentials: 'include',
       });
+
       if (!res.ok) return null;
       const { token } = await res.json();
       return token ?? null;
@@ -123,9 +121,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           return { ok: false, error: body?.error || 'Sign-in failed' };
         }
 
-        // ✅ force fetch with revalidate
         await mutate(SESSION_API_ENDPOINT, undefined, { revalidate: true });
-
         return { ok: true };
       } catch (err) {
         console.error('[signIn] failed:', err);
@@ -136,12 +132,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   );
 
   const signOut = useCallback(
-    async (providerIds?: string[]) => {
+    async (instanceIds?: string[]) => {
       try {
         await fetch('/api/auth/signout', {
           method: 'POST',
           credentials: 'include',
-          body: providerIds ? JSON.stringify({ providerIds }) : undefined,
+          body: instanceIds ? JSON.stringify({ providerIds: instanceIds }) : undefined,
           headers: { 'Content-Type': 'application/json' },
         });
       } catch (_) {}
@@ -166,7 +162,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {},
+    setSessions: () => {}, // could later be implemented if client needs to force session update
     isAuthenticated,
     isLoading,
     error: error ?? null,

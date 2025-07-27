@@ -1,10 +1,7 @@
 // src/authentication/server/pages/api/auth/refresh.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { refreshSessions } from '@authentication/server/utils/sessionUtils';
-import {
-  mapDecodedToAuthUserFromSessions
-} from '@authentication/server/utils/mapDecodedToAuthUser';
+import { refreshSessions, getPrimarySession } from '@authentication/server/utils/sessionUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -12,16 +9,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const newSessions = await refreshSessions(req, res);
+    const sessions = await refreshSessions(req, res);
+    const isAuthenticated = Object.keys(sessions).length > 0;
 
-    if (Object.keys(newSessions).length === 0) {
-      return res.status(401).json({ user: null, error: 'No sessions refreshed' });
+    if (!isAuthenticated) {
+      return res.status(401).json({
+        user: null,
+        sessions: {},
+        isAuthenticated: false,
+        error: 'No sessions refreshed',
+      });
     }
 
-    const user = mapDecodedToAuthUserFromSessions(newSessions);
-    return res.status(200).json({ user });
+    const user = await getPrimarySession(req, res);
+
+    return res.status(200).json({
+      user,
+      sessions,
+      isAuthenticated,
+      error: null,
+    });
   } catch (err) {
     console.error('Error during session refresh:', err);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({
+      user: null,
+      sessions: {},
+      isAuthenticated: false,
+      error: 'Internal Server Error',
+    });
   }
 }
