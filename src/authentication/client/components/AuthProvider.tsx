@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: false,
+      revalidateOnMount: true,
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
