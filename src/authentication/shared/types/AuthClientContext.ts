@@ -26,7 +26,8 @@ export interface AuthClientContext {
   /**
    * Optional sign-in method (interactive or silent).
    */
-  signIn?: (providerId?: string) => Promise<{ ok: boolean; error?: string }>;
+  signIn?: (idToken?: string, instanceId?: string) => Promise<{ ok: boolean; error?: string }>;
+
 
   /**
    * Signs out of one or more provider instances.
