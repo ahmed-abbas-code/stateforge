@@ -35,7 +35,7 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const { sessions } = await res.json();
-  return { ...sessions };
+  return { ...(sessions ?? {}) }; // ✅ guarantees a new object
 };
 
 /* ------------------------------------------------------------------ */
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: true,          // ✅ now fetches on first render
+      revalidateOnMount: true, // ✅ ensures fetching on load
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
@@ -195,7 +195,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // left as no-op for now
+    setSessions: () => {}, // no-op
     isAuthenticated,
     isLoading,
     error: error ?? null,
