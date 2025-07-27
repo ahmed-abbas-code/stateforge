@@ -6,47 +6,45 @@ import { getAuthProviderInstances } from '@authentication/server/utils/authRegis
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
 /**
- * GET /api/auth/token?providerId=some-instance-id
+ * GET /api/auth/token?instanceId=some-instance-id
  * Returns the token from the session cookie of a specific provider instance.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const providers = getAuthProviderInstances();
-  const providerIdParam = req.query.providerId;
 
+  const instanceIdParam = req.query.instanceId || req.query.providerId; // support legacy param
   const resolvedInstanceId =
-    typeof providerIdParam === 'string'
-      ? providerIdParam
-      : Array.isArray(providerIdParam)
-        ? providerIdParam[0]
+    typeof instanceIdParam === 'string'
+      ? instanceIdParam
+      : Array.isArray(instanceIdParam)
+        ? instanceIdParam[0]
         : undefined;
 
-  const instanceId =
-    resolvedInstanceId ?? Object.keys(providers)[0];
-
+  const instanceId = resolvedInstanceId ?? Object.keys(providers)[0];
   if (!instanceId) {
     console.error('[token] No auth provider instances registered');
     return res.status(500).json({ error: 'No auth providers registered' });
   }
 
-  const selectedProvider = providers[instanceId];
-
-  if (!selectedProvider) {
-    console.warn(`[token] Unknown provider instance ID: ${instanceId}`);
+  const provider = providers[instanceId];
+  if (!provider) {
+    console.warn(`[token] Unknown auth provider instance ID: ${instanceId}`);
     return res.status(400).json({ error: `Unknown provider instance: ${instanceId}` });
   }
 
-  const cookieName = getSessionCookieName(selectedProvider.type, instanceId);
+  const providerType = provider.type || process.env.AUTH_STRATEGY || 'firebase';
+  const cookieName = getSessionCookieName(providerType, instanceId);
   const token = req.cookies?.[cookieName];
 
   if (!token) {
-    console.warn(`[token] Missing cookie '${cookieName}' for provider '${instanceId}'`);
+    console.warn(`[token] Missing cookie '${cookieName}' for instance '${instanceId}'`);
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
-    const session = await selectedProvider.verifyToken(req, res);
+    const session = await provider.verifyToken(req, res);
     if (!session) {
-      console.warn(`[token] Token verification failed for provider '${instanceId}'`);
+      console.warn(`[token] Token verification failed for instance '${instanceId}'`);
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
 

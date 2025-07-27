@@ -31,7 +31,7 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const { sessions } = await res.json();
-  return { ...sessions }; // ✅ new object reference ensures SWR consistency
+  return { ...sessions };
 };
 
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
@@ -103,7 +103,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const signIn = useCallback(
-    async (idToken?: string): Promise<{ ok: boolean; error?: string }> => {
+    async (
+      idToken?: string,
+      instanceId?: string
+    ): Promise<{ ok: boolean; error?: string }> => {
       if (!idToken) return { ok: false, error: 'Missing ID token' };
 
       try {
@@ -111,7 +114,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ idToken }),
+          body: JSON.stringify({
+            idToken,
+            instanceId, // ✅ Include instanceId in the payload
+          }),
         });
 
         const body = await res.json();
@@ -162,7 +168,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {}, // could later be implemented if client needs to force session update
+    setSessions: () => {},
     isAuthenticated,
     isLoading,
     error: error ?? null,

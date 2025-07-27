@@ -5,7 +5,7 @@ import { getAuthProviderInstances } from '@authentication/server/utils/authRegis
 
 /**
  * POST /api/auth/signout
- * Clears session cookies for all registered or specified provider **instances**.
+ * Clears session cookies for all or specific auth provider instances.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -18,14 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.body && typeof req.body === 'object') {
-      instanceIds = req.body.providerIds;
+      instanceIds = req.body.instanceIds ?? req.body.providerIds; // support legacy `providerIds` for now
     }
 
-    const selectedEntries = instanceIds?.length
+    const selectedProviders = instanceIds?.length
       ? Object.entries(providers).filter(([instanceId]) => instanceIds!.includes(instanceId))
       : Object.entries(providers);
 
-    for (const [instanceId, provider] of selectedEntries) {
+    for (const [instanceId, provider] of selectedProviders) {
       await provider.signOut(req, res);
     }
 

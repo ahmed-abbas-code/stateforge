@@ -28,15 +28,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       expiresIn: EXPIRES_IN_MS,
     });
 
-    const providerId = 'default'; // or whatever instance ID you use for firebase
-    const providerType = 'firebase';
-    const provider = getAuthProviderInstances()[providerId];
+    // 🔁 Updated to match convention
+    const instanceId = 'default'; // or from req.query/headers if needed
+    const providerType = process.env.AUTH_STRATEGY || 'firebase';
 
+    const provider = getAuthProviderInstances()[instanceId];
     if (!provider) {
       return res.status(500).json({ error: 'Auth provider not found' });
     }
 
-    const cookieName = getSessionCookieName(providerType, providerId);
+    const cookieName = getSessionCookieName(providerType, instanceId);
 
     const context: AuthContext = { req, res, existingSessions: {} };
     const rawOptions =

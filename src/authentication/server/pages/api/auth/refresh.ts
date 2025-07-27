@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user: null,
         sessions: {},
         isAuthenticated: false,
-        error: 'No sessions refreshed',
+        error: 'No active sessions found',
       });
     }
 
