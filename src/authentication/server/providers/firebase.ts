@@ -83,7 +83,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 
     async verifyToken(req) {
       const cookieName = getSessionCookieName(type, id);
-      const sessionCookie = parse(req.headers.cookie || '')[cookieName];
+      const sessionCookie = req.cookies?.[cookieName] || parse(req.headers.cookie || '')[cookieName];
       if (!sessionCookie) return null;
 
       try {
@@ -105,7 +105,8 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
         console.warn(`[${id}] Token verification failed:`, err);
         return null;
       }
-    },
+    }
+    ,
 
     async refreshToken(ctx) {
       const cookieName = getSessionCookieName(type, id);

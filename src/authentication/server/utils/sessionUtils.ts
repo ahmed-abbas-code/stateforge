@@ -25,6 +25,10 @@ export async function getAllSessions(
   console.log('[getAllSessions] Raw req.cookies:', req.cookies);
 
   for (const [instanceId, provider] of Object.entries(providers)) {
+    if (provider.id !== instanceId) {
+      console.warn(`[getAllSessions] Provider ID mismatch: instanceId='${instanceId}' but provider.id='${provider.id}'`);
+    }
+
     const cookieName = getSessionCookieName(provider.type, instanceId);
     const token = req.cookies?.[cookieName];
 
@@ -57,7 +61,6 @@ export async function getAllSessions(
   latestSessions = sessions;
   return sessions;
 }
-
 
 /**
  * Refresh all sessions using optional provider-level refreshToken hooks.

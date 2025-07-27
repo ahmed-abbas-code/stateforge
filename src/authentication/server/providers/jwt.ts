@@ -60,7 +60,7 @@ export function createAuthProvider(
     const userId = typeof rawId === 'number' ? String(rawId) : String(rawId);
 
     if (process.env.NODE_ENV !== 'production') {
-      console.debug(`[jwt:${id}] Using user id from ${payload.sub ? 'sub' : 'user_id'} → ${userId}`);
+      console.debug(`[${type}:${id}] Using user id from ${payload.sub ? 'sub' : 'user_id'} → ${userId}`);
     }
 
     return {
@@ -99,6 +99,8 @@ export function createAuthProvider(
 
       const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
+      console.log(`[${type}:${id}] Setting session cookie: ${getSessionCookieName(type, id)}`);
+
       res.setHeader(
         'Set-Cookie',
         serialize(getSessionCookieName(type, id), token, cookieOpts)
@@ -109,11 +111,17 @@ export function createAuthProvider(
 
     async verifyToken(req: NextApiRequest): Promise<Session | null> {
       const cookieName = getSessionCookieName(type, id);
-      const token = parse(req.headers.cookie || '')[cookieName];
-      if (!token) return null;
+      const token = req.cookies?.[cookieName] || parse(req.headers.cookie || '')[cookieName];
+      if (!token) {
+        console.warn(`[${type}:${id}] No token found in cookies`);
+        return null;
+      }
 
       const payload = decodeJwt(token);
-      if (!payload) return null;
+      if (!payload) {
+        console.warn(`[${type}:${id}] Failed to decode token`);
+        return null;
+      }
 
       return payloadToSession(payload, token);
     },
