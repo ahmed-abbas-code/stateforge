@@ -35,7 +35,7 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const data = await res.json();
-  return structuredClone(data.sessions ?? {}); // ✅ always a new reference
+  return structuredClone(data.sessions ?? {});
 };
 
 /* ------------------------------------------------------------------ */
@@ -44,8 +44,6 @@ const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
-  initialSessions?: Record<string, Session>;
-  /** Limit “authenticated” checks to these instance IDs (optional) */
   instanceIds?: string[];
 }
 
@@ -55,23 +53,19 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
-  initialSessions = {},
   instanceIds,
 }) => (
   <SWRConfig
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: true, // ✅ ensures fetch on first client render
+      revalidateOnMount: true,
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
     }}
   >
-    <InnerAuthProvider
-      initialSessions={initialSessions}
-      instanceIds={instanceIds}
-    >
+    <InnerAuthProvider instanceIds={instanceIds}>
       {children}
     </InnerAuthProvider>
   </SWRConfig>
@@ -83,42 +77,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   children,
-  initialSessions = {},
   instanceIds,
 }) => {
   const router = useRouter();
 
   const {
-    data: sessions = initialSessions,
+    data: sessions,
     error,
     isLoading,
   } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions);
 
-  /* -------- auth state helpers ------------------------------------ */
+  const resolvedSessions = sessions ?? {};
 
   const isAuthenticated = useMemo(() => {
-    const ids = instanceIds ?? Object.keys(sessions);
-    return ids.some((id) => !!sessions[id]);
-  }, [sessions, instanceIds]);
-
-  /* -------- debug logging ----------------------------------------- */
+    const ids = instanceIds ?? Object.keys(resolvedSessions);
+    return ids.some((id) => !!resolvedSessions[id]);
+  }, [resolvedSessions, instanceIds]);
 
   useEffect(() => {
     if (
       process.env.NEXT_PUBLIC_ENV === 'development' &&
       typeof window !== 'undefined'
     ) {
-      console.log('[AuthProvider] sessions (by instanceId):', sessions);
+      console.log('[AuthProvider] sessions (by instanceId):', resolvedSessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
       console.log('[AuthProvider] error:', error);
     }
-  }, [sessions, error, isAuthenticated]);
-
-  /* -------- public helpers ---------------------------------------- */
+  }, [resolvedSessions, error, isAuthenticated]);
 
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
-      const id = instanceId ?? Object.keys(sessions)[0];
+      const id = instanceId ?? Object.keys(resolvedSessions)[0];
       if (!id) return null;
 
       const res = await fetch(`/api/auth/token?instanceId=${id}`, {
@@ -128,7 +117,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       const { token } = await res.json();
       return token ?? null;
     },
-    [sessions]
+    [resolvedSessions]
   );
 
   const signIn = useCallback(
@@ -192,10 +181,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [signOut]
   );
 
-  /* -------- context value ---------------------------------------- */
-
   const contextValue: AuthClientContext = {
-    sessions,
+    sessions: resolvedSessions,
     setSessions: () => {}, // noop
     isAuthenticated,
     isLoading,

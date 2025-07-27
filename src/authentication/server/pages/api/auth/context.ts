@@ -16,7 +16,11 @@ export default async function handler(
 ) {
   try {
     const sessions = await getSession(req, res);
-    const isAuthenticated = Object.keys(sessions).length > 0;
+
+    console.log('[Context API] req.cookies:', req.cookies);
+    console.log('[Context API] sessions from getSession:', sessions);
+
+    const isAuthenticated = Object.keys(sessions ?? {}).length > 0;
 
     return res.status(200).json({
       sessions,
