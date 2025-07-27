@@ -17,6 +17,10 @@ import type { Session, AuthClientContext } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
 
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
     credentials: 'include',
@@ -34,13 +38,20 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   return { ...sessions };
 };
 
+/* ------------------------------------------------------------------ */
+
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
   initialSessions?: Record<string, Session>;
-  instanceIds?: string[]; // ✅ NEW
+  /** Limit “authenticated” checks to these instance IDs (optional) */
+  instanceIds?: string[];
 }
+
+/* ------------------------------------------------------------------ */
+/* Public wrapper                                                      */
+/* ------------------------------------------------------------------ */
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
@@ -51,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     value={{
       refreshInterval: 0,
       revalidateOnFocus: false,
-      revalidateOnMount: true,
+      revalidateOnMount: true,          // ✅ now fetches on first render
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
@@ -59,12 +70,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   >
     <InnerAuthProvider
       initialSessions={initialSessions}
-      instanceIds={instanceIds} // ✅ NEW
+      instanceIds={instanceIds}
     >
       {children}
     </InnerAuthProvider>
   </SWRConfig>
 );
+
+/* ------------------------------------------------------------------ */
+/* Inner provider                                                      */
+/* ------------------------------------------------------------------ */
 
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   children,
@@ -77,33 +92,37 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     data: sessions = initialSessions,
     error,
     isLoading,
-  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions);
+  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions, {
+    fallbackData: initialSessions,
+  });
+
+  /* -------- auth state helpers ------------------------------------ */
 
   const isAuthenticated = useMemo(() => {
     const ids = instanceIds ?? Object.keys(sessions);
     return ids.some((id) => !!sessions[id]);
   }, [sessions, instanceIds]);
 
+  /* -------- debug logging ----------------------------------------- */
+
   useEffect(() => {
-    if (
-      process.env.NEXT_PUBLIC_ENV === 'development' &&
-      typeof window !== 'undefined'
-    ) {
+    if (process.env.NEXT_PUBLIC_ENV === 'development' && typeof window !== 'undefined') {
       console.log('[AuthProvider] sessions (by instanceId):', sessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
       console.log('[AuthProvider] error:', error);
     }
   }, [sessions, error, isAuthenticated]);
 
+  /* -------- public helpers ---------------------------------------- */
+
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
       const id = instanceId ?? Object.keys(sessions)[0];
       if (!id) return null;
 
-      const res = await fetch(`/api/auth/token?providerId=${id}`, {
+      const res = await fetch(`/api/auth/token?instanceId=${id}`, {
         credentials: 'include',
       });
-
       if (!res.ok) return null;
       const { token } = await res.json();
       return token ?? null;
@@ -123,15 +142,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            idToken,
-            instanceId,
-          }),
+          body: JSON.stringify({ idToken, instanceId }),
         });
 
         const body = await res.json();
-        console.log('[signIn] response:', res.status, body);
-
         if (!res.ok || !body.ok) {
           return { ok: false, error: body?.error || 'Sign-in failed' };
         }
@@ -155,7 +169,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           body: providerIds ? JSON.stringify({ providerIds }) : undefined,
           headers: { 'Content-Type': 'application/json' },
         });
-      } catch (_) {}
+      } catch {
+        /* ignore */
+      }
 
       mutate(SESSION_API_ENDPOINT, {}, false);
       router.push('/');
@@ -175,9 +191,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [signOut]
   );
 
+  /* -------- context value ---------------------------------------- */
+
   const contextValue: AuthClientContext = {
     sessions,
-    setSessions: () => {},
+    setSessions: () => {}, // left as no-op for now
     isAuthenticated,
     isLoading,
     error: error ?? null,
@@ -196,6 +214,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     </AuthContext.Provider>
   );
 };
+
+/* ------------------------------------------------------------------ */
+/* Hook export                                                         */
+/* ------------------------------------------------------------------ */
 
 export const useAuthContext = (): AuthClientContext => {
   const ctx = useContext(AuthContext);
