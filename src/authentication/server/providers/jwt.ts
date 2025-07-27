@@ -48,19 +48,19 @@ function buildCookieOptions(maxAge: number): AuthProviderInstance['cookieOptions
 
 export function createAuthProvider(
   instanceId: string,
-  _algorithms?: Algorithm[]      // ready for future signature-check
+  _algorithms?: Algorithm[]
 ): AuthProviderInstance {
   const type = 'jwt';
+  const id = instanceId;
 
-  /* Re-usable helper to convert a decoded payload into a Session */
   const payloadToSession = (payload: JwtPayload, token: string): Session | null => {
-    // Accept either "sub" or "user_id"
     const rawId = payload.sub ?? payload.user_id;
     if (rawId === undefined || rawId === null) return null;
+
     const userId = typeof rawId === 'number' ? String(rawId) : String(rawId);
 
     if (process.env.NODE_ENV !== 'production') {
-      console.debug(`[jwt:${instanceId}] Using user id from ${payload.sub ? 'sub' : 'user_id'} → ${userId}`);
+      console.debug(`[jwt:${id}] Using user id from ${payload.sub ? 'sub' : 'user_id'} → ${userId}`);
     }
 
     return {
@@ -69,15 +69,14 @@ export function createAuthProvider(
       token,
       expiresAt: payload.exp ? payload.exp * 1000 : undefined,
       provider: type,
-      providerId: instanceId,
+      providerId: id,
     };
   };
 
   const provider: AuthProviderInstance = {
-    id: instanceId,
+    id,
     type,
 
-    /* -------- SIGN-IN -------- */
     async signIn(req: NextApiRequest, res: NextApiResponse, ctx?: { token: string }) {
       const token =
         ctx?.token ||
@@ -102,15 +101,14 @@ export function createAuthProvider(
 
       res.setHeader(
         'Set-Cookie',
-        serialize(getSessionCookieName(type, instanceId), token, cookieOpts)
+        serialize(getSessionCookieName(type, id), token, cookieOpts)
       );
 
       res.status(200).json({ user: session });
     },
 
-    /* -------- VERIFY TOKEN -------- */
     async verifyToken(req: NextApiRequest): Promise<Session | null> {
-      const cookieName = getSessionCookieName(type, instanceId);
+      const cookieName = getSessionCookieName(type, id);
       const token = parse(req.headers.cookie || '')[cookieName];
       if (!token) return null;
 
@@ -120,9 +118,8 @@ export function createAuthProvider(
       return payloadToSession(payload, token);
     },
 
-    /* -------- REFRESH TOKEN -------- */
     async refreshToken(ctx: AuthContext): Promise<Session | null> {
-      const cookieName = getSessionCookieName(type, instanceId);
+      const cookieName = getSessionCookieName(type, id);
       const token = ctx.req.cookies?.[cookieName];
       if (!token) return null;
 
@@ -132,13 +129,12 @@ export function createAuthProvider(
       return payloadToSession(payload, token);
     },
 
-    /* -------- SIGN-OUT -------- */
     async signOut(req: NextApiRequest, res: NextApiResponse) {
       const cookieOpts = (provider.cookieOptions as any)({ req, res, existingSessions: {} });
 
       res.setHeader(
         'Set-Cookie',
-        serialize(getSessionCookieName(type, instanceId), '', {
+        serialize(getSessionCookieName(type, id), '', {
           ...cookieOpts,
           maxAge: -1,
         })
@@ -159,7 +155,7 @@ export function createAuthProvider(
 
 const jwtProvider = createAuthProvider('default');
 
-export const signIn              = jwtProvider.signIn;
-export const signOut             = jwtProvider.signOut;
-export const verifyToken         = jwtProvider.verifyToken;
+export const signIn = jwtProvider.signIn;
+export const signOut = jwtProvider.signOut;
+export const verifyToken = jwtProvider.verifyToken;
 export const jwtSessionCookieName = getSessionCookieName('jwt', 'default');
