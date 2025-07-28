@@ -25,11 +25,14 @@ export function AuthProtection({
   requireProvider,
   isAuthenticatedFn,
 }: Props) {
-  const { sessions, isLoading } = useAuthContext();
+  const { sessions, isAuthenticated, isLoading } = useAuthContext();
   const router = useRouter();
 
-  const isAuthenticated = (() => {
-    if (isAuthenticatedFn) return isAuthenticatedFn(sessions);
+  // ✅ Compute effective auth check
+  const effectiveIsAuthenticated = (() => {
+    if (isAuthenticatedFn) {
+      return isAuthenticatedFn(sessions);
+    }
 
     if (requireProvider) {
       return (
@@ -40,21 +43,22 @@ export function AuthProtection({
       );
     }
 
-    return Object.keys(sessions ?? {}).length > 0;
+    // Fall back to context’s built‑in logic
+    return isAuthenticated;
   })();
 
   useEffect(() => {
     if (!router.isReady) return;
 
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !effectiveIsAuthenticated) {
       console.log('[AuthProtection] Not authenticated. Redirecting to:', redirectTo);
       router.replace(redirectTo);
     } else if (!isLoading) {
       console.log('[AuthProtection] Authenticated. Access granted.');
     }
-  }, [router.isReady, isLoading, isAuthenticated, redirectTo, router]);
+  }, [router.isReady, isLoading, effectiveIsAuthenticated, redirectTo, router]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !effectiveIsAuthenticated) {
     return <>{loadingFallback?.() ?? <p>Checking authentication…</p>}</>;
   }
 
