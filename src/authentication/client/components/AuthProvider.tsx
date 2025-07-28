@@ -42,7 +42,7 @@ const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 interface AuthProviderProps {
   children: React.ReactNode;
   instanceIds?: string[];
-  initialSessions?: Record<string, Session>; // ✅ SSR hydration
+  initialSessions?: Record<string, Session>;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       errorRetryCount: 0,
       onErrorRetry: () => {},
       fallback: {
-        [SESSION_API_ENDPOINT]: initialSessions ?? {}, // ✅ hydrate SWR with SSR data
+        [SESSION_API_ENDPOINT]: initialSessions ?? {},
       },
     }}
   >
@@ -85,36 +85,45 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
 
   const resolvedSessions = sessions ?? {};
 
-  // ✅ Updated: require *all* instanceIds if provided, otherwise at least one
+  // ✅ FIX: do not mark unauthenticated until loading finishes
   const isAuthenticated = useMemo(() => {
-    if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) return false;
+    if (isLoading) return false;
+
+    if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) {
+      return false;
+    }
 
     if (instanceIds && instanceIds.length > 0) {
       return instanceIds.every((id) => !!resolvedSessions[id]);
     }
 
     return Object.keys(resolvedSessions).some((id) => !!resolvedSessions[id]);
-  }, [resolvedSessions, instanceIds]);
+  }, [resolvedSessions, instanceIds, isLoading]);
 
   const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
     if (!session?.expiresAt) return false;
     return session.expiresAt - Date.now() < bufferMs;
   };
 
-  // 🔁 Log expiry info in human-readable format
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       const now = new Date();
-      console.log(`[AuthProvider] Current client time: ${now.toLocaleString()} (${Date.now()})`);
+      console.log(
+        `[AuthProvider] Current client time: ${now.toLocaleString()} (${Date.now()})`
+      );
       for (const [id, session] of Object.entries(resolvedSessions)) {
-        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`);
+        console.log(
+          `[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`
+        );
       }
     }
   }, [resolvedSessions]);
 
   useEffect(() => {
     if (lastAuthState.current !== isAuthenticated) {
-      console.warn(`[AuthProvider] 🔁 isAuthenticated changed → ${isAuthenticated}`);
+      console.warn(
+        `[AuthProvider] 🔁 isAuthenticated changed → ${isAuthenticated}`
+      );
       lastAuthState.current = isAuthenticated;
     }
   }, [isAuthenticated]);
@@ -241,7 +250,6 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // ✅ Dynamic proactive auto-refresh
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -296,7 +304,7 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
     handleResponse,
     auth: undefined,
     handleRedirectCallback: undefined,
-    instanceIds, // ✅ expose instanceIds to consumers
+    instanceIds,
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
