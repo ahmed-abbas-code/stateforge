@@ -106,7 +106,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return true;
   }, [resolvedSessions, instanceIds, isLoading, isClient]);
 
-  const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
+  // 🔹 Reduced buffer from 2 minutes → 30 seconds
+  const isExpiringSoon = (session?: Session, bufferMs = 30 * 1000) => {
     if (!session?.expiresAt) return false;
     return session.expiresAt - Date.now() < bufferMs;
   };
@@ -252,7 +253,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, isClient]
   );
 
-  // Auto-refresh (patched: one refresh per cycle)
+  // 🔹 Auto-refresh logic (one refresh per cycle)
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -268,7 +269,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
       if (!isFinite(nextExpiry)) return;
 
-      const bufferMs = 2 * 60 * 1000;
+      const bufferMs = 30 * 1000; // 30s buffer
       const delay = Math.max(nextExpiry - Date.now() - bufferMs, 0);
 
       if (isClient) {
@@ -278,8 +279,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       }
 
       refreshTimer.current = setTimeout(async () => {
-        // ✅ Only call refreshToken ONCE if any session is expiring
-        const hasExpiring = Object.values(resolvedSessions).some((s) => isExpiringSoon(s));
+        const hasExpiring = Object.values(resolvedSessions).some((s) =>
+          isExpiringSoon(s, bufferMs)
+        );
         if (hasExpiring) {
           await refreshToken();
         }
