@@ -17,7 +17,6 @@ import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
-// ✅ Always fetch all sessions
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
@@ -72,6 +71,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   const router = useRouter();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAuthState = useRef<boolean | undefined>(undefined);
+  const isClient = typeof window !== 'undefined';
 
   const {
     data: sessions,
@@ -81,10 +81,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const resolvedSessions = sessions ?? {};
 
-  // ✅ Return undefined while loading, instead of false
   const isAuthenticated = useMemo((): boolean | undefined => {
     if (isLoading) {
-      console.log('[AuthProvider:Decision] Still loading → deferring decision.');
+      if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
+        console.log('[AuthProvider:Decision] Still loading → deferring decision.');
+      }
       return undefined;
     }
 
@@ -95,13 +96,15 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     if (instanceIds && instanceIds.length > 0) {
       const missing = instanceIds.filter((id) => !resolvedSessions[id]);
       if (missing.length > 0) {
-        console.warn('[AuthProvider:Decision] Missing sessions for:', missing);
+        if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
+          console.warn('[AuthProvider:Decision] Missing sessions for:', missing);
+        }
         return false;
       }
     }
 
     return true;
-  }, [resolvedSessions, instanceIds, isLoading]);
+  }, [resolvedSessions, instanceIds, isLoading, isClient]);
 
   const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
     if (!session?.expiresAt) return false;
@@ -110,28 +113,28 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   // Debug logs
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENV === 'development') {
+    if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
       for (const [id, session] of Object.entries(resolvedSessions)) {
         console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`);
       }
     }
-  }, [resolvedSessions]);
+  }, [resolvedSessions, isClient]);
 
   useEffect(() => {
-    if (lastAuthState.current !== isAuthenticated) {
+    if (isClient && lastAuthState.current !== isAuthenticated) {
       console.warn(`[AuthProvider] 🔁 isAuthenticated changed →`, isAuthenticated);
       lastAuthState.current = isAuthenticated;
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isClient]);
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENV === 'development') {
+    if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log('[AuthProvider] sessions:', resolvedSessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
       if (error) console.error('[AuthProvider] error:', error);
     }
-  }, [resolvedSessions, error, isAuthenticated]);
+  }, [resolvedSessions, error, isAuthenticated, isClient]);
 
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
@@ -204,7 +207,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         });
 
         if (!res.ok) {
-          console.warn('[refreshToken] Refresh failed:', res.status);
+          if (isClient) {
+            console.warn('[refreshToken] Refresh failed:', res.status);
+          }
           return null;
         }
 
@@ -218,19 +223,23 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         return null;
       }
     },
-    []
+    [isClient]
   );
 
   const handleResponse = useCallback(
     async (res: Response) => {
       if (res.status !== 401) return res;
 
-      console.warn('[handleResponse] Got 401. Attempting refresh...');
+      if (isClient) {
+        console.warn('[handleResponse] Got 401. Attempting refresh...');
+      }
       const refreshed = await refreshToken();
 
       if (!refreshed) {
-        console.warn('[handleResponse] Refresh failed — signing out.');
-        toast.info('Session expired. Please sign in again.');
+        if (isClient) {
+          console.warn('[handleResponse] Refresh failed — signing out.');
+          toast.info('Session expired. Please sign in again.');
+        }
         await signOut();
         throw new Error('Unauthorized');
       }
@@ -241,7 +250,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         credentials: 'include',
       });
     },
-    [refreshToken, signOut, resolvedSessions]
+    [refreshToken, signOut, resolvedSessions, isClient]
   );
 
   // Auto-refresh
@@ -263,9 +272,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       const bufferMs = 2 * 60 * 1000;
       const delay = Math.max(nextExpiry - Date.now() - bufferMs, 0);
 
-      console.debug(
-        `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s (${formatSessionTTL(nextExpiry)})`
-      );
+      if (isClient) {
+        console.debug(
+          `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s (${formatSessionTTL(nextExpiry)})`
+        );
+      }
 
       refreshTimer.current = setTimeout(async () => {
         for (const [providerId, session] of Object.entries(resolvedSessions)) {
@@ -282,12 +293,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken, resolvedSessions]);
+  }, [isAuthenticated, refreshToken, resolvedSessions, isClient]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
     setSessions: () => {},
-    isAuthenticated: isAuthenticated ?? false, // consumer sees boolean fallback
+    isAuthenticated: isAuthenticated ?? false,
     isLoading,
     error: error ?? null,
     signIn,

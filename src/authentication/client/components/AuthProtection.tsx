@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthContext } from '@authentication/client';
 
@@ -28,6 +28,10 @@ export function AuthProtection({
   const { sessions, isAuthenticated, isLoading } = useAuthContext();
   const router = useRouter();
 
+  // ✅ Track client‑side rendering to avoid SSR mismatch
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => setIsClient(true), []);
+
   // ✅ Compute effective auth check
   const effectiveIsAuthenticated: boolean | undefined = (() => {
     if (isLoading) return undefined; // defer until loading completes
@@ -48,8 +52,9 @@ export function AuthProtection({
     return isAuthenticated;
   })();
 
+  // ✅ Handle redirect when decision is clear
   useEffect(() => {
-    if (!router.isReady || effectiveIsAuthenticated === undefined) return;
+    if (!isClient || !router.isReady || effectiveIsAuthenticated === undefined) return;
 
     if (!effectiveIsAuthenticated) {
       console.warn('[AuthProtection] ❌ Not authenticated. Redirecting to:', redirectTo);
@@ -57,10 +62,10 @@ export function AuthProtection({
     } else {
       console.log('[AuthProtection] ✅ Authenticated. Access granted.');
     }
-  }, [router.isReady, effectiveIsAuthenticated, redirectTo, router]);
+  }, [isClient, router.isReady, effectiveIsAuthenticated, redirectTo, router]);
 
-  // ✅ Render fallback while we *don’t know yet*
-  if (isLoading || effectiveIsAuthenticated === undefined) {
+  // ✅ Show fallback during SSR or while still loading
+  if (!isClient || isLoading || effectiveIsAuthenticated === undefined) {
     return <>{loadingFallback?.() ?? <p>⏳ Checking authentication…</p>}</>;
   }
 
