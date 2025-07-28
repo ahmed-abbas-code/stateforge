@@ -13,6 +13,7 @@ import { getCookieOptions } from '@authentication/shared/constants/sessionCookie
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
+const SESSION_EXPIRES_IN_MS = SESSION_EXPIRES_IN_SEC * 1000; // ✅ consistent with Firebase
 
 /* ────────────────────────────────────────────────────────── */
 /* Helpers                                                   */
@@ -44,21 +45,26 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
     type,
 
     async signIn(_req: NextApiRequest, _res: NextApiResponse, _ctx?: { token: string }) {
+      console.warn(`[${type}:${id}] signIn called but not implemented`);
       throw new Error(`[${type}:${id}] signIn not implemented`);
     },
 
     async verifyToken(_req: NextApiRequest): Promise<Session | null> {
+      console.warn(`[${type}:${id}] verifyToken called but not implemented`);
       throw new Error(`[${type}:${id}] verifyToken not implemented`);
     },
 
     async signOut(_req: NextApiRequest, _res: NextApiResponse) {
+      console.warn(`[${type}:${id}] signOut called but not implemented`);
       throw new Error(`[${type}:${id}] signOut not implemented`);
     },
 
     async refreshToken(_ctx: AuthContext): Promise<Session | null> {
+      console.warn(`[${type}:${id}] refreshToken called but not implemented`);
       throw new Error(`[${type}:${id}] refreshToken not implemented`);
     },
 
+    // ✅ Ensure cookie options use seconds, but sessions use ms consistently
     cookieOptions: buildCookieOptions(SESSION_EXPIRES_IN_SEC),
   };
 }

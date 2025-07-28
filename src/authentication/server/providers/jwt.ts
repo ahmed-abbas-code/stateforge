@@ -58,16 +58,25 @@ export function createAuthProvider(
     if (rawId === undefined || rawId === null) return null;
 
     const userId = typeof rawId === 'number' ? String(rawId) : String(rawId);
+    const expiresAt = payload.exp ? payload.exp * 1000 : undefined;
 
     if (process.env.NODE_ENV !== 'production') {
-      console.debug(`[${type}:${id}] Using user id from ${payload.sub ? 'sub' : 'user_id'} → ${userId}`);
+      const now = new Date();
+      const expText = expiresAt
+        ? `${new Date(expiresAt).toLocaleString()} (in ${Math.round(
+            (expiresAt - Date.now()) / 1000
+          )}s)`
+        : 'unknown';
+      console.debug(
+        `[${type}:${id}] payloadToSession → userId: ${userId}, current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${expText}`
+      );
     }
 
     return {
       userId,
       email: payload.email,
       token,
-      expiresAt: payload.exp ? payload.exp * 1000 : undefined,
+      expiresAt,
       provider: type,
       providerId: id,
     };

@@ -25,7 +25,12 @@ export interface ChainedProviderOptions {
   /**
    * Final transformation step to build a combined session
    */
-  onFinish?: (results: Record<string, Session>) => Promise<Session>;
+  onFinish?: (results: Record<string, Session>) => Promise<Session | null>;
+
+  /**
+   * If true, return the full session map instead of just one session
+   */
+  returnAll?: boolean;
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -40,7 +45,7 @@ export function createChainedProvider(
 ): AuthProviderInstance {
   return {
     id,
-    type: 'composite', // ✅ Valid AuthProviderType according to authSchema.ts
+    type: 'composite', // ✅ valid AuthProviderType
 
     async signIn(req: NextApiRequest, res: NextApiResponse) {
       for (const p of providers) {
@@ -68,11 +73,22 @@ export function createChainedProvider(
         }
       }
 
+      // ✅ If explicitly asked, return the whole sessions map
+      if (options?.returnAll) {
+        // @ts-expect-error allow override: caller knows they asked for all sessions
+        return sessions;
+      }
+
       if (options?.onFinish) {
         return await options.onFinish(sessions);
       }
 
-      return Object.values(sessions)[0] ?? null;
+      // ✅ Default: pick the session with the latest expiry
+      const sorted = Object.values(sessions).sort(
+        (a, b) => (b.expiresAt ?? 0) - (a.expiresAt ?? 0)
+      );
+
+      return sorted[0] ?? null;
     },
 
     async signOut(req: NextApiRequest, res: NextApiResponse) {
@@ -81,7 +97,7 @@ export function createChainedProvider(
       }
     },
 
-    // ⚠️ Composite providers don't manage cookies directly, but must return safe options
+    // ⚠️ Composite providers don’t manage cookies directly, but must return safe defaults
     cookieOptions: {
       maxAge: 0,
       httpOnly: true,

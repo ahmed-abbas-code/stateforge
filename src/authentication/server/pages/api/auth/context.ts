@@ -23,7 +23,7 @@ function ensureExpiresAt(sessions: Record<string, Session>): Record<string, Sess
       try {
         const payload = jwtDecode<TokenPayload>(session.token);
         if (payload.exp) {
-          session.expiresAt = payload.exp * 1000;
+          session.expiresAt = payload.exp * 1000; // convert to ms
         }
       } catch (err) {
         console.warn(`[Context API] Failed to decode token for ${key}:`, err);
@@ -40,6 +40,10 @@ export default async function handler(
   res: NextApiResponse<ContextResponse>
 ) {
   try {
+    // 🔑 Add toggle via query param ?all=true
+    const returnAll = req.query.all === 'true';
+
+    // getSession should already collect sessions via AuthenticationChain
     const sessions = await getSession(req, res);
     const sessionsWithExpiry = ensureExpiresAt(sessions);
 
@@ -48,9 +52,21 @@ export default async function handler(
 
     const isAuthenticated = Object.keys(sessionsWithExpiry).length > 0;
 
+    // Default behavior: pick the "primary" session if not returning all
+    let responseSessions: Record<string, Session>;
+    if (returnAll) {
+      responseSessions = sessionsWithExpiry;
+    } else {
+      // pick the latest-expiring session
+      const sorted = Object.entries(sessionsWithExpiry).sort(
+        ([_aId, a], [_bId, b]) => (b.expiresAt ?? 0) - (a.expiresAt ?? 0)
+      );
+      responseSessions = sorted.length > 0 ? { [sorted[0][0]]: sorted[0][1] } : {};
+    }
+
     return res.status(200).json({
-      sessions: sessionsWithExpiry,
-      isAuthenticated,
+      sessions: responseSessions,
+      isAuthenticated: Object.keys(responseSessions).length > 0,
       error: null,
     });
   } catch (error: any) {

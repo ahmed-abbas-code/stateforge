@@ -62,6 +62,7 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           serialize(getSessionCookieName(type, id), sessionCookie, cookieOpts)
         );
 
+        // ✅ Ensure expiresAt is always in milliseconds
         const expiresAt = decoded.exp ? decoded.exp * 1000 : Date.now() + SESSION_EXPIRES_IN_MS;
 
         const session: Session = {
@@ -73,6 +74,13 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           providerId: id,
           displayName: decoded.name,
         };
+
+        const now = new Date();
+        console.debug(
+          `[${id}] signIn → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
+            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
+          }`
+        );
 
         res.status(200).json({ user: session });
       } catch (err) {
@@ -92,11 +100,19 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           console.debug(`[${id}] Session verified without revocation check (dev mode).`);
         }
 
+        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
+        const now = new Date();
+        console.debug(
+          `[${id}] verifyToken → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
+            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
+          }`
+        );
+
         return {
           userId: decoded.uid,
           email: decoded.email,
           token: sessionCookie,
-          expiresAt: decoded.exp ? decoded.exp * 1000 : undefined,
+          expiresAt,
           provider: type,
           providerId: id,
           displayName: decoded.name,
@@ -114,11 +130,19 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 
       try {
         const decoded = await adminAuth.verifySessionCookie(sessionCookie, CHECK_REVOKED);
+        const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
+        const now = new Date();
+        console.debug(
+          `[${id}] refreshToken → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
+            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
+          }`
+        );
+
         return {
           userId: decoded.uid,
           email: decoded.email,
           token: sessionCookie,
-          expiresAt: decoded.exp ? decoded.exp * 1000 : undefined,
+          expiresAt,
           provider: type,
           providerId: id,
           displayName: decoded.name,

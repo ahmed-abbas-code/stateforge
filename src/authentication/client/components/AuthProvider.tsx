@@ -18,7 +18,7 @@ import type { Session, AuthClientContext } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
-const REFRESH_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const REFRESH_INTERVAL_MS = 15 * 60 * 1000; // fallback: 15 minutes
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -90,8 +90,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return session.expiresAt - Date.now() < bufferMs;
   };
 
+  // 🔁 Log expiry info with current client time
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
+      const now = new Date();
+      console.log(`[AuthProvider] Current client time: ${now.toLocaleString()} (${Date.now()})`);
+
       for (const [id, session] of Object.entries(resolvedSessions)) {
         const expires = session.expiresAt
           ? new Date(session.expiresAt).toLocaleString()
@@ -227,17 +231,16 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         throw new Error('Unauthorized');
       }
 
-      const retry = await fetch(res.url, {
+      return fetch(res.url, {
         method: res.type,
         headers: res.headers,
         credentials: 'include',
       });
-
-      return retry;
     },
     [refreshToken, signOut, resolvedSessions]
   );
 
+  // proactive auto-refresh
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
