@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const instanceId: string = req.body?.instanceId ?? 'default'; // default fallback
+  const instanceId: string = req.body?.instanceId ?? 'default'; // fallback
   const token: string | undefined = req.body?.idToken ?? req.body?.token;
 
   const providers = getAuthProviderInstances();
@@ -29,8 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Normalize the input for the provider
     req.body.token = token;
+
+    // 🔍 Log for timestamp debugging
+    const now = new Date();
+    console.log(`[signin] Server time: ${now.toISOString()} (${Date.now()})`);
 
     await provider.signIn(req, res);
 

@@ -25,7 +25,7 @@ export async function getAllSessions(
   console.log('[getAllSessions] Raw req.cookies:', req.cookies);
 
   for (const [instanceId, provider] of Object.entries(providers)) {
-    const cookieName = getSessionCookieName(provider.type, provider.id); // ✅ FIXED here
+    const cookieName = getSessionCookieName(provider.type, provider.id);
     const token = req.cookies?.[cookieName];
 
     if (!token) {
@@ -39,7 +39,6 @@ export async function getAllSessions(
       let session = await provider.verifyToken(req, res);
 
       if (session) {
-        // Inject provider info explicitly
         session.provider = provider.type;
         session.providerId = provider.id;
 
@@ -85,12 +84,24 @@ export async function refreshSessions(
         session.provider = provider.type;
         session.providerId = provider.id;
 
+        // Ensure expiresAt is set (fallback to JWT decode if needed)
+        if (!session.expiresAt && session.token) {
+          try {
+            const payload = JSON.parse(
+              Buffer.from(session.token.split('.')[1], 'base64').toString('utf8')
+            );
+            if (payload.exp) {
+              session.expiresAt = payload.exp * 1000; // seconds → ms
+            }
+          } catch (err) {
+            console.warn(`[refreshSessions] Failed to decode token expiry for ${provider.id}:`, err);
+          }
+        }
+
         if (provider.onVerifySuccess) {
           session = await provider.onVerifySuccess(session, context);
         }
-      }
 
-      if (session) {
         sessions[provider.id] = session;
       }
     } catch (err) {

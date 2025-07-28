@@ -85,7 +85,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return ids.some((id) => !!resolvedSessions[id]);
   }, [resolvedSessions, instanceIds]);
 
-  // 🔁 Log session expiry info
+  const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
+    if (!session?.expiresAt) return false;
+    return session.expiresAt - Date.now() < bufferMs;
+  };
+
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       for (const [id, session] of Object.entries(resolvedSessions)) {
@@ -100,7 +104,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     }
   }, [resolvedSessions]);
 
-  // 🔁 Log transition of isAuthenticated
   useEffect(() => {
     if (lastAuthState.current !== isAuthenticated) {
       console.warn(`[AuthProvider] 🔁 isAuthenticated changed → ${isAuthenticated}`);
@@ -224,7 +227,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         throw new Error('Unauthorized');
       }
 
-      // Retry the original request
       const retry = await fetch(res.url, {
         method: res.type,
         headers: res.headers,
@@ -236,7 +238,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // Auto-refresh polling
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
@@ -244,14 +245,19 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     }
 
     refreshTimer.current = setInterval(() => {
-      console.debug('[AuthProvider] Auto-refreshing sessions...');
-      refreshToken();
-    }, REFRESH_INTERVAL_MS);
+      console.debug('[AuthProvider] Checking for expiring sessions...');
+      Object.entries(resolvedSessions).forEach(([providerId, session]) => {
+        if (isExpiringSoon(session)) {
+          console.debug(`[AuthProvider] Refreshing '${providerId}' before expiry`);
+          refreshToken(providerId);
+        }
+      });
+    }, 60 * 1000);
 
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken]);
+  }, [isAuthenticated, refreshToken, resolvedSessions]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
