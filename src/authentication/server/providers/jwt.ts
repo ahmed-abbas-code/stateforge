@@ -133,12 +133,52 @@ export function createAuthProvider(
     async refreshToken(ctx: AuthContext): Promise<Session | null> {
       const cookieName = getSessionCookieName(type, id);
       const token = ctx.req.cookies?.[cookieName];
-      if (!token) return null;
 
-      const payload = decodeJwt(token);
-      if (!payload) return null;
+      // If we already have a valid token, decode it
+      if (token) {
+        const payload = decodeJwt(token);
+        if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
+          return payloadToSession(payload, token);
+        }
+      }
 
-      return payloadToSession(payload, token);
+      // Otherwise, attempt refresh with refresh token
+      const refreshToken = ctx.req.cookies?.[`sf.jwt.refresh.${id}-token`];
+      if (!refreshToken) {
+        console.warn(`[${type}:${id}] No refresh token found`);
+        return null;
+      }
+
+      try {
+        const res = await fetch(`${process.env.BASE_URL}/auth/jwt/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (!res.ok) {
+          console.warn(`[${type}:${id}] Refresh token request failed: ${res.status}`);
+          return null;
+        }
+
+        const { access_token } = await res.json();
+        const payload = decodeJwt(access_token);
+        if (!payload) return null;
+
+        const session = payloadToSession(payload, access_token);
+
+        // Update cookie with new access token
+        const cookieOpts = (provider.cookieOptions as any)(ctx);
+        ctx.res.setHeader(
+          'Set-Cookie',
+          serialize(getSessionCookieName(type, id), access_token, cookieOpts)
+        );
+
+        return session;
+      } catch (err) {
+        console.error(`[${type}:${id}] Refresh error:`, err);
+        return null;
+      }
     },
 
     async signOut(req: NextApiRequest, res: NextApiResponse) {
@@ -147,6 +187,15 @@ export function createAuthProvider(
       res.setHeader(
         'Set-Cookie',
         serialize(getSessionCookieName(type, id), '', {
+          ...cookieOpts,
+          maxAge: -1,
+        })
+      );
+
+      // also clear refresh token
+      res.setHeader(
+        'Set-Cookie',
+        serialize(`sf.jwt.refresh.${id}-token`, '', {
           ...cookieOpts,
           maxAge: -1,
         })
