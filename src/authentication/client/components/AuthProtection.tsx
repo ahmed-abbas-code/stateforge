@@ -4,7 +4,7 @@
 
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@authentication/client';
+import { useAuthContext } from '@authentication/client';
 
 interface Props {
   children: ReactNode;
@@ -25,14 +25,13 @@ export function AuthProtection({
   requireProvider,
   isAuthenticatedFn,
 }: Props) {
-  const { sessions, isLoading } = useAuth();
+  const { sessions, isLoading } = useAuthContext();
   const router = useRouter();
 
   const isAuthenticated = (() => {
     if (isAuthenticatedFn) return isAuthenticatedFn(sessions);
 
     if (requireProvider) {
-      // Match by provider type or instance ID
       return (
         sessions?.[requireProvider] !== undefined ||
         Object.values(sessions ?? {}).some(
@@ -45,10 +44,15 @@ export function AuthProtection({
   })();
 
   useEffect(() => {
+    if (!router.isReady) return;
+
     if (!isLoading && !isAuthenticated) {
+      console.log('[AuthProtection] Not authenticated. Redirecting to:', redirectTo);
       router.replace(redirectTo);
+    } else if (!isLoading) {
+      console.log('[AuthProtection] Authenticated. Access granted.');
     }
-  }, [isLoading, isAuthenticated, router, redirectTo]);
+  }, [router.isReady, isLoading, isAuthenticated, redirectTo, router]);
 
   if (isLoading || !isAuthenticated) {
     return <>{loadingFallback?.() ?? <p>Checking authentication…</p>}</>;
