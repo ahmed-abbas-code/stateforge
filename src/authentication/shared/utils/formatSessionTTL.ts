@@ -16,8 +16,7 @@ export function formatSessionTTL(expiresAt?: number): string {
   const parts: string[] = [];
   if (hours > 0) parts.push(`${hours}h`);
   if (minutes > 0) parts.push(`${minutes}m`);
-  if (seconds > 0 && hours === 0) parts.push(`${seconds}s`); 
-  // only show seconds if <1h
+  if (seconds > 0 && hours === 0) parts.push(`${seconds}s`);
 
   return parts.join(' ') + ` (until ${new Date(expiresAt).toLocaleString()})`;
 }
