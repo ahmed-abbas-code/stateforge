@@ -3,9 +3,10 @@
 import {
   AuthProviderInstance,
   AuthContext,
-  Session
+  Session,
 } from '@authentication/shared/types/AuthProvider';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 export interface ChainedProviderOptions {
   /**
@@ -28,7 +29,8 @@ export interface ChainedProviderOptions {
   onFinish?: (results: Record<string, Session>) => Promise<Session | null>;
 
   /**
-   * If true, return the full session map instead of just one session
+   * If true, return the full session map instead of just one session.
+   * ⚠️ Return type will be cast to `any` so caller must know what to expect.
    */
   returnAll?: boolean;
 }
@@ -53,13 +55,12 @@ export function createChainedProvider(
       }
     },
 
-    async verifyToken(req: NextApiRequest, res: NextApiResponse): Promise<Session | null> {
+    async verifyToken(
+      req: NextApiRequest,
+      res: NextApiResponse
+    ): Promise<Session | null> {
       const sessions: Record<string, Session> = {};
-      const context: AuthContext = {
-        req,
-        res,
-        existingSessions: sessions,
-      };
+      const context: AuthContext = { req, res, existingSessions: sessions };
 
       const chain = options?.onStart ? options.onStart(providers) : providers;
 
@@ -70,13 +71,18 @@ export function createChainedProvider(
         }
         if (session) {
           sessions[provider.id] = session;
+
+          if (process.env.NODE_ENV === 'development') {
+            console.debug(
+              `[Chain:${id}] Verified ${provider.id} → ${session.userId} (${formatSessionTTL(session.expiresAt)})`
+            );
+          }
         }
       }
 
       // ✅ If explicitly asked, return the whole sessions map
       if (options?.returnAll) {
-        // @ts-expect-error allow override: caller knows they asked for all sessions
-        return sessions;
+        return sessions as any; // caller must know they asked for all sessions
       }
 
       if (options?.onFinish) {
@@ -104,6 +110,6 @@ export function createChainedProvider(
       secure: isProduction,
       sameSite: isProduction ? 'strict' : 'lax',
       path: '/',
-    }
+    },
   };
 }

@@ -13,6 +13,7 @@ import type {
   AuthContext,
 } from '@authentication/shared/types/AuthProvider';
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
+import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 7; // 7 days
 
@@ -57,18 +58,12 @@ export function createAuthProvider(
     const rawId = payload.sub ?? payload.user_id;
     if (rawId === undefined || rawId === null) return null;
 
-    const userId = typeof rawId === 'number' ? String(rawId) : String(rawId);
+    const userId = String(rawId);
     const expiresAt = payload.exp ? payload.exp * 1000 : undefined;
 
     if (process.env.NODE_ENV !== 'production') {
-      const now = new Date();
-      const expText = expiresAt
-        ? `${new Date(expiresAt).toLocaleString()} (in ${Math.round(
-            (expiresAt - Date.now()) / 1000
-          )}s)`
-        : 'unknown';
       console.debug(
-        `[${type}:${id}] payloadToSession → userId: ${userId}, current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${expText}`
+        `[${type}:${id}] payloadToSession → userId: ${userId}, server time: ${new Date().toLocaleString()} | TTL: ${formatSessionTTL(expiresAt)}`
       );
     }
 

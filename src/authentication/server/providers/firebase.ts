@@ -12,6 +12,7 @@ import type {
   AuthContext,
 } from '@authentication/shared/types/AuthProvider';
 import { getSessionCookieName } from '@authentication/shared/utils/getSessionCookieName';
+import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 const SESSION_EXPIRES_IN_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 
@@ -62,7 +63,6 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           serialize(getSessionCookieName(type, id), sessionCookie, cookieOpts)
         );
 
-        // ✅ Ensure expiresAt is always in milliseconds
         const expiresAt = decoded.exp ? decoded.exp * 1000 : Date.now() + SESSION_EXPIRES_IN_MS;
 
         const session: Session = {
@@ -75,12 +75,11 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
           displayName: decoded.name,
         };
 
-        const now = new Date();
-        console.debug(
-          `[${id}] signIn → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
-            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
-          }`
-        );
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug(
+            `[${id}] signIn → server time: ${new Date().toLocaleString()} | TTL: ${formatSessionTTL(expiresAt)}`
+          );
+        }
 
         res.status(200).json({ user: session });
       } catch (err) {
@@ -96,17 +95,13 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
 
       try {
         const decoded = await adminAuth.verifySessionCookie(sessionCookie, CHECK_REVOKED);
-        if (!CHECK_REVOKED) {
-          console.debug(`[${id}] Session verified without revocation check (dev mode).`);
-        }
-
         const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
-        const now = new Date();
-        console.debug(
-          `[${id}] verifyToken → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
-            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
-          }`
-        );
+
+        if (!CHECK_REVOKED && process.env.NODE_ENV !== 'production') {
+          console.debug(
+            `[${id}] verifyToken → server time: ${new Date().toLocaleString()} | TTL: ${formatSessionTTL(expiresAt)}`
+          );
+        }
 
         return {
           userId: decoded.uid,
@@ -131,12 +126,12 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
       try {
         const decoded = await adminAuth.verifySessionCookie(sessionCookie, CHECK_REVOKED);
         const expiresAt = decoded.exp ? decoded.exp * 1000 : undefined;
-        const now = new Date();
-        console.debug(
-          `[${id}] refreshToken → current server time: ${now.toLocaleString()} (${Date.now()}), expiresAt: ${
-            expiresAt ? new Date(expiresAt).toLocaleString() : 'unknown'
-          }`
-        );
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug(
+            `[${id}] refreshToken → server time: ${new Date().toLocaleString()} | TTL: ${formatSessionTTL(expiresAt)}`
+          );
+        }
 
         return {
           userId: decoded.uid,
@@ -173,7 +168,6 @@ export function createAuthProvider(instanceId: string): AuthProviderInstance {
   return provider;
 }
 
-// ✅ Use full instance ID
 const firebaseProvider = createAuthProvider('firebase-default');
 
 export const signIn = firebaseProvider.signIn;

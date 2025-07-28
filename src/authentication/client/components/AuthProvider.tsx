@@ -15,6 +15,7 @@ import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 
 import type { Session, AuthClientContext } from '@authentication/shared';
+import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
@@ -89,20 +90,16 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return session.expiresAt - Date.now() < bufferMs;
   };
 
-  // 🔁 Log expiry info with current client time
+  // 🔁 Log expiry info in human-readable format
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       const now = new Date();
       console.log(`[AuthProvider] Current client time: ${now.toLocaleString()} (${Date.now()})`);
 
       for (const [id, session] of Object.entries(resolvedSessions)) {
-        const expires = session.expiresAt
-          ? new Date(session.expiresAt).toLocaleString()
-          : 'unknown';
-        const ttl = session.expiresAt
-          ? Math.round((session.expiresAt - Date.now()) / 1000)
-          : 'unknown';
-        console.log(`[AuthProvider] Session for ${id} expires at: ${expires} (in ${ttl}s)`);
+        console.log(
+          `[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`
+        );
       }
     }
   }, [resolvedSessions]);
@@ -239,7 +236,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // ✅ Dynamic proactive auto-refresh (only before expiry)
+  // ✅ Dynamic proactive auto-refresh (scheduled per expiry)
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -249,20 +246,17 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     const scheduleRefresh = () => {
       if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) return;
 
-      // Find the soonest expiry among all sessions
       const nextExpiry = Math.min(
-        ...Object.values(resolvedSessions)
-          .map((s) => s.expiresAt ?? Infinity)
+        ...Object.values(resolvedSessions).map((s) => s.expiresAt ?? Infinity)
       );
 
       if (!isFinite(nextExpiry)) return;
 
-      // Refresh 2 minutes before expiry
       const bufferMs = 2 * 60 * 1000;
       const delay = Math.max(nextExpiry - Date.now() - bufferMs, 0);
 
       console.debug(
-        `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s`
+        `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s (${formatSessionTTL(nextExpiry)})`
       );
 
       refreshTimer.current = setTimeout(async () => {
@@ -273,7 +267,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
             await refreshToken(providerId);
           }
         }
-        scheduleRefresh(); // reschedule for the next expiry
+        scheduleRefresh();
       }, delay);
     };
 
