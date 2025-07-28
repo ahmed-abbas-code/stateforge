@@ -28,7 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       expiresIn: EXPIRES_IN_MS,
     });
 
-    // ✅ Dynamically resolve the first available provider instance
     const providers = getAuthProviderInstances();
     const [instanceId, provider] = Object.entries(providers)[0] || [];
 
@@ -36,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Auth provider not found' });
     }
 
-    // ✅ Use provider.type and provider.id to construct cookie name
     const cookieName = getSessionCookieName(provider.type, provider.id);
 
     const context: AuthContext = { req, res, existingSessions: {} };
@@ -51,7 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     res.setHeader('Set-Cookie', serialize(cookieName, sessionCookie, options));
-    res.status(200).json({ ok: true });
+
+    const expiresAt = Date.now() + EXPIRES_IN_MS;
+
+    res.status(200).json({
+      ok: true,
+      expiresAt,
+    });
   } catch (err) {
     console.error('[SESSION ERROR]', err);
     res.status(401).json({ error: 'Failed to create session cookie' });

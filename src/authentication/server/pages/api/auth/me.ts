@@ -3,6 +3,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAllSessions, getPrimarySession } from '@authentication/server/utils/sessionUtils';
 import type { Session } from '@authentication/shared/types/AuthProvider';
+import { jwtDecode } from 'jwt-decode';
 
 type MeResponse = {
   user: Session | null;
@@ -10,6 +11,30 @@ type MeResponse = {
   isAuthenticated: boolean;
   error?: string | null;
 };
+
+type TokenPayload = {
+  exp?: number;
+};
+
+function ensureExpiresAt(sessions: Record<string, Session>): Record<string, Session> {
+  const enhanced: Record<string, Session> = {};
+
+  for (const [key, session] of Object.entries(sessions)) {
+    if (!session.expiresAt && session.token) {
+      try {
+        const payload = jwtDecode<TokenPayload>(session.token);
+        if (payload.exp) {
+          session.expiresAt = payload.exp * 1000;
+        }
+      } catch (err) {
+        console.warn(`[ME API] Failed to decode token for ${key}:`, err);
+      }
+    }
+    enhanced[key] = session;
+  }
+
+  return enhanced;
+}
 
 /**
  * GET /api/auth/me
@@ -20,7 +45,7 @@ export default async function handler(
   res: NextApiResponse<MeResponse>
 ): Promise<void> {
   try {
-    const sessions = await getAllSessions(req, res);
+    const sessions = ensureExpiresAt(await getAllSessions(req, res));
     const isAuthenticated = Object.keys(sessions).length > 0;
 
     if (!isAuthenticated) {

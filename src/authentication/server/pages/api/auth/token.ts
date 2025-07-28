@@ -11,7 +11,7 @@ import { getSessionCookieName } from '@authentication/shared/utils/getSessionCoo
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const providers = getAuthProviderInstances();
 
-  const instanceIdParam = req.query.instanceId || req.query.providerId; // support legacy param
+  const instanceIdParam = req.query.instanceId || req.query.providerId;
   const resolvedInstanceId =
     typeof instanceIdParam === 'string'
       ? instanceIdParam
@@ -46,7 +46,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
 
-    return res.status(200).json({ token });
+    return res.status(200).json({
+      token,
+      expiresAt: session.expiresAt ?? null,
+    });
   } catch (err) {
     console.error(`[token] Error verifying token for '${provider.id}':`, err);
     return res.status(401).json({ error: 'Token verification failed' });
