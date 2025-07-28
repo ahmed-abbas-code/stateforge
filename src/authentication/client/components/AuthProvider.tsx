@@ -198,7 +198,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   );
 
   const refreshToken = useCallback(
-    async (providerId?: string) => {
+    async () => {
       try {
         const res = await fetch(REFRESH_API_ENDPOINT, {
           method: 'POST',
@@ -216,8 +216,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         const { sessions } = await res.json();
         await mutate(SESSION_API_ENDPOINT, sessions, false);
 
-        const id = providerId ?? Object.keys(sessions)[0];
-        return sessions?.[id]?.token ?? null;
+        return sessions;
       } catch (err) {
         console.error('[refreshToken] Error:', err);
         return null;
@@ -250,10 +249,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         credentials: 'include',
       });
     },
-    [refreshToken, signOut, resolvedSessions, isClient]
+    [refreshToken, signOut, isClient]
   );
 
-  // Auto-refresh
+  // Auto-refresh (patched: one refresh per cycle)
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -279,10 +278,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       }
 
       refreshTimer.current = setTimeout(async () => {
-        for (const [providerId, session] of Object.entries(resolvedSessions)) {
-          if (isExpiringSoon(session)) {
-            await refreshToken(providerId);
-          }
+        // ✅ Only call refreshToken ONCE if any session is expiring
+        const hasExpiring = Object.values(resolvedSessions).some((s) => isExpiringSoon(s));
+        if (hasExpiring) {
+          await refreshToken();
         }
         scheduleRefresh();
       }, delay);
