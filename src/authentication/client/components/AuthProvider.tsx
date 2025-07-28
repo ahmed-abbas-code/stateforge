@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       revalidateOnMount: true,
       dedupingInterval: 5000,
       errorRetryCount: 0,
-      onErrorRetry: () => {},
+      onErrorRetry: () => { },
     }}
   >
     <InnerAuthProvider instanceIds={instanceIds}>
@@ -101,7 +101,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     ) {
       console.log('[AuthProvider] sessions (by instanceId):', resolvedSessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
-      console.log('[AuthProvider] error:', error);
+      if (error) {
+        console.error('[AuthProvider] error:', error);
+      }
     }
   }, [resolvedSessions, error, isAuthenticated]);
 
@@ -183,7 +185,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
-    setSessions: () => {}, // noop
+    setSessions: () => { }, // noop
     isAuthenticated,
     isLoading,
     error: error ?? null,
