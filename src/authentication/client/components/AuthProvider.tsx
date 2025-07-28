@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
-// ✅ Force ?all=true so we always fetch all sessions
+// ✅ Always fetch all sessions
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
@@ -71,7 +71,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
   const router = useRouter();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
-  const lastAuthState = useRef<boolean>(false);
+  const lastAuthState = useRef<boolean | undefined>(undefined);
 
   const {
     data: sessions,
@@ -81,10 +81,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const resolvedSessions = sessions ?? {};
 
-  const isAuthenticated = useMemo(() => {
+  // ✅ Return undefined while loading, instead of false
+  const isAuthenticated = useMemo((): boolean | undefined => {
     if (isLoading) {
-      console.log('[AuthProvider:Decision] Still loading → treating as unauthenticated.');
-      return false;
+      console.log('[AuthProvider:Decision] Still loading → deferring decision.');
+      return undefined;
     }
 
     if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) {
@@ -107,6 +108,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return session.expiresAt - Date.now() < bufferMs;
   };
 
+  // Debug logs
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
@@ -118,7 +120,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   useEffect(() => {
     if (lastAuthState.current !== isAuthenticated) {
-      console.warn(`[AuthProvider] 🔁 isAuthenticated changed → ${isAuthenticated}`);
+      console.warn(`[AuthProvider] 🔁 isAuthenticated changed →`, isAuthenticated);
       lastAuthState.current = isAuthenticated;
     }
   }, [isAuthenticated]);
@@ -242,6 +244,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
+  // Auto-refresh
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -284,7 +287,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
     setSessions: () => {},
-    isAuthenticated,
+    isAuthenticated: isAuthenticated ?? false, // consumer sees boolean fallback
     isLoading,
     error: error ?? null,
     signIn,

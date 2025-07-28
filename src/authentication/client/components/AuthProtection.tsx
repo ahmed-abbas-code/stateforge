@@ -29,7 +29,7 @@ export function AuthProtection({
   const router = useRouter();
 
   // ✅ Compute effective auth check
-  const effectiveIsAuthenticated = (() => {
+  const effectiveIsAuthenticated: boolean | undefined = (() => {
     if (isLoading) return undefined; // defer until loading completes
 
     if (isAuthenticatedFn) {
@@ -49,19 +49,21 @@ export function AuthProtection({
   })();
 
   useEffect(() => {
-    if (!router.isReady || isLoading || effectiveIsAuthenticated === undefined) return;
+    if (!router.isReady || effectiveIsAuthenticated === undefined) return;
 
     if (!effectiveIsAuthenticated) {
-      console.warn('[AuthProtection] Not authenticated. Redirecting to:', redirectTo);
+      console.warn('[AuthProtection] ❌ Not authenticated. Redirecting to:', redirectTo);
       router.replace(redirectTo);
     } else {
-      console.log('[AuthProtection] Authenticated. Access granted.');
+      console.log('[AuthProtection] ✅ Authenticated. Access granted.');
     }
-  }, [router.isReady, isLoading, effectiveIsAuthenticated, redirectTo, router]);
+  }, [router.isReady, effectiveIsAuthenticated, redirectTo, router]);
 
+  // ✅ Render fallback while we *don’t know yet*
   if (isLoading || effectiveIsAuthenticated === undefined) {
-    return <>{loadingFallback?.() ?? <p>Checking authentication…</p>}</>;
+    return <>{loadingFallback?.() ?? <p>⏳ Checking authentication…</p>}</>;
   }
 
+  // ✅ Render protected children once confirmed
   return <>{children}</>;
 }
