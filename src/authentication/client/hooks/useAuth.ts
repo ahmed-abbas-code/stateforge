@@ -29,7 +29,9 @@ const fetchSessions = async (): Promise<MeResponse> => {
 /**
  * Client-side hook to access authenticated sessions state
  */
-export const useAuth = (): Omit<
+export const useAuth = (
+  instanceIds?: string[]
+): Omit<
   AuthClientContext,
   'signIn' | 'signOut' | 'getToken'
 > & {
@@ -39,25 +41,40 @@ export const useAuth = (): Omit<
   revalidate: () => void;
   status: 'loading' | 'authenticated' | 'unauthenticated';
 } => {
-  const { data, error, isLoading, mutate } = useSWR<MeResponse>('/api/auth/me', fetchSessions, {
-    refreshInterval: 0,
-    revalidateOnFocus: false,
-    errorRetryCount: 0,
-    onErrorRetry: () => {},
-  });
+  const { data, error, isLoading, mutate } = useSWR<MeResponse>(
+    '/api/auth/me',
+    fetchSessions,
+    {
+      refreshInterval: 0,
+      revalidateOnFocus: false,
+      errorRetryCount: 0,
+      onErrorRetry: () => {},
+    }
+  );
 
-  // Fallback to empty sessions if none
   const sessions = data?.sessions ?? {};
-  // Derive user (for backward compat) as the first session's user, or null
+
+  // ✅ Derive user as the first session’s user or explicit user from API
   const user =
     data?.user ??
     Object.values(sessions)[0]?.user ??
     null;
 
-  const isAuthenticated = Object.keys(sessions).length > 0;
-  const status = isLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
+  // ✅ Updated authentication logic
+  const isAuthenticated = (() => {
+    if (!sessions || Object.keys(sessions).length === 0) return false;
 
-  // Supply a setter for sessions that always provides both keys for MeResponse
+    if (instanceIds && instanceIds.length > 0) {
+      return instanceIds.every((id) => !!sessions[id]);
+    }
+
+    return Object.keys(sessions).some((id) => !!sessions[id]);
+  })();
+
+  const status: 'loading' | 'authenticated' | 'unauthenticated' =
+    isLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
+
+  // ✅ Setter that preserves user but updates sessions
   const setSessions = (nextSessions: Record<string, Session>) => {
     mutate(
       { user: data?.user ?? null, sessions: nextSessions },

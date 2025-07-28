@@ -42,7 +42,7 @@ const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 interface AuthProviderProps {
   children: React.ReactNode;
   instanceIds?: string[];
-  initialSessions?: Record<string, Session>; // ✅ added support for SSR hydration
+  initialSessions?: Record<string, Session>; // ✅ SSR hydration
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
@@ -85,9 +85,15 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
 
   const resolvedSessions = sessions ?? {};
 
+  // ✅ Updated: require *all* instanceIds if provided, otherwise at least one
   const isAuthenticated = useMemo(() => {
-    const ids = instanceIds ?? Object.keys(resolvedSessions);
-    return ids.some((id) => !!resolvedSessions[id]);
+    if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) return false;
+
+    if (instanceIds && instanceIds.length > 0) {
+      return instanceIds.every((id) => !!resolvedSessions[id]);
+    }
+
+    return Object.keys(resolvedSessions).some((id) => !!resolvedSessions[id]);
   }, [resolvedSessions, instanceIds]);
 
   const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
@@ -100,11 +106,8 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       const now = new Date();
       console.log(`[AuthProvider] Current client time: ${now.toLocaleString()} (${Date.now()})`);
-
       for (const [id, session] of Object.entries(resolvedSessions)) {
-        console.log(
-          `[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`
-        );
+        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(session.expiresAt)}`);
       }
     }
   }, [resolvedSessions]);
@@ -140,10 +143,7 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
   );
 
   const signIn = useCallback(
-    async (
-      idToken?: string,
-      instanceId?: string
-    ): Promise<{ ok: boolean; error?: string }> => {
+    async (idToken?: string, instanceId?: string) => {
       if (!idToken) return { ok: false, error: 'Missing ID token' };
 
       try {
@@ -189,7 +189,7 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
   );
 
   const refreshToken = useCallback(
-    async (providerId?: string): Promise<string | null> => {
+    async (providerId?: string) => {
       try {
         const res = await fetch(REFRESH_API_ENDPOINT, {
           method: 'POST',
@@ -216,7 +216,7 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
   );
 
   const handleResponse = useCallback(
-    async (res: Response): Promise<Response> => {
+    async (res: Response) => {
       if (res.status !== 401) return res;
 
       console.warn('[handleResponse] Got 401. Attempting refresh...');
@@ -241,7 +241,7 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // ✅ Dynamic proactive auto-refresh (scheduled per expiry)
+  // ✅ Dynamic proactive auto-refresh
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -296,13 +296,10 @@ const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = 
     handleResponse,
     auth: undefined,
     handleRedirectCallback: undefined,
+    instanceIds, // ✅ expose instanceIds to consumers
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuthContext = (): AuthClientContext => {

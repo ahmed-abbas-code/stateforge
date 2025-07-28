@@ -26,8 +26,10 @@ export interface AuthClientContext {
   /**
    * Optional sign-in method (interactive or silent).
    */
-  signIn?: (idToken?: string, instanceId?: string) => Promise<{ ok: boolean; error?: string }>;
-
+  signIn?: (
+    idToken?: string,
+    instanceId?: string
+  ) => Promise<{ ok: boolean; error?: string }>;
 
   /**
    * Signs out of one or more provider instances.
@@ -52,9 +54,17 @@ export interface AuthClientContext {
   error?: Error | null;
 
   /**
-   * True if any valid session is present.
+   * True if all required sessions are present.
+   * - If `instanceIds` is provided, all listed IDs must have a valid session.
+   * - Otherwise, true if at least one valid session exists.
    */
   isAuthenticated: boolean;
+
+  /**
+   * The list of provider instance IDs this context cares about.
+   * - If omitted, context uses all available sessions.
+   */
+  instanceIds?: string[];
 
   /**
    * Optional handler for redirect-based auth flows (e.g., Auth0).
@@ -76,5 +86,5 @@ export interface AuthClientContext {
  * Extended API request that includes authenticated user context (SSR/server-side use).
  */
 export interface AuthApiRequest extends NextApiRequest {
-  user: unknown; // Consider replacing with `Session` or `AuthUserType` depending on your SSR model
+  user: unknown; // Consider replacing with `Session` or a typed AuthUser model
 }
