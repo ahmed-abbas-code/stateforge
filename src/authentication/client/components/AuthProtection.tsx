@@ -30,7 +30,7 @@ export function AuthProtection({
 
   // ✅ Compute effective auth check
   const effectiveIsAuthenticated = (() => {
-    if (isLoading) return undefined; // defer until loading finishes
+    if (isLoading) return undefined; // defer until loading completes
 
     if (isAuthenticatedFn) {
       return isAuthenticatedFn(sessions);
@@ -38,22 +38,21 @@ export function AuthProtection({
 
     if (requireProvider) {
       return (
-        sessions?.[requireProvider] !== undefined ||
+        !!sessions?.[requireProvider] ||
         Object.values(sessions ?? {}).some(
           (session: any) => session.provider === requireProvider
         )
       );
     }
 
-    // Fall back to context’s built‑in logic
     return isAuthenticated;
   })();
 
   useEffect(() => {
-    if (!router.isReady || effectiveIsAuthenticated === undefined) return;
+    if (!router.isReady || isLoading || effectiveIsAuthenticated === undefined) return;
 
     if (!effectiveIsAuthenticated) {
-      console.log('[AuthProtection] Not authenticated. Redirecting to:', redirectTo);
+      console.warn('[AuthProtection] Not authenticated. Redirecting to:', redirectTo);
       router.replace(redirectTo);
     } else {
       console.log('[AuthProtection] Authenticated. Access granted.');

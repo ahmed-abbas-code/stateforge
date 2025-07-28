@@ -17,7 +17,8 @@ import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
-const SESSION_API_ENDPOINT = '/api/auth/context';
+// ✅ Force ?all=true so we always fetch all sessions
+const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
@@ -82,32 +83,23 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const isAuthenticated = useMemo(() => {
     if (isLoading) {
-      console.debug('[AuthProvider:Decision] Still loading → treating as unauthenticated.');
+      console.log('[AuthProvider:Decision] Still loading → treating as unauthenticated.');
       return false;
     }
 
     if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) {
-      console.debug('[AuthProvider:Decision] No sessions found.');
       return false;
     }
 
     if (instanceIds && instanceIds.length > 0) {
-      const allPresent = instanceIds.every((id) => !!resolvedSessions[id]);
-      console.debug(
-        `[AuthProvider:Decision] Required instanceIds=${JSON.stringify(
-          instanceIds
-        )} → allPresent=${allPresent}`
-      );
-      if (!allPresent) {
-        const missing = instanceIds.filter((id) => !resolvedSessions[id]);
+      const missing = instanceIds.filter((id) => !resolvedSessions[id]);
+      if (missing.length > 0) {
         console.warn('[AuthProvider:Decision] Missing sessions for:', missing);
+        return false;
       }
-      return allPresent;
     }
 
-    const anyPresent = Object.keys(resolvedSessions).length > 0;
-    console.debug(`[AuthProvider:Decision] No instanceIds filter → anyPresent=${anyPresent}`);
-    return anyPresent;
+    return true;
   }, [resolvedSessions, instanceIds, isLoading]);
 
   const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
@@ -115,7 +107,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return session.expiresAt - Date.now() < bufferMs;
   };
 
-  // Dev logs: print sessions and TTLs
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
@@ -251,7 +242,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // Auto-refresh loop
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
