@@ -18,7 +18,6 @@ import type { Session, AuthClientContext } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
-const REFRESH_INTERVAL_MS = 15 * 60 * 1000; // fallback: 15 minutes
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -240,25 +239,48 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // proactive auto-refresh
+  // ✅ Dynamic proactive auto-refresh (only before expiry)
   useEffect(() => {
     if (!isAuthenticated) {
-      if (refreshTimer.current) clearInterval(refreshTimer.current);
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
       return;
     }
 
-    refreshTimer.current = setInterval(() => {
-      console.debug('[AuthProvider] Checking for expiring sessions...');
-      Object.entries(resolvedSessions).forEach(([providerId, session]) => {
-        if (isExpiringSoon(session)) {
-          console.debug(`[AuthProvider] Refreshing '${providerId}' before expiry`);
-          refreshToken(providerId);
+    const scheduleRefresh = () => {
+      if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) return;
+
+      // Find the soonest expiry among all sessions
+      const nextExpiry = Math.min(
+        ...Object.values(resolvedSessions)
+          .map((s) => s.expiresAt ?? Infinity)
+      );
+
+      if (!isFinite(nextExpiry)) return;
+
+      // Refresh 2 minutes before expiry
+      const bufferMs = 2 * 60 * 1000;
+      const delay = Math.max(nextExpiry - Date.now() - bufferMs, 0);
+
+      console.debug(
+        `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s`
+      );
+
+      refreshTimer.current = setTimeout(async () => {
+        console.debug('[AuthProvider] Triggering scheduled refresh...');
+        for (const [providerId, session] of Object.entries(resolvedSessions)) {
+          if (isExpiringSoon(session)) {
+            console.debug(`[AuthProvider] Refreshing '${providerId}' before expiry`);
+            await refreshToken(providerId);
+          }
         }
-      });
-    }, 60 * 1000);
+        scheduleRefresh(); // reschedule for the next expiry
+      }, delay);
+    };
+
+    scheduleRefresh();
 
     return () => {
-      if (refreshTimer.current) clearInterval(refreshTimer.current);
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
     };
   }, [isAuthenticated, refreshToken, resolvedSessions]);
 
