@@ -42,11 +42,13 @@ const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 interface AuthProviderProps {
   children: React.ReactNode;
   instanceIds?: string[];
+  initialSessions?: Record<string, Session>; // ✅ added support for SSR hydration
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
   instanceIds,
+  initialSessions,
 }) => (
   <SWRConfig
     value={{
@@ -56,6 +58,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       dedupingInterval: 5000,
       errorRetryCount: 0,
       onErrorRetry: () => {},
+      fallback: {
+        [SESSION_API_ENDPOINT]: initialSessions ?? {}, // ✅ hydrate SWR with SSR data
+      },
     }}
   >
     <InnerAuthProvider instanceIds={instanceIds}>
@@ -64,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({
+const InnerAuthProvider: React.FC<Omit<AuthProviderProps, 'initialSessions'>> = ({
   children,
   instanceIds,
 }) => {
