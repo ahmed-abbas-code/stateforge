@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
 } from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
@@ -16,10 +17,8 @@ import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context';
-
-/* ------------------------------------------------------------------ */
-/* Helpers                                                            */
-/* ------------------------------------------------------------------ */
+const REFRESH_API_ENDPOINT = '/api/auth/refresh';
+const REFRESH_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -38,18 +37,12 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   return structuredClone(data.sessions ?? {});
 };
 
-/* ------------------------------------------------------------------ */
-
 const AuthContext = createContext<AuthClientContext | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
   instanceIds?: string[];
 }
-
-/* ------------------------------------------------------------------ */
-/* Public wrapper                                                     */
-/* ------------------------------------------------------------------ */
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
@@ -62,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       revalidateOnMount: true,
       dedupingInterval: 5000,
       errorRetryCount: 0,
-      onErrorRetry: () => { },
+      onErrorRetry: () => {},
     }}
   >
     <InnerAuthProvider instanceIds={instanceIds}>
@@ -71,15 +64,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   </SWRConfig>
 );
 
-/* ------------------------------------------------------------------ */
-/* Inner provider                                                     */
-/* ------------------------------------------------------------------ */
-
 const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   children,
   instanceIds,
 }) => {
   const router = useRouter();
+  const refreshTimer = useRef<NodeJS.Timeout | null>(null);
+  const lastAuthState = useRef<boolean>(false);
 
   const {
     data: sessions,
@@ -94,16 +85,34 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return ids.some((id) => !!resolvedSessions[id]);
   }, [resolvedSessions, instanceIds]);
 
+  // 🔁 Log session expiry info
   useEffect(() => {
-    if (
-      process.env.NEXT_PUBLIC_ENV === 'development' &&
-      typeof window !== 'undefined'
-    ) {
+    if (process.env.NEXT_PUBLIC_ENV === 'development') {
+      for (const [id, session] of Object.entries(resolvedSessions)) {
+        const expires = session.expiresAt
+          ? new Date(session.expiresAt).toLocaleString()
+          : 'unknown';
+        const ttl = session.expiresAt
+          ? Math.round((session.expiresAt - Date.now()) / 1000)
+          : 'unknown';
+        console.log(`[AuthProvider] Session for ${id} expires at: ${expires} (in ${ttl}s)`);
+      }
+    }
+  }, [resolvedSessions]);
+
+  // 🔁 Log transition of isAuthenticated
+  useEffect(() => {
+    if (lastAuthState.current !== isAuthenticated) {
+      console.warn(`[AuthProvider] 🔁 isAuthenticated changed → ${isAuthenticated}`);
+      lastAuthState.current = isAuthenticated;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log('[AuthProvider] sessions (by instanceId):', resolvedSessions);
       console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
-      if (error) {
-        console.error('[AuthProvider] error:', error);
-      }
+      if (error) console.error('[AuthProvider] error:', error);
     }
   }, [resolvedSessions, error, isAuthenticated]);
 
@@ -171,28 +180,89 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [router]
   );
 
+  const refreshToken = useCallback(
+    async (providerId?: string): Promise<string | null> => {
+      try {
+        const res = await fetch(REFRESH_API_ENDPOINT, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+          console.warn('[refreshToken] Refresh failed:', res.status);
+          return null;
+        }
+
+        const { sessions } = await res.json();
+        await mutate(SESSION_API_ENDPOINT, sessions, false);
+
+        const id = providerId ?? Object.keys(sessions)[0];
+        return sessions?.[id]?.token ?? null;
+      } catch (err) {
+        console.error('[refreshToken] Error:', err);
+        return null;
+      }
+    },
+    []
+  );
+
   const handleResponse = useCallback(
     async (res: Response): Promise<Response> => {
-      if (res.status === 401) {
+      if (res.status !== 401) return res;
+
+      console.warn('[handleResponse] Got 401. Attempting refresh...');
+      const refreshed = await refreshToken();
+
+      if (!refreshed) {
+        const activeIds = Object.keys(resolvedSessions);
+        console.warn(
+          `[handleResponse] Refresh failed — no sessions returned. Previous active providers: [${activeIds.join(', ')}]`
+        );
         toast.info('Session expired. Please sign in again.');
         await signOut();
         throw new Error('Unauthorized');
       }
-      return res;
+
+      // Retry the original request
+      const retry = await fetch(res.url, {
+        method: res.type,
+        headers: res.headers,
+        credentials: 'include',
+      });
+
+      return retry;
     },
-    [signOut]
+    [refreshToken, signOut, resolvedSessions]
   );
+
+  // Auto-refresh polling
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (refreshTimer.current) clearInterval(refreshTimer.current);
+      return;
+    }
+
+    refreshTimer.current = setInterval(() => {
+      console.debug('[AuthProvider] Auto-refreshing sessions...');
+      refreshToken();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => {
+      if (refreshTimer.current) clearInterval(refreshTimer.current);
+    };
+  }, [isAuthenticated, refreshToken]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
-    setSessions: () => { }, // noop
+    setSessions: () => {},
     isAuthenticated,
     isLoading,
     error: error ?? null,
     signIn,
     signOut,
     getToken,
-    refreshToken: undefined,
+    refreshToken,
     handleResponse,
     auth: undefined,
     handleRedirectCallback: undefined,
@@ -204,10 +274,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     </AuthContext.Provider>
   );
 };
-
-/* ------------------------------------------------------------------ */
-/* Hook export                                                        */
-/* ------------------------------------------------------------------ */
 
 export const useAuthContext = (): AuthClientContext => {
   const ctx = useContext(AuthContext);
