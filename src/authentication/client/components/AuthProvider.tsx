@@ -80,19 +80,34 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const resolvedSessions = sessions ?? {};
 
-  // ✅ FIX: don’t mark unauthenticated while still loading
   const isAuthenticated = useMemo(() => {
-    if (isLoading) return false; // defer judgment until SWR completes
+    if (isLoading) {
+      console.debug('[AuthProvider:Decision] Still loading → treating as unauthenticated.');
+      return false;
+    }
 
     if (!resolvedSessions || Object.keys(resolvedSessions).length === 0) {
+      console.debug('[AuthProvider:Decision] No sessions found.');
       return false;
     }
 
     if (instanceIds && instanceIds.length > 0) {
-      return instanceIds.every((id) => !!resolvedSessions[id]);
+      const allPresent = instanceIds.every((id) => !!resolvedSessions[id]);
+      console.debug(
+        `[AuthProvider:Decision] Required instanceIds=${JSON.stringify(
+          instanceIds
+        )} → allPresent=${allPresent}`
+      );
+      if (!allPresent) {
+        const missing = instanceIds.filter((id) => !resolvedSessions[id]);
+        console.warn('[AuthProvider:Decision] Missing sessions for:', missing);
+      }
+      return allPresent;
     }
 
-    return Object.keys(resolvedSessions).some((id) => !!resolvedSessions[id]);
+    const anyPresent = Object.keys(resolvedSessions).length > 0;
+    console.debug(`[AuthProvider:Decision] No instanceIds filter → anyPresent=${anyPresent}`);
+    return anyPresent;
   }, [resolvedSessions, instanceIds, isLoading]);
 
   const isExpiringSoon = (session?: Session, bufferMs = 2 * 60 * 1000) => {
@@ -100,7 +115,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return session.expiresAt - Date.now() < bufferMs;
   };
 
-  // 🔍 Dev logs
+  // Dev logs: print sessions and TTLs
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
       console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
@@ -236,7 +251,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, resolvedSessions]
   );
 
-  // 🔁 Auto-refresh tokens
+  // Auto-refresh loop
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
