@@ -22,7 +22,7 @@ import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL'
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
-const FIREBASE_DEBOUNCE_MS = 30 * 1000; // 30s cooldown between refresh calls
+const FIREBASE_DEBOUNCE_MS = 30 * 1000; // 30s cooldown for auto refresh
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -127,14 +127,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     }
   }, [isAuthenticated, isClient]);
 
-  useEffect(() => {
-    if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
-      console.log('[AuthProvider] sessions:', resolvedSessions);
-      console.log('[AuthProvider] isAuthenticated:', isAuthenticated);
-      if (error) console.error('[AuthProvider] error:', error);
-    }
-  }, [resolvedSessions, error, isAuthenticated, isClient]);
-
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
       const id = instanceId ?? Object.keys(resolvedSessions)[0];
@@ -230,9 +222,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       lastFirebaseRefresh.current = now;
 
       try {
-        await user.getIdToken(true); // ensures Firebase token is fresh
-        console.debug('[AuthProvider] 🔄 Firebase ID token refreshed. Calling backend refresh...');
-        await refreshToken(); // backend uses idToken if provided
+        await user.getIdToken(true);
+        console.debug('[AuthProvider] 🔄 Firebase ID token refreshed → calling backend refresh');
+        await refreshToken();
       } catch (err) {
         console.error('[AuthProvider] Firebase auto re-signin failed:', err);
         await signOut();
@@ -275,7 +267,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
     error: error ?? null,
-    signIn: async () => ({ ok: false, error: 'Disabled in client' }), // handled via Firebase + refresh
+    signIn: async () => ({ ok: false, error: 'Disabled in client' }), // handled via Firebase + server refresh
     signOut,
     getToken,
     refreshToken,
