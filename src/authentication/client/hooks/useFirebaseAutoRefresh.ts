@@ -13,6 +13,8 @@ export function useFirebaseAutoRefresh() {
   const lastRefresh = useRef(0);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return; 
+
     const auth = getAuth();
     if (!auth) return;
 
