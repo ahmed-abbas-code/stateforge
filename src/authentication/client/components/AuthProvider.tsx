@@ -17,6 +17,9 @@ import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
+// 🔹 Firebase client import
+import { getAuth, signOut as firebaseSignOut } from 'firebase/auth';
+
 /* ------------------------------------------------------------------ */
 /* Constants & helpers                                                */
 /* ------------------------------------------------------------------ */
@@ -57,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, instanceId
       revalidateOnMount: true,
       dedupingInterval: 5_000,
       errorRetryCount: 0,
-      onErrorRetry: () => { },
+      onErrorRetry: () => {},
     }}
   >
     <InnerAuthProvider instanceIds={instanceIds}>{children}</InnerAuthProvider>
@@ -134,14 +137,32 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   const signOut = useCallback(
     async (providerIds?: string[]) => {
       try {
+        // 🔹 Clear backend cookies
         await fetch('/api/auth/signout', {
           method: 'POST',
           credentials: 'include',
           body: providerIds ? JSON.stringify({ providerIds }) : undefined,
           headers: { 'Content-Type': 'application/json' },
         });
-      } catch {/* ignore network issues */ }
+      } catch {
+        /* ignore network issues */
+      }
+
+      try {
+        // 🔹 Explicit Firebase client signout
+        const auth = getAuth();
+        if (auth.currentUser) {
+          await firebaseSignOut(auth);
+          console.log('[AuthProvider] Firebase client signed out.');
+        }
+      } catch (err) {
+        console.warn('[AuthProvider] Firebase signOut failed:', err);
+      }
+
+      // 🔹 Clear SWR state
       mutate(SESSION_API_ENDPOINT, {}, false);
+
+      // 🔹 Navigate away
       router.push('/');
     },
     [router],
@@ -192,7 +213,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
-      return;                         // <-- ok: returns undefined
+      return;
     }
 
     if (refreshTimer.current) clearInterval(refreshTimer.current);
@@ -201,7 +222,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       refreshToken(undefined, { isIdToken: false });
     }, 60_000);
 
-    // ✅ CLEAN-UP now returns void, never null
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
@@ -232,15 +252,14 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
 /* ------------------------------------------------------------------ */
 export const useAuthContext = (): AuthClientContext => {
   if (typeof window === 'undefined') {
-    // minimal no-op context for SSG / prerender builds
     return {
       sessions: {},
-      setSessions: () => { },
+      setSessions: () => {},
       isAuthenticated: false,
       isLoading: true,
       error: null,
       signIn: async () => ({ ok: false, error: 'SSR fallback' }),
-      signOut: async () => { },
+      signOut: async () => {},
       getToken: async () => null,
       refreshToken: async () => null,
       handleResponse: async (r) => r,
