@@ -106,7 +106,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     return true;
   }, [resolvedSessions, instanceIds, isLoading, isClient]);
 
-  // 🔹 Reduced buffer from 2 minutes → 30 seconds
   const isExpiringSoon = (session?: Session, bufferMs = 30 * 1000) => {
     if (!session?.expiresAt) return false;
     return session.expiresAt - Date.now() < bufferMs;
@@ -216,6 +215,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       const { sessions } = await res.json();
       await mutate(SESSION_API_ENDPOINT, sessions, false);
 
+      // ✅ Explicit log for when a refresh actually succeeds
+      if (isClient) {
+        console.log('[AuthProvider] ✅ Refresh executed. Sessions updated:', sessions);
+      }
+
       return sessions;
     } catch (err) {
       console.error('[refreshToken] Error:', err);
@@ -266,9 +270,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       );
       if (hasExpiring) {
         if (isClient) {
-          console.debug('[AuthProvider] Triggering refresh due to near expiry');
+          console.debug('[AuthProvider] 🔔 Expiring soon → triggering refresh');
         }
         await refreshToken();
+      } else if (isClient) {
+        // ✅ Safe check log: shows the interval is alive but no refresh needed
+        console.debug('[AuthProvider] ⏳ Checked sessions, none expiring yet');
       }
     }, 30 * 1000); // check every 30 seconds
 
