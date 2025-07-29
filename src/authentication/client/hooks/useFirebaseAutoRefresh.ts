@@ -9,11 +9,22 @@ import { useAuthContext } from '../components/AuthProvider';
 const FIREBASE_DEBOUNCE_MS = 30 * 1000;
 
 export function useFirebaseAutoRefresh() {
-  const { refreshToken, signOut } = useAuthContext();
+  let refreshToken: ((token?: string, opts?: { isIdToken?: boolean }) => Promise<string | null>) | null = null;
+  let signOut: (() => Promise<void>) | null = null;
+
+  try {
+    const ctx = useAuthContext();
+    refreshToken = ctx.refreshToken;
+    signOut = ctx.signOut;
+  } catch {
+    console.warn('[useFirebaseAutoRefresh] No AuthProvider found → skipping auto-refresh.');
+    return; // exit early if not inside an AuthProvider
+  }
+
   const lastRefresh = useRef(0);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return; 
+    if (typeof window === 'undefined' || !refreshToken || !signOut) return;
 
     const auth = getAuth();
     if (!auth) return;
