@@ -14,11 +14,15 @@ import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 
+// Firebase client SDK
+import { getAuth, onIdTokenChanged } from 'firebase/auth';
+
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
+const FIREBASE_DEBOUNCE_MS = 30 * 1000; // 30s cooldown between refresh calls
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -58,26 +62,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       onErrorRetry: () => {},
     }}
   >
-    <InnerAuthProvider instanceIds={instanceIds}>
-      {children}
-    </InnerAuthProvider>
+    <InnerAuthProvider instanceIds={instanceIds}>{children}</InnerAuthProvider>
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({
-  children,
-  instanceIds,
-}) => {
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds }) => {
   const router = useRouter();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAuthState = useRef<boolean | undefined>(undefined);
+  const lastFirebaseRefresh = useRef<number>(0);
   const isClient = typeof window !== 'undefined';
 
-  const {
-    data: sessions,
-    error,
-    isLoading,
-  } = useSWR<Record<string, Session>>(SESSION_API_ENDPOINT, fetchSessions);
+  const { data: sessions, error, isLoading } = useSWR<Record<string, Session>>(
+    SESSION_API_ENDPOINT,
+    fetchSessions
+  );
 
   const resolvedSessions = sessions ?? {};
 
@@ -151,33 +150,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [resolvedSessions]
   );
 
-  const signIn = useCallback(
-    async (idToken?: string, instanceId?: string) => {
-      if (!idToken) return { ok: false, error: 'Missing ID token' };
-
-      try {
-        const res = await fetch('/api/auth/signin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ idToken, instanceId }),
-        });
-
-        const body = await res.json();
-        if (!res.ok || !body.ok) {
-          return { ok: false, error: body?.error || 'Sign-in failed' };
-        }
-
-        await mutate(SESSION_API_ENDPOINT, undefined, { revalidate: true });
-        return { ok: true };
-      } catch (err) {
-        console.error('[signIn] failed:', err);
-        return { ok: false, error: 'Request failed' };
-      }
-    },
-    []
-  );
-
   const signOut = useCallback(
     async (providerIds?: string[]) => {
       try {
@@ -199,62 +171,78 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   const refreshToken = useCallback(async () => {
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const idToken = user ? await user.getIdToken(true) : null;
+
       const res = await fetch(REFRESH_API_ENDPOINT, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        body: idToken ? JSON.stringify({ idToken }) : undefined,
       });
 
       if (!res.ok) {
-        if (isClient) {
-          console.warn('[refreshToken] Refresh failed:', res.status);
-        }
+        console.warn('[refreshToken] Refresh failed:', res.status);
         return null;
       }
 
       const { sessions } = await res.json();
       await mutate(SESSION_API_ENDPOINT, sessions, false);
 
-      // ✅ Explicit log for when a refresh actually succeeds
-      if (isClient) {
-        console.log('[AuthProvider] ✅ Refresh executed. Sessions updated:', sessions);
-      }
-
+      console.log('[AuthProvider] ✅ Refresh executed. Sessions updated:', sessions);
       return sessions;
     } catch (err) {
       console.error('[refreshToken] Error:', err);
       return null;
     }
-  }, [isClient]);
+  }, []);
 
   const handleResponse = useCallback(
     async (res: Response) => {
       if (res.status !== 401) return res;
-
-      if (isClient) {
-        console.warn('[handleResponse] Got 401. Attempting refresh...');
-      }
+      console.warn('[handleResponse] Got 401. Attempting refresh...');
       const refreshed = await refreshToken();
-
       if (!refreshed) {
-        if (isClient) {
-          console.warn('[handleResponse] Refresh failed — signing out.');
-          toast.info('Session expired. Please sign in again.');
-        }
+        console.warn('[handleResponse] Refresh failed — signing out.');
+        toast.info('Session expired. Please sign in again.');
         await signOut();
         throw new Error('Unauthorized');
       }
-
-      return fetch(res.url, {
-        method: res.type,
-        headers: res.headers,
-        credentials: 'include',
-      });
+      return fetch(res.url, { method: res.type, headers: res.headers, credentials: 'include' });
     },
-    [refreshToken, signOut, isClient]
+    [refreshToken, signOut]
   );
 
-  // 🔹 Auto-refresh logic using a stable interval
+  // 🔹 Firebase Auto Re-SignIn with debounce
+  useEffect(() => {
+    if (!isClient) return;
+    const auth = getAuth();
+
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      if (!user) return;
+
+      const now = Date.now();
+      if (now - lastFirebaseRefresh.current < FIREBASE_DEBOUNCE_MS) {
+        console.debug('[AuthProvider] ⏳ Skipping Firebase refresh (debounced)');
+        return;
+      }
+      lastFirebaseRefresh.current = now;
+
+      try {
+        await user.getIdToken(true); // ensures Firebase token is fresh
+        console.debug('[AuthProvider] 🔄 Firebase ID token refreshed. Calling backend refresh...');
+        await refreshToken(); // backend uses idToken if provided
+      } catch (err) {
+        console.error('[AuthProvider] Firebase auto re-signin failed:', err);
+        await signOut();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isClient, refreshToken, signOut]);
+
+  // 🔹 JWT auto-refresh with timer
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
@@ -263,26 +251,23 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
     if (refreshTimer.current) clearInterval(refreshTimer.current);
 
-    const bufferMs = 30 * 1000; // 30s buffer
+    const bufferMs = 30 * 1000;
     refreshTimer.current = setInterval(async () => {
       const hasExpiring = Object.values(resolvedSessions).some((s) =>
         isExpiringSoon(s, bufferMs)
       );
       if (hasExpiring) {
-        if (isClient) {
-          console.debug('[AuthProvider] 🔔 Expiring soon → triggering refresh');
-        }
+        console.debug('[AuthProvider] 🔔 Expiring soon → triggering refresh');
         await refreshToken();
-      } else if (isClient) {
-        // ✅ Safe check log: shows the interval is alive but no refresh needed
+      } else {
         console.debug('[AuthProvider] ⏳ Checked sessions, none expiring yet');
       }
-    }, 30 * 1000); // check every 30 seconds
+    }, 30 * 1000);
 
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken, isClient, resolvedSessions]);
+  }, [isAuthenticated, refreshToken, resolvedSessions]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
@@ -290,7 +275,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
     error: error ?? null,
-    signIn,
+    signIn: async () => ({ ok: false, error: 'Disabled in client' }), // handled via Firebase + refresh
     signOut,
     getToken,
     refreshToken,
@@ -300,9 +285,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     instanceIds,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuthContext = (): AuthClientContext => {
