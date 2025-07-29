@@ -252,7 +252,26 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   );
 };
 
+// ✅ Safe SSR fallback for build-time
 export const useAuthContext = (): AuthClientContext => {
+  if (typeof window === 'undefined') {
+    return {
+      sessions: {},
+      setSessions: () => {},
+      isAuthenticated: false,
+      isLoading: true,
+      error: null,
+      signIn: async () => ({ ok: false, error: 'SSR fallback' }),
+      signOut: async () => {},
+      getToken: async () => null,
+      refreshToken: async () => null,
+      handleResponse: async (res) => res,
+      auth: undefined,
+      handleRedirectCallback: undefined,
+      instanceIds: [],
+    };
+  }
+
   const ctx = useContext(AuthContext);
   if (!ctx) {
     throw new Error('useAuthContext must be used within an AuthProvider');

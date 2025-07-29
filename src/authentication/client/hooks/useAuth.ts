@@ -1,5 +1,7 @@
 // src/authentication/client/hooks/useAuth.ts
 
+'use client';
+
 import useSWR from 'swr';
 import { useAuthContext } from '../components/AuthProvider';
 import type { AuthClientContext, AuthUserType, Session } from '@authentication/shared';
@@ -9,6 +11,7 @@ type MeResponse = {
   sessions: Record<string, Session> | null;
 };
 
+// SWR fetcher for /api/auth/me
 const fetchSessions = async (): Promise<MeResponse> => {
   const res = await fetch('/api/auth/me', {
     method: 'GET',
@@ -28,19 +31,22 @@ const fetchSessions = async (): Promise<MeResponse> => {
 
 export const useAuth = (
   instanceIds?: string[]
-): Omit<
-  AuthClientContext,
-  'signIn' | 'signOut' | 'getToken'
-> & {
+): Omit<AuthClientContext, 'signIn' | 'signOut' | 'getToken'> & {
   user: AuthUserType | null;
   sessions: Record<string, Session>;
   setSessions: (sessions: Record<string, Session>) => void;
   revalidate: () => void;
   status: 'loading' | 'authenticated' | 'unauthenticated';
 } => {
-  const { refreshToken } = useAuthContext(); // ✅ borrow from context
+  const isClient = typeof window !== 'undefined';
+
+  // ✅ Safe fallback when running in SSR
+  const authCtx = isClient ? useAuthContext() : {
+    refreshToken: async () => null,
+  } as Pick<AuthClientContext, 'refreshToken'>;
+
   const { data, error, isLoading, mutate } = useSWR<MeResponse>(
-    '/api/auth/me',
+    isClient ? '/api/auth/me' : null, // ✅ don’t fetch on server
     fetchSessions,
     {
       refreshInterval: 0,
@@ -62,7 +68,13 @@ export const useAuth = (
   })();
 
   const status: 'loading' | 'authenticated' | 'unauthenticated' =
-    isLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
+    !isClient
+      ? 'loading'
+      : isLoading
+      ? 'loading'
+      : isAuthenticated
+      ? 'authenticated'
+      : 'unauthenticated';
 
   const setSessions = (nextSessions: Record<string, Session>) => {
     mutate({ user: data?.user ?? null, sessions: nextSessions }, false);
@@ -72,11 +84,11 @@ export const useAuth = (
     user,
     sessions,
     isAuthenticated,
-    isLoading,
+    isLoading: !isClient || isLoading,
     error: error ?? null,
     status,
     setSessions,
     revalidate: () => mutate(),
-    refreshToken, 
+    refreshToken: authCtx.refreshToken,
   };
 };
