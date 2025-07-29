@@ -198,33 +198,30 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [router]
   );
 
-  const refreshToken = useCallback(
-    async () => {
-      try {
-        const res = await fetch(REFRESH_API_ENDPOINT, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
+  const refreshToken = useCallback(async () => {
+    try {
+      const res = await fetch(REFRESH_API_ENDPOINT, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-        if (!res.ok) {
-          if (isClient) {
-            console.warn('[refreshToken] Refresh failed:', res.status);
-          }
-          return null;
+      if (!res.ok) {
+        if (isClient) {
+          console.warn('[refreshToken] Refresh failed:', res.status);
         }
-
-        const { sessions } = await res.json();
-        await mutate(SESSION_API_ENDPOINT, sessions, false);
-
-        return sessions;
-      } catch (err) {
-        console.error('[refreshToken] Error:', err);
         return null;
       }
-    },
-    [isClient]
-  );
+
+      const { sessions } = await res.json();
+      await mutate(SESSION_API_ENDPOINT, sessions, false);
+
+      return sessions;
+    } catch (err) {
+      console.error('[refreshToken] Error:', err);
+      return null;
+    }
+  }, [isClient]);
 
   const handleResponse = useCallback(
     async (res: Response) => {
@@ -253,48 +250,32 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut, isClient]
   );
 
-  // 🔹 Auto-refresh logic (one refresh per cycle)
+  // 🔹 Auto-refresh logic using a stable interval
   useEffect(() => {
     if (!isAuthenticated) {
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      if (refreshTimer.current) clearInterval(refreshTimer.current);
       return;
     }
 
-    const scheduleRefresh = () => {
-      if (Object.keys(resolvedSessions).length === 0) return;
+    if (refreshTimer.current) clearInterval(refreshTimer.current);
 
-      const nextExpiry = Math.min(
-        ...Object.values(resolvedSessions).map((s) => s.expiresAt ?? Infinity)
+    const bufferMs = 30 * 1000; // 30s buffer
+    refreshTimer.current = setInterval(async () => {
+      const hasExpiring = Object.values(resolvedSessions).some((s) =>
+        isExpiringSoon(s, bufferMs)
       );
-
-      if (!isFinite(nextExpiry)) return;
-
-      const bufferMs = 30 * 1000; // 30s buffer
-      const delay = Math.max(nextExpiry - Date.now() - bufferMs, 0);
-
-      if (isClient) {
-        console.debug(
-          `[AuthProvider] Next refresh scheduled in ${Math.round(delay / 1000)}s (${formatSessionTTL(nextExpiry)})`
-        );
-      }
-
-      refreshTimer.current = setTimeout(async () => {
-        const hasExpiring = Object.values(resolvedSessions).some((s) =>
-          isExpiringSoon(s, bufferMs)
-        );
-        if (hasExpiring) {
-          await refreshToken();
+      if (hasExpiring) {
+        if (isClient) {
+          console.debug('[AuthProvider] Triggering refresh due to near expiry');
         }
-        scheduleRefresh();
-      }, delay);
-    };
-
-    scheduleRefresh();
+        await refreshToken();
+      }
+    }, 30 * 1000); // check every 30 seconds
 
     return () => {
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken, resolvedSessions, isClient]);
+  }, [isAuthenticated, refreshToken, isClient, resolvedSessions]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
