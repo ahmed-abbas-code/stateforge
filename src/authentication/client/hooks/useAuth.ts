@@ -1,6 +1,7 @@
 // src/authentication/client/hooks/useAuth.ts
 
 import useSWR from 'swr';
+import { useAuthContext } from '../components/AuthProvider';
 import type { AuthClientContext, AuthUserType, Session } from '@authentication/shared';
 
 type MeResponse = {
@@ -8,7 +9,6 @@ type MeResponse = {
   sessions: Record<string, Session> | null;
 };
 
-// SWR fetcher function with 401 suppression
 const fetchSessions = async (): Promise<MeResponse> => {
   const res = await fetch('/api/auth/me', {
     method: 'GET',
@@ -26,9 +26,6 @@ const fetchSessions = async (): Promise<MeResponse> => {
   return await res.json();
 };
 
-/**
- * Client-side hook to access authenticated sessions state
- */
 export const useAuth = (
   instanceIds?: string[]
 ): Omit<
@@ -41,6 +38,7 @@ export const useAuth = (
   revalidate: () => void;
   status: 'loading' | 'authenticated' | 'unauthenticated';
 } => {
+  const { refreshToken } = useAuthContext(); // ✅ borrow from context
   const { data, error, isLoading, mutate } = useSWR<MeResponse>(
     '/api/auth/me',
     fetchSessions,
@@ -53,33 +51,21 @@ export const useAuth = (
   );
 
   const sessions = data?.sessions ?? {};
+  const user = data?.user ?? Object.values(sessions)[0]?.user ?? null;
 
-  // ✅ Derive user as the first session’s user or explicit user from API
-  const user =
-    data?.user ??
-    Object.values(sessions)[0]?.user ??
-    null;
-
-  // ✅ Updated authentication logic
   const isAuthenticated = (() => {
     if (!sessions || Object.keys(sessions).length === 0) return false;
-
     if (instanceIds && instanceIds.length > 0) {
       return instanceIds.every((id) => !!sessions[id]);
     }
-
     return Object.keys(sessions).some((id) => !!sessions[id]);
   })();
 
   const status: 'loading' | 'authenticated' | 'unauthenticated' =
     isLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
 
-  // ✅ Setter that preserves user but updates sessions
   const setSessions = (nextSessions: Record<string, Session>) => {
-    mutate(
-      { user: data?.user ?? null, sessions: nextSessions },
-      false
-    );
+    mutate({ user: data?.user ?? null, sessions: nextSessions }, false);
   };
 
   return {
@@ -91,5 +77,6 @@ export const useAuth = (
     status,
     setSessions,
     revalidate: () => mutate(),
+    refreshToken, 
   };
 };

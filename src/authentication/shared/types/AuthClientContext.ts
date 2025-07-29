@@ -5,6 +5,16 @@ import type { Auth } from 'firebase/auth';
 import { Session } from '@authentication/shared/types/AuthProvider';
 
 /**
+ * RefreshTokenFn:
+ * - If providerId provided → refresh session for that provider (generic).
+ * - If idToken provided with opts.isIdToken → refresh session via ID token (Firebase).
+ */
+export type RefreshTokenFn = (
+  providerIdOrIdToken?: string,
+  opts?: { isIdToken?: boolean }
+) => Promise<string | null>;
+
+/**
  * Client-side context for authentication state, tokens, and session actions.
  */
 export interface AuthClientContext {
@@ -73,8 +83,12 @@ export interface AuthClientContext {
 
   /**
    * Manually trigger refresh of all or specific provider sessions.
+   * - Generic: pass providerId
+   * - Firebase: pass idToken with `{ isIdToken: true }`
+   *
+   * ✅ Always defined in SF's AuthProvider (no more optional).
    */
-  refreshToken?: (providerId?: string) => Promise<string | null>;
+  refreshToken: RefreshTokenFn;
 
   /**
    * Wraps fetch responses to handle 401s, token refresh, etc.
@@ -86,5 +100,5 @@ export interface AuthClientContext {
  * Extended API request that includes authenticated user context (SSR/server-side use).
  */
 export interface AuthApiRequest extends NextApiRequest {
-  user: unknown; // Consider replacing with `Session` or a typed AuthUser model
+  user: unknown; // Can later replace with Session or a typed AuthUser model
 }

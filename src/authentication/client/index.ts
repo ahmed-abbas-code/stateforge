@@ -4,6 +4,7 @@ export * from './hooks/useApiFetch';
 export * from './hooks/useSignOut';
 export * from './hooks/useBackend';
 export * from './hooks/useBackendMutation';
+export * from './hooks/useFirebaseAutoRefresh';
 export * from './utils/withAuthProtection';
 export * from './utils/backendClient';
 export * from './components/AuthProtection';

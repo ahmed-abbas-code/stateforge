@@ -14,15 +14,11 @@ import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 
-// Firebase client SDK
-import { getAuth, onIdTokenChanged } from 'firebase/auth';
-
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
-const FIREBASE_DEBOUNCE_MS = 30 * 1000; // 30s cooldown for auto refresh
 
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
@@ -70,7 +66,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   const router = useRouter();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAuthState = useRef<boolean | undefined>(undefined);
-  const lastFirebaseRefresh = useRef<number>(0);
   const isClient = typeof window !== 'undefined';
 
   const { data: sessions, error, isLoading } = useSWR<Record<string, Session>>(
@@ -104,11 +99,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
 
     return true;
   }, [resolvedSessions, instanceIds, isLoading, isClient]);
-
-  const isExpiringSoon = (session?: Session, bufferMs = 30 * 1000) => {
-    if (!session?.expiresAt) return false;
-    return session.expiresAt - Date.now() < bufferMs;
-  };
 
   // Debug logs
   useEffect(() => {
@@ -161,31 +151,44 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     [router]
   );
 
-  const refreshToken = useCallback(async () => {
+  const refreshToken = useCallback<
+    AuthClientContext['refreshToken']
+  >(async (providerIdOrIdToken, opts) => {
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      const idToken = user ? await user.getIdToken(true) : null;
+      const isIdToken = opts?.isIdToken === true;
+      const body: Record<string, string> = {};
+
+      if (isIdToken && providerIdOrIdToken) {
+        body.idToken = providerIdOrIdToken;
+      } else if (providerIdOrIdToken) {
+        body.providerId = providerIdOrIdToken;
+      }
+
+      console.debug(
+        `[AuthProvider] 🔄 Refresh triggered (${
+          isIdToken ? 'idToken' : 'providerId'
+        })`
+      );
 
       const res = await fetch(REFRESH_API_ENDPOINT, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: idToken ? JSON.stringify({ idToken }) : undefined,
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
       });
 
       if (!res.ok) {
-        console.warn('[refreshToken] Refresh failed:', res.status);
+        console.warn(`[AuthProvider] Refresh failed:`, res.status);
         return null;
       }
 
       const { sessions } = await res.json();
       await mutate(SESSION_API_ENDPOINT, sessions, false);
 
-      console.log('[AuthProvider] ✅ Refresh executed. Sessions updated:', sessions);
-      return sessions;
+      console.log('[AuthProvider] ✅ Refresh succeeded. Sessions updated:', sessions);
+      return providerIdOrIdToken ?? null;
     } catch (err) {
-      console.error('[refreshToken] Error:', err);
+      console.error('[AuthProvider] Refresh error:', err);
       return null;
     }
   }, []);
@@ -193,48 +196,24 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   const handleResponse = useCallback(
     async (res: Response) => {
       if (res.status !== 401) return res;
-      console.warn('[handleResponse] Got 401. Attempting refresh...');
-      const refreshed = await refreshToken();
+      console.warn('[AuthProvider] Got 401 → attempting refresh...');
+      const refreshed = await refreshToken(undefined, { isIdToken: false });
       if (!refreshed) {
-        console.warn('[handleResponse] Refresh failed — signing out.');
+        console.warn('[AuthProvider] Refresh failed after 401 → signing out.');
         toast.info('Session expired. Please sign in again.');
         await signOut();
         throw new Error('Unauthorized');
       }
-      return fetch(res.url, { method: res.type, headers: res.headers, credentials: 'include' });
+      return fetch(res.url, {
+        method: res.type,
+        headers: res.headers,
+        credentials: 'include',
+      });
     },
     [refreshToken, signOut]
   );
 
-  // 🔹 Firebase Auto Re-SignIn with debounce
-  useEffect(() => {
-    if (!isClient) return;
-    const auth = getAuth();
-
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      if (!user) return;
-
-      const now = Date.now();
-      if (now - lastFirebaseRefresh.current < FIREBASE_DEBOUNCE_MS) {
-        console.debug('[AuthProvider] ⏳ Skipping Firebase refresh (debounced)');
-        return;
-      }
-      lastFirebaseRefresh.current = now;
-
-      try {
-        await user.getIdToken(true);
-        console.debug('[AuthProvider] 🔄 Firebase ID token refreshed → calling backend refresh');
-        await refreshToken();
-      } catch (err) {
-        console.error('[AuthProvider] Firebase auto re-signin failed:', err);
-        await signOut();
-      }
-    });
-
-    return () => unsubscribe();
-  }, [isClient, refreshToken, signOut]);
-
-  // 🔹 JWT auto-refresh with timer
+  // 🔹 Timer-based auto-refresh
   useEffect(() => {
     if (!isAuthenticated) {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
@@ -243,23 +222,14 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
 
     if (refreshTimer.current) clearInterval(refreshTimer.current);
 
-    const bufferMs = 30 * 1000;
     refreshTimer.current = setInterval(async () => {
-      const hasExpiring = Object.values(resolvedSessions).some((s) =>
-        isExpiringSoon(s, bufferMs)
-      );
-      if (hasExpiring) {
-        console.debug('[AuthProvider] 🔔 Expiring soon → triggering refresh');
-        await refreshToken();
-      } else {
-        console.debug('[AuthProvider] ⏳ Checked sessions, none expiring yet');
-      }
-    }, 30 * 1000);
+      await refreshToken(undefined, { isIdToken: false });
+    }, 60 * 1000);
 
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken, resolvedSessions]);
+  }, [isAuthenticated, refreshToken]);
 
   const contextValue: AuthClientContext = {
     sessions: resolvedSessions,
@@ -267,7 +237,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
     error: error ?? null,
-    signIn: async () => ({ ok: false, error: 'Disabled in client' }), // handled via Firebase + server refresh
+    signIn: async () => ({ ok: false, error: 'Handled externally' }),
     signOut,
     getToken,
     refreshToken,
@@ -277,7 +247,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     instanceIds,
   };
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
 };
 
 export const useAuthContext = (): AuthClientContext => {
