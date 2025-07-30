@@ -38,9 +38,17 @@ const fetchContext = async (): Promise<{
   }
 
   const data = await res.json();
+
+  // 🔹 Always hydrate sessions into context for consistency
+  const unifiedSessions = data.sessions ?? data.context?.sessions ?? {};
+  const unifiedContext = {
+    ...(data.context ?? {}),
+    sessions: unifiedSessions,
+  };
+
   return {
-    sessions: structuredClone(data.sessions ?? data.context?.sessions ?? {}),
-    context: data.context ?? null,
+    sessions: structuredClone(unifiedSessions),
+    context: unifiedContext,
   };
 };
 
@@ -102,9 +110,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         `[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`
       );
       Object.entries(resolvedSessions).forEach(([id, s]) =>
-        console.log(
-          `[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`
-        )
+        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
       );
       if (meta) console.log('[AuthProvider] meta context:', meta);
     }
@@ -119,8 +125,15 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   /* Helpers */
   const setSessions = useCallback(
-    (next: Record<string, Session>) => {
-      mutate(SESSION_API_ENDPOINT, { sessions: next, context: meta }, false);
+    async (next: Record<string, Session>) => {
+      await mutate(
+        SESSION_API_ENDPOINT,
+        { sessions: next, context: { ...meta, sessions: next } },
+        false
+      );
+      if (process.env.NEXT_PUBLIC_ENV === 'development') {
+        console.log('[AuthProvider] setSessions applied:', next);
+      }
     },
     [meta]
   );
@@ -158,19 +171,13 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [router]
   );
 
-  /**
-   * 🔹 Refresh token using SSR proxy only
-   * Supports both provider-based and ID-token-based refresh flows.
-   */
   const refreshToken = useCallback<
     AuthClientContext['refreshToken']
   >(async (providerIdOrIdToken, opts) => {
     const body: Record<string, string> = {};
     if (opts?.isIdToken && providerIdOrIdToken) {
-      // Client passes Firebase ID token
       body.idToken = providerIdOrIdToken;
     } else if (providerIdOrIdToken) {
-      // Or client requests refresh for a specific provider
       body.providerId = providerIdOrIdToken;
     }
 
@@ -190,11 +197,14 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
     await mutate(
       SESSION_API_ENDPOINT,
-      { sessions: newSessions, context: newMeta },
+      { sessions: newSessions, context: { ...newMeta, sessions: newSessions } },
       false
     );
 
-    // ✅ Return actual refreshed token if available
+    if (process.env.NEXT_PUBLIC_ENV === 'development') {
+      console.log('[AuthProvider] refreshToken updated sessions:', newSessions);
+    }
+
     if (opts?.isIdToken && body.idToken) {
       return body.idToken;
     }
