@@ -1,12 +1,11 @@
 // src/authentication/server/utils/buildAuthContextResponse.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { Session } from '@authentication/shared/types/AuthProvider';
 import { hydrateSessions } from '@authentication/server';
 import type { AuthContextMeta } from '@authentication/shared/types/AuthClientContext';
 
 const FIREBASE_INSTANCE_ID = 'firebase-default';
-const JWT_INSTANCE_ID = 'jwt-default';
+const JWT_INSTANCE_ID      = 'jwt-default';
 
 export interface AuthContextResponse extends AuthContextMeta {
   sessions: Record<string, Session>;
@@ -42,11 +41,14 @@ export async function buildAuthContextResponse(
   opts: BuildAuthContextOptions = {}
 ): Promise<AuthContextResponse> {
   const {
-    returnAll = false,
+    returnAll        = false,
     primaryInstanceId = JWT_INSTANCE_ID,
     fallbackDecoded,
   } = opts;
 
+  // ────────────────────────────────────────────────────────────
+  // 1️⃣  Load sessions via helper
+  // ────────────────────────────────────────────────────────────
   let { sessions, isAuthenticated, user, users } = await hydrateSessions(
     req,
     res,
@@ -54,45 +56,55 @@ export async function buildAuthContextResponse(
     primaryInstanceId
   );
 
-  // 🔹 Fallback if hydrateSessions returned nothing but cookies + fallbackDecoded exists
-  if (!isAuthenticated && (!sessions || Object.keys(sessions).length === 0)) {
+  // ────────────────────────────────────────────────────────────
+  // 2️⃣  Cookie present but no sessions?  Build from fallback.
+  // ────────────────────────────────────────────────────────────
+  if (!isAuthenticated && Object.keys(sessions ?? {}).length === 0) {
     const cookieKeys = Object.keys(req.cookies ?? {});
     if (cookieKeys.some((k) => k.startsWith('sf.')) && fallbackDecoded) {
       console.warn(
         '[AuthContext] hydrateSessions returned empty; using fallbackDecoded to build session.'
       );
 
-      const now = Date.now();
-      const expMs = fallbackDecoded.exp ? fallbackDecoded.exp * 1000 : now + 3600_000;
+      const now   = Date.now();
+      const expMs = fallbackDecoded.exp ? fallbackDecoded.exp * 1000 : now + 3_600_000;
 
       const fallbackSession: Session = {
         providerId: fallbackDecoded.providerId ?? primaryInstanceId,
-        userId: fallbackDecoded.uid,
-        email: fallbackDecoded.email ?? undefined,
-        issuedAt: fallbackDecoded.iat ? fallbackDecoded.iat * 1000 : now,
-        expiresAt: expMs,
+        userId    : fallbackDecoded.uid,
+        email     : fallbackDecoded.email ?? undefined,
+        issuedAt  : fallbackDecoded.iat ? fallbackDecoded.iat * 1000 : now,
+        expiresAt : expMs,
       };
 
       sessions = {
         [FIREBASE_INSTANCE_ID]: { ...fallbackSession, providerId: FIREBASE_INSTANCE_ID },
-        [JWT_INSTANCE_ID]: { ...fallbackSession, providerId: JWT_INSTANCE_ID },
+        [JWT_INSTANCE_ID]     : { ...fallbackSession, providerId: JWT_INSTANCE_ID },
       };
 
-      users = { ...sessions };
-      user = sessions[primaryInstanceId];
+      users          = { ...sessions };
+      user           = sessions[primaryInstanceId];
       isAuthenticated = true;
     }
   }
 
-  const expiresAt = user?.expiresAt ?? undefined;
+  // ────────────────────────────────────────────────────────────
+  // 3️⃣  Ensure `users` is never undefined when we need “all”.
+  // ────────────────────────────────────────────────────────────
+  const allUsers = users ?? sessions;         // <- key line
 
+  const expiresAt = user?.expiresAt;
+
+  // ────────────────────────────────────────────────────────────
+  // 4️⃣  Unified response
+  // ────────────────────────────────────────────────────────────
   return {
-    sessions: returnAll ? users ?? {} : user ? { [user.providerId]: user } : {},
+    sessions       : returnAll ? allUsers : user ? { [user.providerId]: user } : {},
     isAuthenticated,
     user,
-    users: returnAll ? users : undefined,
-    error: null,
-    ok: isAuthenticated,   // ✅ explicitly include ok
-    expiresAt,             // ✅ expose unified expiry
+    users          : returnAll ? allUsers : undefined,
+    error          : null,
+    ok             : isAuthenticated,
+    expiresAt,
   };
 }
