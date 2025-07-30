@@ -102,7 +102,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         `[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`
       );
       Object.entries(resolvedSessions).forEach(([id, s]) =>
-        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
+        console.log(
+          `[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`
+        )
       );
       if (meta) console.log('[AuthProvider] meta context:', meta);
     }
@@ -156,13 +158,19 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [router]
   );
 
+  /**
+   * 🔹 Refresh token using SSR proxy only
+   * Supports both provider-based and ID-token-based refresh flows.
+   */
   const refreshToken = useCallback<
     AuthClientContext['refreshToken']
   >(async (providerIdOrIdToken, opts) => {
     const body: Record<string, string> = {};
     if (opts?.isIdToken && providerIdOrIdToken) {
+      // Client passes Firebase ID token
       body.idToken = providerIdOrIdToken;
     } else if (providerIdOrIdToken) {
+      // Or client requests refresh for a specific provider
       body.providerId = providerIdOrIdToken;
     }
 
@@ -186,7 +194,15 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
       false
     );
 
-    return providerIdOrIdToken ?? null;
+    // ✅ Return actual refreshed token if available
+    if (opts?.isIdToken && body.idToken) {
+      return body.idToken;
+    }
+    if (providerIdOrIdToken && newSessions?.[providerIdOrIdToken]) {
+      return newSessions[providerIdOrIdToken].token ?? null;
+    }
+
+    return null;
   }, []);
 
   const handleResponse = useCallback(
