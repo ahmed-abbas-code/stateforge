@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  startTransition,
 } from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
@@ -18,7 +19,7 @@ import { formatSessionTTL } from '@authentication/shared';
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
-/* Combined SWR fetcher for sessions + meta */
+/* Fetcher: unified context + sessions */
 const fetchContext = async (): Promise<{
   sessions: Record<string, Session>;
   context: any;
@@ -30,16 +31,12 @@ const fetchContext = async (): Promise<{
 
   if (!res.ok) {
     if (res.status !== 401) {
-      console.error(
-        `[AuthProvider] fetchContext failed: ${res.status} ${res.statusText}`
-      );
+      console.error(`[AuthProvider] fetchContext failed: ${res.status} ${res.statusText}`);
     }
     return { sessions: {}, context: null };
   }
 
   const data = await res.json();
-
-  // 🔹 Always hydrate sessions into context for consistency
   const unifiedSessions = data.sessions ?? data.context?.sessions ?? {};
   const unifiedContext = {
     ...(data.context ?? {}),
@@ -60,10 +57,7 @@ interface AuthProviderProps {
   instanceIds?: string[];
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({
-  children,
-  instanceIds,
-}) => (
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds }) => (
   <SWRConfig
     value={{
       refreshInterval: 0,
@@ -78,37 +72,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({
-  children,
-  instanceIds,
-}) => {
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds }) => {
   const router = useRouter();
   const lastAuthState = useRef<boolean | undefined>(undefined);
   const isClient = typeof window !== 'undefined';
 
-  /* SWR: unified sessions + meta */
   const { data, error, isLoading } = useSWR(SESSION_API_ENDPOINT, fetchContext);
-
   const resolvedSessions = data?.sessions ?? {};
   const meta = data?.context ?? null;
 
-  /* Derived authentication state */
   const isAuthenticated = useMemo(() => {
     if (isLoading) return undefined;
     if (Object.keys(resolvedSessions).length === 0) return false;
-
     if (instanceIds?.length) {
       return instanceIds.every((id) => !!resolvedSessions[id]);
     }
     return true;
   }, [resolvedSessions, instanceIds, isLoading]);
 
-  /* Debug logging */
   useEffect(() => {
     if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
-      console.log(
-        `[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`
-      );
+      console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
       Object.entries(resolvedSessions).forEach(([id, s]) =>
         console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
       );
@@ -123,14 +107,16 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     }
   }, [isAuthenticated, isClient]);
 
-  /* Helpers */
+  /* Unified session updater */
   const setSessions = useCallback(
     async (next: Record<string, Session>) => {
-      await mutate(
-        SESSION_API_ENDPOINT,
-        { sessions: next, context: { ...meta, sessions: next } },
-        false
-      );
+      const unifiedMeta = { ...meta, sessions: next };
+
+      startTransition(() => {
+        mutate(SESSION_API_ENDPOINT, { sessions: next, context: unifiedMeta }, false);
+        mutate('/api/auth/me', unifiedMeta, false);
+      });
+
       if (process.env.NEXT_PUBLIC_ENV === 'development') {
         console.log('[AuthProvider] setSessions applied:', next);
       }
@@ -142,9 +128,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     async (instanceId?: string): Promise<string | null> => {
       const id = instanceId ?? Object.keys(resolvedSessions)[0];
       if (!id) return null;
-      const res = await fetch(`/api/auth/token?instanceId=${id}`, {
-        credentials: 'include',
-      });
+      const res = await fetch(`/api/auth/token?instanceId=${id}`, { credentials: 'include' });
       if (!res.ok) return null;
       const { token } = await res.json();
       return token ?? null;
@@ -165,55 +149,51 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         /* ignore network issues */
       }
 
-      await mutate(SESSION_API_ENDPOINT, { sessions: {}, context: null }, false);
+      await setSessions({});
       router.push('/');
     },
-    [router]
+    [router, setSessions]
   );
 
-  const refreshToken = useCallback<
-    AuthClientContext['refreshToken']
-  >(async (providerIdOrIdToken, opts) => {
-    const body: Record<string, string> = {};
-    if (opts?.isIdToken && providerIdOrIdToken) {
-      body.idToken = providerIdOrIdToken;
-    } else if (providerIdOrIdToken) {
-      body.providerId = providerIdOrIdToken;
-    }
+  const refreshToken = useCallback<AuthClientContext['refreshToken']>(
+    async (providerIdOrIdToken, opts) => {
+      const body: Record<string, string> = {};
+      if (opts?.isIdToken && providerIdOrIdToken) {
+        body.idToken = providerIdOrIdToken;
+      } else if (providerIdOrIdToken) {
+        body.providerId = providerIdOrIdToken;
+      }
 
-    const res = await fetch(REFRESH_API_ENDPOINT, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: Object.keys(body).length ? JSON.stringify(body) : undefined,
-    });
+      const res = await fetch(REFRESH_API_ENDPOINT, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: Object.keys(body).length ? JSON.stringify(body) : undefined,
+      });
 
-    if (!res.ok) {
-      console.warn('[AuthProvider] refreshToken failed', res.status);
+      if (!res.ok) {
+        console.warn('[AuthProvider] refreshToken failed', res.status);
+        return null;
+      }
+
+      const { sessions: newSessions, context: newMeta } = await res.json();
+      await setSessions(newSessions);
+
+      if (process.env.NEXT_PUBLIC_ENV === 'development') {
+        console.log('[AuthProvider] refreshToken updated sessions:', newSessions);
+      }
+
+      if (opts?.isIdToken && body.idToken) {
+        return body.idToken;
+      }
+      if (providerIdOrIdToken && newSessions?.[providerIdOrIdToken]) {
+        return newSessions[providerIdOrIdToken].token ?? null;
+      }
+
       return null;
-    }
-
-    const { sessions: newSessions, context: newMeta } = await res.json();
-
-    await mutate(
-      SESSION_API_ENDPOINT,
-      { sessions: newSessions, context: { ...newMeta, sessions: newSessions } },
-      false
-    );
-
-    if (process.env.NEXT_PUBLIC_ENV === 'development') {
-      console.log('[AuthProvider] refreshToken updated sessions:', newSessions);
-    }
-
-    if (opts?.isIdToken && body.idToken) {
-      return body.idToken;
-    }
-    if (providerIdOrIdToken && newSessions?.[providerIdOrIdToken]) {
-      return newSessions[providerIdOrIdToken].token ?? null;
-    }
-
-    return null;
-  }, []);
+    },
+    [setSessions]
+  );
 
   const handleResponse = useCallback(
     async (res: Response) => {
@@ -233,7 +213,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     [refreshToken, signOut]
   );
 
-  /* Context value */
   const ctx: AuthClientContext & { meta?: any } = {
     sessions: resolvedSessions,
     meta,
@@ -260,7 +239,7 @@ export const useAuthContext = (): AuthClientContext & { meta?: any } => {
     return {
       sessions: {},
       meta: null,
-      setSessions: () => {},
+      setSessions: async () => {},
       isAuthenticated: false,
       isLoading: true,
       error: null,
@@ -276,7 +255,6 @@ export const useAuthContext = (): AuthClientContext & { meta?: any } => {
   }
 
   const ctx = useContext(AuthContext);
-  if (!ctx)
-    throw new Error('useAuthContext must be used within an AuthProvider');
+  if (!ctx) throw new Error('useAuthContext must be used within an AuthProvider');
   return ctx as AuthClientContext & { meta?: any };
 };
