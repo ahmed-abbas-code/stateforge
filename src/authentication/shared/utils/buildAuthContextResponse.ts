@@ -19,7 +19,7 @@ export interface BuildAuthContextOptions {
   returnAll?: boolean;
   primaryInstanceId?: string;
   /**
-   * Decoded Firebase token for fallback hydration
+   * Optional decoded Firebase token for fallback hydration
    */
   fallbackDecoded?: {
     uid: string;
@@ -51,7 +51,7 @@ export async function buildAuthContextResponse(
     primaryInstanceId
   );
 
-  // 🔹 If hydrateSessions failed but cookies exist and we have fallbackDecoded
+  // 🔹 Fallback if hydrateSessions returned nothing but cookies + fallbackDecoded exists
   if (!isAuthenticated && (!sessions || Object.keys(sessions).length === 0)) {
     const cookieKeys = Object.keys(req.cookies ?? {});
     if (cookieKeys.some((k) => k.startsWith('sf.')) && fallbackDecoded) {
@@ -65,7 +65,7 @@ export async function buildAuthContextResponse(
       const fallbackSession: Session = {
         providerId: fallbackDecoded.providerId ?? primaryInstanceId,
         userId: fallbackDecoded.uid,
-        email: fallbackDecoded.email ?? undefined, // ✅ fix: ensure string | undefined
+        email: fallbackDecoded.email ?? undefined,
         issuedAt: fallbackDecoded.iat ? fallbackDecoded.iat * 1000 : now,
         expiresAt: expMs,
       };
