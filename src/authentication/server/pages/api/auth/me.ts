@@ -1,9 +1,7 @@
 // src/authentication/server/pages/api/auth/me.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-
 import { AuthContextResponse, buildAuthContextResponse } from '@authentication/shared';
-
 
 /**
  * GET /api/auth/me
@@ -20,18 +18,19 @@ export default async function handler(
     if (!response.isAuthenticated) {
       return res.status(401).json({
         ...response,
-        error: 'No active sessions found',
+        error: 'Session expired or not authenticated',
       });
     }
 
     return res.status(200).json(response);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[API] /auth/me error:', err);
+
     return res.status(500).json({
       sessions: {},
       isAuthenticated: false,
       user: null,
-      error: 'Internal server error',
+      error: err?.message || 'Internal server error',
     });
   }
 }
