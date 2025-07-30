@@ -16,11 +16,13 @@ import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
-const META_API_ENDPOINT = '/api/auth/context/meta';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
-/* SWR fetcher for sessions */
-const fetchSessions = async (): Promise<Record<string, Session>> => {
+/* Combined SWR fetcher for sessions + meta */
+const fetchContext = async (): Promise<{
+  sessions: Record<string, Session>;
+  context: any;
+}> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -29,34 +31,19 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   if (!res.ok) {
     if (res.status !== 401) {
       console.error(
-        `[AuthProvider] fetchSessions failed: ${res.status} ${res.statusText}`
+        `[AuthProvider] fetchContext failed: ${res.status} ${res.statusText}`
       );
     }
-    return {};
+    return { sessions: {}, context: null };
   }
 
   const data = await res.json();
-
-  // ✅ Always fallback to context.sessions if direct sessions is empty
-  if (data.sessions && Object.keys(data.sessions).length > 0) {
-    return structuredClone(data.sessions);
-  }
-  if (data.context?.sessions && Object.keys(data.context.sessions).length > 0) {
-    return structuredClone(data.context.sessions);
-  }
-
-  console.warn('[AuthProvider] No sessions found in response');
-  return {};
-};
-
-/* SWR fetcher for meta context */
-const fetchMeta = async () => {
-  const res = await fetch(META_API_ENDPOINT, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) return null;
-  return res.json();
+  return {
+    sessions: structuredClone(
+      data.sessions ?? data.context?.sessions ?? {}
+    ),
+    context: data.context ?? null,
+  };
 };
 
 /* Context setup */
@@ -94,14 +81,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   const lastAuthState = useRef<boolean | undefined>(undefined);
   const isClient = typeof window !== 'undefined';
 
-  /* SWR: sessions and meta context */
-  const { data: sessions, error, isLoading } = useSWR<Record<string, Session>>(
-    SESSION_API_ENDPOINT,
-    fetchSessions
-  );
-  const { data: meta } = useSWR(META_API_ENDPOINT, fetchMeta);
+  /* SWR: unified sessions + meta */
+  const { data, error, isLoading } = useSWR(SESSION_API_ENDPOINT, fetchContext);
 
-  const resolvedSessions = sessions ?? {};
+  const resolvedSessions = data?.sessions ?? {};
+  const meta = data?.context ?? null;
 
   /* Derived authentication state */
   const isAuthenticated = useMemo(() => {
@@ -125,9 +109,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
           `[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`
         )
       );
-      if (meta) {
-        console.log('[AuthProvider] meta context:', meta);
-      }
+      if (meta) console.log('[AuthProvider] meta context:', meta);
     }
   }, [resolvedSessions, isClient, meta]);
 
@@ -140,8 +122,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
   /* Helpers */
   const setSessions = useCallback((next: Record<string, Session>) => {
-    mutate(SESSION_API_ENDPOINT, next, false);
-  }, []);
+    mutate(SESSION_API_ENDPOINT, { sessions: next, context: meta }, false);
+  }, [meta]);
 
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
@@ -170,9 +152,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         /* ignore network issues */
       }
 
-      await mutate(SESSION_API_ENDPOINT, {}, false);
-      await mutate(META_API_ENDPOINT, null, false);
-
+      await mutate(SESSION_API_ENDPOINT, { sessions: {}, context: null }, false);
       router.push('/');
     },
     [router]
@@ -202,9 +182,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
     const { sessions: newSessions, context: newMeta } = await res.json();
 
-    // ✅ Update both SWR keys so UI stays in sync
-    await mutate(SESSION_API_ENDPOINT, newSessions, false);
-    await mutate(META_API_ENDPOINT, newMeta, false);
+    await mutate(
+      SESSION_API_ENDPOINT,
+      { sessions: newSessions, context: newMeta },
+      false
+    );
 
     return providerIdOrIdToken ?? null;
   }, []);
@@ -248,7 +230,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   /* Context value */
   const ctx: AuthClientContext & { meta?: any } = {
     sessions: resolvedSessions,
-    meta, // 🔹 Expose meta context
+    meta,
     setSessions,
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
@@ -263,9 +245,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     instanceIds,
   };
 
-  return (
-    <AuthContext.Provider value={ctx}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={ctx}>{children}</AuthContext.Provider>;
 };
 
 /* Hook export */
