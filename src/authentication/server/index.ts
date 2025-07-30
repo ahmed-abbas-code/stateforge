@@ -53,10 +53,12 @@ export * from './utils/authRegistry';
 // Middleware & Utilities
 // -------------------------
 
+export * from './AuthenticationChain';
 export * from './middleware';
 export * from './utils/backend-client';
 export * from './utils/cookieHelpers';
 export * from './utils/createBackendProxyRoute';
 export * from './utils/getServerSideAuthContext';
 export * from './utils/mapDecodedToAuthUser';
-export * from './AuthenticationChain';
+export * from './utils/hydrateSessions';
+export * from './utils/buildAuthContextResponse';

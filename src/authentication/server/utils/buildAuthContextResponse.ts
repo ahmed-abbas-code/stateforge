@@ -1,8 +1,8 @@
-// src/authentication/shared/utils/buildAuthContextResponse.ts
+// src/authentication/server/utils/buildAuthContextResponse.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { Session } from '@authentication/shared/types/AuthProvider';
-import { hydrateSessions } from '@authentication/shared';
+import { hydrateSessions } from '@authentication/server';
 
 const FIREBASE_INSTANCE_ID = 'firebase-default';
 const JWT_INSTANCE_ID = 'jwt-default';

@@ -1,7 +1,7 @@
 // src/authentication/server/pages/api/auth/me.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AuthContextResponse, buildAuthContextResponse } from '@authentication/shared';
+import { AuthContextResponse, buildAuthContextResponse } from '@authentication/server';
 
 /**
  * GET /api/auth/me

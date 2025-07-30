@@ -14,7 +14,7 @@ import { useRouter } from 'next/router';
 import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
-import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
+import { formatSessionTTL } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';

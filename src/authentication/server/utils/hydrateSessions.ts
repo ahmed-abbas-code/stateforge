@@ -1,4 +1,4 @@
-// src/authentication/shared/utils/hydrateSessions.ts
+// src/authentication/server/utils/hydrateSessions.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { Session } from '@authentication/shared';
