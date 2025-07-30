@@ -1,5 +1,4 @@
 // src/authentication/client/components/AuthProvider.tsx
-
 'use client';
 
 import React, {
@@ -38,9 +37,13 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
 
   const data = await res.json();
 
-  // ✅ Handle both API shape and mutate shape
-  if (data.sessions) return structuredClone(data.sessions);
-  if (data.context?.sessions) return structuredClone(data.context.sessions);
+  // ✅ Always fallback to context.sessions if direct sessions is empty
+  if (data.sessions && Object.keys(data.sessions).length > 0) {
+    return structuredClone(data.sessions);
+  }
+  if (data.context?.sessions && Object.keys(data.context.sessions).length > 0) {
+    return structuredClone(data.context.sessions);
+  }
 
   console.warn('[AuthProvider] No sessions found in response');
   return {};
@@ -200,11 +203,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     const { sessions: newSessions, context: newMeta } = await res.json();
 
     // ✅ Update both SWR keys so UI stays in sync
-    await mutate(
-      SESSION_API_ENDPOINT,
-      { sessions: newSessions, context: newMeta },
-      false
-    );
+    await mutate(SESSION_API_ENDPOINT, newSessions, false);
     await mutate(META_API_ENDPOINT, newMeta, false);
 
     return providerIdOrIdToken ?? null;
@@ -249,7 +248,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   /* Context value */
   const ctx: AuthClientContext & { meta?: any } = {
     sessions: resolvedSessions,
-    meta, // 🔹 Expose meta context here
+    meta, // 🔹 Expose meta context
     setSessions,
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
