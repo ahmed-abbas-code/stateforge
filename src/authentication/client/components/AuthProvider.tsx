@@ -121,9 +121,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   }, [isAuthenticated, isClient]);
 
   /* Helpers */
-  const setSessions = useCallback((next: Record<string, Session>) => {
-    mutate(SESSION_API_ENDPOINT, { sessions: next, context: meta }, false);
-  }, [meta]);
+  const setSessions = useCallback(
+    (next: Record<string, Session>) => {
+      mutate(SESSION_API_ENDPOINT, { sessions: next, context: meta }, false);
+    },
+    [meta]
+  );
 
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
@@ -218,14 +221,28 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
 
     if (refreshTimer.current) clearInterval(refreshTimer.current);
 
-    refreshTimer.current = setInterval(() => {
-      refreshToken(undefined, { isIdToken: false });
+    refreshTimer.current = setInterval(async () => {
+      const firebase = resolvedSessions['firebase-default'];
+
+      if (!firebase || !firebase.expiresAt) return;
+
+      const timeLeft = firebase.expiresAt - Date.now();
+
+      if (timeLeft < 120_000) {
+        const ok = await refreshToken('firebase-default');
+        if (!ok) {
+          console.warn('[AuthProvider] Firebase refresh failed → signing out');
+          await signOut();
+        } else {
+          await refreshToken('jwt-default');
+        }
+      }
     }, 60_000);
 
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current);
     };
-  }, [isAuthenticated, refreshToken]);
+  }, [isAuthenticated, refreshToken, signOut, resolvedSessions]);
 
   /* Context value */
   const ctx: AuthClientContext & { meta?: any } = {
