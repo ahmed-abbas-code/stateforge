@@ -37,8 +37,13 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
   }
 
   const data = await res.json();
-  // fallback to context.sessions if shape changed
-  return structuredClone(data.sessions ?? data.context?.sessions ?? {});
+
+  // ✅ Handle both API shape and mutate shape
+  if (data.sessions) return structuredClone(data.sessions);
+  if (data.context?.sessions) return structuredClone(data.context.sessions);
+
+  console.warn('[AuthProvider] No sessions found in response');
+  return {};
 };
 
 /* SWR fetcher for meta context */
@@ -59,7 +64,10 @@ interface AuthProviderProps {
   instanceIds?: string[];
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds }) => (
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  instanceIds,
+}) => (
   <SWRConfig
     value={{
       refreshInterval: 0,
@@ -74,7 +82,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, instanceId
   </SWRConfig>
 );
 
-const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds }) => {
+const InnerAuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  instanceIds,
+}) => {
   const router = useRouter();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAuthState = useRef<boolean | undefined>(undefined);
@@ -103,9 +114,13 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   /* Debug logging */
   useEffect(() => {
     if (isClient && process.env.NEXT_PUBLIC_ENV === 'development') {
-      console.log(`[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`);
+      console.log(
+        `[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`
+      );
       Object.entries(resolvedSessions).forEach(([id, s]) =>
-        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
+        console.log(
+          `[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`
+        )
       );
       if (meta) {
         console.log('[AuthProvider] meta context:', meta);
@@ -121,18 +136,17 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   }, [isAuthenticated, isClient]);
 
   /* Helpers */
-  const setSessions = useCallback(
-    (next: Record<string, Session>) => {
-      mutate(SESSION_API_ENDPOINT, next, false);
-    },
-    []
-  );
+  const setSessions = useCallback((next: Record<string, Session>) => {
+    mutate(SESSION_API_ENDPOINT, next, false);
+  }, []);
 
   const getToken = useCallback(
     async (instanceId?: string): Promise<string | null> => {
       const id = instanceId ?? Object.keys(resolvedSessions)[0];
       if (!id) return null;
-      const res = await fetch(`/api/auth/token?instanceId=${id}`, { credentials: 'include' });
+      const res = await fetch(`/api/auth/token?instanceId=${id}`, {
+        credentials: 'include',
+      });
       if (!res.ok) return null;
       const { token } = await res.json();
       return token ?? null;
@@ -140,25 +154,30 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     [resolvedSessions]
   );
 
-  const signOut = useCallback(async (providerIds?: string[]) => {
-    try {
-      await fetch('/api/auth/signout', {
-        method: 'POST',
-        credentials: 'include',
-        body: providerIds ? JSON.stringify({ providerIds }) : undefined,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch {
-      /* ignore network issues */
-    }
+  const signOut = useCallback(
+    async (providerIds?: string[]) => {
+      try {
+        await fetch('/api/auth/signout', {
+          method: 'POST',
+          credentials: 'include',
+          body: providerIds ? JSON.stringify({ providerIds }) : undefined,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        /* ignore network issues */
+      }
 
-    await mutate(SESSION_API_ENDPOINT, {}, false);
-    await mutate(META_API_ENDPOINT, null, false);
+      await mutate(SESSION_API_ENDPOINT, {}, false);
+      await mutate(META_API_ENDPOINT, null, false);
 
-    router.push('/');
-  }, [router]);
+      router.push('/');
+    },
+    [router]
+  );
 
-  const refreshToken = useCallback<AuthClientContext['refreshToken']>(async (providerIdOrIdToken, opts) => {
+  const refreshToken = useCallback<
+    AuthClientContext['refreshToken']
+  >(async (providerIdOrIdToken, opts) => {
     const body: Record<string, string> = {};
     if (opts?.isIdToken && providerIdOrIdToken) {
       body.idToken = providerIdOrIdToken;
@@ -179,22 +198,35 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     }
 
     const { sessions: newSessions, context: newMeta } = await res.json();
-    await mutate(SESSION_API_ENDPOINT, newSessions, false);
+
+    // ✅ Update both SWR keys so UI stays in sync
+    await mutate(
+      SESSION_API_ENDPOINT,
+      { sessions: newSessions, context: newMeta },
+      false
+    );
     await mutate(META_API_ENDPOINT, newMeta, false);
 
     return providerIdOrIdToken ?? null;
   }, []);
 
-  const handleResponse = useCallback(async (res: Response) => {
-    if (res.status !== 401) return res;
-    const ok = await refreshToken(undefined, { isIdToken: false });
-    if (!ok) {
-      toast.info('Session expired. Please sign in again.');
-      await signOut();
-      throw new Error('Unauthorized');
-    }
-    return fetch(res.url, { method: res.type, headers: res.headers, credentials: 'include' });
-  }, [refreshToken, signOut]);
+  const handleResponse = useCallback(
+    async (res: Response) => {
+      if (res.status !== 401) return res;
+      const ok = await refreshToken(undefined, { isIdToken: false });
+      if (!ok) {
+        toast.info('Session expired. Please sign in again.');
+        await signOut();
+        throw new Error('Unauthorized');
+      }
+      return fetch(res.url, {
+        method: res.type,
+        headers: res.headers,
+        credentials: 'include',
+      });
+    },
+    [refreshToken, signOut]
+  );
 
   /* Timer auto-refresh */
   useEffect(() => {
@@ -215,7 +247,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   }, [isAuthenticated, refreshToken]);
 
   /* Context value */
-  const ctx: AuthClientContext = {
+  const ctx: AuthClientContext & { meta?: any } = {
     sessions: resolvedSessions,
     meta, // 🔹 Expose meta context here
     setSessions,
@@ -232,7 +264,9 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     instanceIds,
   };
 
-  return <AuthContext.Provider value={ctx}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={ctx}>{children}</AuthContext.Provider>
+  );
 };
 
 /* Hook export */
@@ -257,6 +291,7 @@ export const useAuthContext = (): AuthClientContext & { meta?: any } => {
   }
 
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used within an AuthProvider');
+  if (!ctx)
+    throw new Error('useAuthContext must be used within an AuthProvider');
   return ctx as AuthClientContext & { meta?: any };
 };
