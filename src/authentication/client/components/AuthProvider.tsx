@@ -15,7 +15,6 @@ import useSWR, { mutate, SWRConfig } from 'swr';
 import { toast } from 'react-toastify';
 import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared/utils/formatSessionTTL';
-import { getAuth, signOut as firebaseSignOut } from 'firebase/auth';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
@@ -135,35 +134,19 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       /* ignore network issues */
     }
 
-    try {
-      // Explicit Firebase client signout
-      const auth = getAuth();
-      if (auth.currentUser) {
-        await firebaseSignOut(auth);
-        console.log('[AuthProvider] Firebase client signed out.');
-      }
-    } catch (err) {
-      console.warn('[AuthProvider] Firebase signOut failed:', err);
-    }
-
     // Clear SWR cache
-    mutate(SESSION_API_ENDPOINT, {}, false);
+    await mutate(SESSION_API_ENDPOINT, {}, false);
+
     router.push('/');
   }, [router]);
 
   const refreshToken = useCallback<AuthClientContext['refreshToken']>(async (providerIdOrIdToken, opts) => {
-    // Skip refresh if no current user
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      console.debug('[AuthProvider] Skipping refresh — no Firebase currentUser.');
-      return null;
-    }
-
-    const isIdToken = opts?.isIdToken === true;
     const body: Record<string, string> = {};
-
-    if (isIdToken && providerIdOrIdToken) body.idToken = providerIdOrIdToken;
-    else if (providerIdOrIdToken) body.providerId = providerIdOrIdToken;
+    if (opts?.isIdToken && providerIdOrIdToken) {
+      body.idToken = providerIdOrIdToken;
+    } else if (providerIdOrIdToken) {
+      body.providerId = providerIdOrIdToken;
+    }
 
     const res = await fetch(REFRESH_API_ENDPOINT, {
       method: 'POST',
@@ -223,7 +206,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     getToken,
     refreshToken,
     handleResponse,
-    auth: undefined,
+    auth: undefined, // no Firebase client SDK
     handleRedirectCallback: undefined,
     instanceIds,
   };
