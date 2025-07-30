@@ -39,9 +39,7 @@ const fetchContext = async (): Promise<{
 
   const data = await res.json();
   return {
-    sessions: structuredClone(
-      data.sessions ?? data.context?.sessions ?? {}
-    ),
+    sessions: structuredClone(data.sessions ?? data.context?.sessions ?? {}),
     context: data.context ?? null,
   };
 };
@@ -77,7 +75,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
   instanceIds,
 }) => {
   const router = useRouter();
-  const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   const lastAuthState = useRef<boolean | undefined>(undefined);
   const isClient = typeof window !== 'undefined';
 
@@ -105,9 +102,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
         `[AuthProvider] Client time: ${new Date().toLocaleString()} (${Date.now()})`
       );
       Object.entries(resolvedSessions).forEach(([id, s]) =>
-        console.log(
-          `[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`
-        )
+        console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
       );
       if (meta) console.log('[AuthProvider] meta context:', meta);
     }
@@ -211,38 +206,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({
     },
     [refreshToken, signOut]
   );
-
-  /* Timer auto-refresh */
-  useEffect(() => {
-    if (!isAuthenticated) {
-      if (refreshTimer.current) clearInterval(refreshTimer.current);
-      return;
-    }
-
-    if (refreshTimer.current) clearInterval(refreshTimer.current);
-
-    refreshTimer.current = setInterval(async () => {
-      const firebase = resolvedSessions['firebase-default'];
-
-      if (!firebase || !firebase.expiresAt) return;
-
-      const timeLeft = firebase.expiresAt - Date.now();
-
-      if (timeLeft < 120_000) {
-        const ok = await refreshToken('firebase-default');
-        if (!ok) {
-          console.warn('[AuthProvider] Firebase refresh failed → signing out');
-          await signOut();
-        } else {
-          await refreshToken('jwt-default');
-        }
-      }
-    }, 60_000);
-
-    return () => {
-      if (refreshTimer.current) clearInterval(refreshTimer.current);
-    };
-  }, [isAuthenticated, refreshToken, signOut, resolvedSessions]);
 
   /* Context value */
   const ctx: AuthClientContext & { meta?: any } = {
