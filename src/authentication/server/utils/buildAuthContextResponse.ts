@@ -3,17 +3,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { Session } from '@authentication/shared/types/AuthProvider';
 import { hydrateSessions } from '@authentication/server';
+import type { AuthContextMeta } from '@authentication/shared/types/AuthClientContext';
 
 const FIREBASE_INSTANCE_ID = 'firebase-default';
 const JWT_INSTANCE_ID = 'jwt-default';
 
-export type AuthContextResponse = {
+export interface AuthContextResponse extends AuthContextMeta {
   sessions: Record<string, Session>;
   isAuthenticated: boolean;
   user: Session | null;
   users?: Record<string, Session>;
   error: string | null;
-};
+  ok?: boolean;       // ✅ always provided for client logic
+  expiresAt?: number; // ✅ unified expiry timestamp
+}
 
 export interface BuildAuthContextOptions {
   returnAll?: boolean;
@@ -81,11 +84,15 @@ export async function buildAuthContextResponse(
     }
   }
 
+  const expiresAt = user?.expiresAt ?? undefined;
+
   return {
     sessions: returnAll ? users ?? {} : user ? { [user.providerId]: user } : {},
     isAuthenticated,
     user,
     users: returnAll ? users : undefined,
     error: null,
+    ok: isAuthenticated,   // ✅ explicitly include ok
+    expiresAt,             // ✅ expose unified expiry
   };
 }

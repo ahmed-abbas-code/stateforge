@@ -15,6 +15,18 @@ export type RefreshTokenFn = (
 ) => Promise<string | null>;
 
 /**
+ * Rich meta context returned from /api/auth/context.
+ */
+export interface AuthContextMeta {
+  sessions?: Record<string, Session>;
+  users?: Record<string, Session>;
+  user?: Session | null;
+  ok?: boolean;
+  error?: string | null;
+  expiresAt?: number;
+}
+
+/**
  * Client-side context for authentication state, tokens, and session actions.
  */
 export interface AuthClientContext {
@@ -22,6 +34,12 @@ export interface AuthClientContext {
    * Map of provider IDs to authenticated sessions.
    */
   sessions: Record<string, Session>;
+
+  /**
+   * Full context payload from the server (/api/auth/context/meta).
+   * Exposed for debugging and richer client logic.
+   */
+  meta?: AuthContextMeta | null;
 
   /**
    * Set the full session map manually (e.g., during hydration).

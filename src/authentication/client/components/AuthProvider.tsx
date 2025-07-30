@@ -17,9 +17,10 @@ import type { Session, AuthClientContext } from '@authentication/shared';
 import { formatSessionTTL } from '@authentication/shared';
 
 const SESSION_API_ENDPOINT = '/api/auth/context?all=true';
+const META_API_ENDPOINT = '/api/auth/context/meta';
 const REFRESH_API_ENDPOINT = '/api/auth/refresh';
 
-/* SWR fetcher */
+/* SWR fetcher for sessions */
 const fetchSessions = async (): Promise<Record<string, Session>> => {
   const res = await fetch(SESSION_API_ENDPOINT, {
     credentials: 'include',
@@ -28,12 +29,26 @@ const fetchSessions = async (): Promise<Record<string, Session>> => {
 
   if (!res.ok) {
     if (res.status !== 401) {
-      console.error(`[AuthProvider] fetchSessions failed: ${res.status} ${res.statusText}`);
+      console.error(
+        `[AuthProvider] fetchSessions failed: ${res.status} ${res.statusText}`
+      );
     }
     return {};
   }
+
   const data = await res.json();
-  return structuredClone(data.sessions ?? {});
+  // fallback to context.sessions if shape changed
+  return structuredClone(data.sessions ?? data.context?.sessions ?? {});
+};
+
+/* SWR fetcher for meta context */
+const fetchMeta = async () => {
+  const res = await fetch(META_API_ENDPOINT, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) return null;
+  return res.json();
 };
 
 /* Context setup */
@@ -65,11 +80,12 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   const lastAuthState = useRef<boolean | undefined>(undefined);
   const isClient = typeof window !== 'undefined';
 
-  /* SWR sessions */
+  /* SWR: sessions and meta context */
   const { data: sessions, error, isLoading } = useSWR<Record<string, Session>>(
     SESSION_API_ENDPOINT,
     fetchSessions
   );
+  const { data: meta } = useSWR(META_API_ENDPOINT, fetchMeta);
 
   const resolvedSessions = sessions ?? {};
 
@@ -91,8 +107,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       Object.entries(resolvedSessions).forEach(([id, s]) =>
         console.log(`[AuthProvider] Session for ${id}: ${formatSessionTTL(s.expiresAt)}`)
       );
+      if (meta) {
+        console.log('[AuthProvider] meta context:', meta);
+      }
     }
-  }, [resolvedSessions, isClient]);
+  }, [resolvedSessions, isClient, meta]);
 
   useEffect(() => {
     if (isClient && lastAuthState.current !== isAuthenticated) {
@@ -123,7 +142,6 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
 
   const signOut = useCallback(async (providerIds?: string[]) => {
     try {
-      // Clear backend cookies
       await fetch('/api/auth/signout', {
         method: 'POST',
         credentials: 'include',
@@ -134,8 +152,8 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       /* ignore network issues */
     }
 
-    // Clear SWR cache
     await mutate(SESSION_API_ENDPOINT, {}, false);
+    await mutate(META_API_ENDPOINT, null, false);
 
     router.push('/');
   }, [router]);
@@ -160,8 +178,10 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
       return null;
     }
 
-    const { sessions: newSessions } = await res.json();
+    const { sessions: newSessions, context: newMeta } = await res.json();
     await mutate(SESSION_API_ENDPOINT, newSessions, false);
+    await mutate(META_API_ENDPOINT, newMeta, false);
+
     return providerIdOrIdToken ?? null;
   }, []);
 
@@ -197,6 +217,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
   /* Context value */
   const ctx: AuthClientContext = {
     sessions: resolvedSessions,
+    meta, // 🔹 Expose meta context here
     setSessions,
     isAuthenticated: isAuthenticated ?? false,
     isLoading,
@@ -206,7 +227,7 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
     getToken,
     refreshToken,
     handleResponse,
-    auth: undefined, // no Firebase client SDK
+    auth: undefined,
     handleRedirectCallback: undefined,
     instanceIds,
   };
@@ -215,10 +236,11 @@ const InnerAuthProvider: React.FC<AuthProviderProps> = ({ children, instanceIds 
 };
 
 /* Hook export */
-export const useAuthContext = (): AuthClientContext => {
+export const useAuthContext = (): AuthClientContext & { meta?: any } => {
   if (typeof window === 'undefined') {
     return {
       sessions: {},
+      meta: null,
       setSessions: () => {},
       isAuthenticated: false,
       isLoading: true,
@@ -236,5 +258,5 @@ export const useAuthContext = (): AuthClientContext => {
 
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuthContext must be used within an AuthProvider');
-  return ctx;
+  return ctx as AuthClientContext & { meta?: any };
 };
